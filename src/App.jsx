@@ -1588,15 +1588,149 @@ function FeatureCard({ feature, active, onToggle }) {
     const ctx = canvas.getContext("2d", { willReadFrequently: false });
     const W = canvas.width, H = canvas.height;
     ctx.clearRect(0,0,W,H);
-    const g = ctx.createLinearGradient(0,0,W,H);
-    g.addColorStop(0, feature.color+"44"); g.addColorStop(1, feature.color+"11");
-    ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
-    ctx.font = "48px serif"; ctx.textAlign="center"; ctx.textBaseline="middle";
-    ctx.fillText(feature.icon, W/2, H*0.42);
-    ctx.fillStyle=feature.color; ctx.font="bold 13px Inter,sans-serif"; ctx.textBaseline="alphabetic";
-    ctx.fillText(feature.label, W/2, H*0.76);
-    ctx.fillStyle="#64748b"; ctx.font="11px Inter,sans-serif";
-    ctx.fillText(feature.desc, W/2, H*0.88);
+
+    // Background gradient
+    const bg = ctx.createLinearGradient(0,0,W,H);
+    bg.addColorStop(0, "#0a0f1e"); bg.addColorStop(1, "#111827");
+    ctx.fillStyle = bg; ctx.fillRect(0,0,W,H);
+
+    // Feature-specific illustration
+    const c = feature.color;
+    const drawWater = (x,y,w,h,col="#1ca7c0") => {
+      ctx.fillStyle=col+"99"; ctx.beginPath(); ctx.roundRect(x,y,w,h,8); ctx.fill();
+      ctx.strokeStyle="rgba(255,255,255,0.2)"; ctx.lineWidth=1;
+      for(let i=1;i<3;i++){ctx.beginPath();ctx.moveTo(x+w*i/3,y+4);ctx.bezierCurveTo(x+w*i/3+10,y,x+w*i/3+20,y+8,x+w*i/3+30,y+4);ctx.stroke();}
+    };
+
+    if(feature.id==="beach_entry"){
+      // Gradual beach entry with gradient floor
+      const grad=ctx.createLinearGradient(0,H*0.3,W,H*0.85);
+      grad.addColorStop(0,"#c9a84c66"); grad.addColorStop(0.4,"#1ca7c099"); grad.addColorStop(1,"#1a5fa8cc");
+      ctx.fillStyle=grad; ctx.beginPath(); ctx.moveTo(0,H*0.75); ctx.lineTo(W,H*0.45); ctx.lineTo(W,H*0.85); ctx.lineTo(0,H*0.85); ctx.closePath(); ctx.fill();
+      // Sand ripples
+      ctx.strokeStyle="rgba(201,168,76,0.3)"; ctx.lineWidth=1;
+      for(let i=0;i<3;i++){ctx.beginPath();ctx.ellipse(W*0.2+i*30,H*0.72-i*5,40-i*8,6,0,0,Math.PI*2);ctx.stroke();}
+      // Water ripples
+      ctx.strokeStyle="rgba(255,255,255,0.25)"; ctx.lineWidth=1;
+      for(let i=0;i<3;i++){ctx.beginPath();ctx.moveTo(W*0.4+i*40,H*0.55+i*5);ctx.bezierCurveTo(W*0.5+i*40,H*0.52+i*5,W*0.55+i*40,H*0.58+i*5,W*0.65+i*40,H*0.55+i*5);ctx.stroke();}
+    } else if(feature.id==="baja_shelf"){
+      drawWater(W*0.05,H*0.35,W*0.9,H*0.5,"#1ca7c0");
+      // Shallow shelf
+      ctx.fillStyle="#c9a84c55"; ctx.beginPath(); ctx.roundRect(W*0.1,H*0.38,W*0.4,H*0.12,6); ctx.fill();
+      ctx.strokeStyle="rgba(201,168,76,0.6)"; ctx.lineWidth=2; ctx.strokeRect(W*0.1,H*0.38,W*0.4,H*0.12);
+      ctx.fillStyle="rgba(201,168,76,0.8)"; ctx.font="10px Inter,sans-serif"; ctx.textAlign="center"; ctx.fillText("Shallow Shelf 12\"",W*0.3,H*0.47);
+      // Lounge chairs hint
+      ctx.fillStyle=c+"88"; ctx.beginPath(); ctx.roundRect(W*0.15,H*0.4,18,8,3); ctx.fill();
+      ctx.beginPath(); ctx.roundRect(W*0.28,H*0.4,18,8,3); ctx.fill();
+    } else if(feature.id==="spa_attached"){
+      drawWater(W*0.1,H*0.4,W*0.8,H*0.45,"#1a5fa8");
+      // Spa circle
+      ctx.fillStyle="#8b5cf699"; ctx.beginPath(); ctx.arc(W*0.25,H*0.38,W*0.15,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle="#8b5cf6"; ctx.lineWidth=2; ctx.stroke();
+      // Jets/bubbles
+      for(let i=0;i<6;i++){ctx.fillStyle="rgba(255,255,255,0.5)"; ctx.beginPath(); ctx.arc(W*0.25+Math.cos(i)*W*0.1,H*0.38+Math.sin(i)*H*0.08,2,0,Math.PI*2); ctx.fill();}
+      ctx.fillStyle="rgba(139,92,246,0.8)"; ctx.font="9px Inter,sans-serif"; ctx.textAlign="center"; ctx.fillText("Attached Spa",W*0.25,H*0.38+3);
+    } else if(feature.id==="infinity_edge"){
+      drawWater(W*0.05,H*0.3,W*0.9,H*0.55,"#1ca7c0");
+      // Infinity edge waterfall effect
+      const inf=ctx.createLinearGradient(W*0.75,H*0.3,W*0.95,H*0.85);
+      inf.addColorStop(0,"#1ca7c0cc"); inf.addColorStop(1,"transparent");
+      ctx.fillStyle=inf; ctx.beginPath(); ctx.moveTo(W*0.78,H*0.3); ctx.lineTo(W*0.95,H*0.3); ctx.lineTo(W*0.9,H*0.85); ctx.lineTo(W*0.73,H*0.6); ctx.closePath(); ctx.fill();
+      // Horizon line
+      ctx.strokeStyle="rgba(28,167,192,0.6)"; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.moveTo(W*0.78,H*0.3); ctx.lineTo(W*0.95,H*0.3); ctx.stroke();
+      ctx.fillStyle=c+"cc"; ctx.font="9px Inter,sans-serif"; ctx.textAlign="center"; ctx.fillText("∞ Vanishing Edge",W*0.86,H*0.26);
+    } else if(feature.id==="grotto"){
+      // Rock arch
+      ctx.fillStyle="#4a3728cc"; ctx.beginPath(); ctx.arc(W*0.5,H*0.5,W*0.28,Math.PI,Math.PI*2); ctx.fill();
+      ctx.fillStyle="#5a4738cc"; ctx.beginPath(); ctx.arc(W*0.5,H*0.52,W*0.22,Math.PI,Math.PI*2); ctx.fill();
+      drawWater(W*0.25,H*0.52,W*0.5,H*0.3,"#1a5fa8");
+      // Waterfall
+      ctx.strokeStyle="rgba(255,255,255,0.4)"; ctx.lineWidth=3;
+      ctx.beginPath(); ctx.moveTo(W*0.42,H*0.32); ctx.quadraticCurveTo(W*0.44,H*0.42,W*0.42,H*0.52); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(W*0.5,H*0.3); ctx.quadraticCurveTo(W*0.5,H*0.41,W*0.5,H*0.52); ctx.stroke();
+    } else if(feature.id==="waterfall"){
+      drawWater(W*0.1,H*0.5,W*0.8,H*0.38,"#1ca7c0");
+      // Rock formation
+      ctx.fillStyle="#5a4738"; ctx.beginPath(); ctx.roundRect(W*0.3,H*0.25,W*0.4,H*0.28,4); ctx.fill();
+      ctx.fillStyle="#6a5748"; ctx.beginPath(); ctx.roundRect(W*0.35,H*0.2,W*0.3,H*0.1,4); ctx.fill();
+      // Water streams
+      ctx.strokeStyle="rgba(28,167,192,0.7)"; ctx.lineWidth=4;
+      ctx.beginPath(); ctx.moveTo(W*0.4,H*0.35); ctx.quadraticCurveTo(W*0.38,H*0.44,W*0.4,H*0.5); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(W*0.5,H*0.33); ctx.quadraticCurveTo(W*0.5,H*0.43,W*0.5,H*0.5); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(W*0.6,H*0.35); ctx.quadraticCurveTo(W*0.62,H*0.44,W*0.6,H*0.5); ctx.stroke();
+    } else if(feature.id==="diving_rock"){
+      drawWater(W*0.05,H*0.45,W*0.9,H*0.45,"#1a5fa8");
+      // Natural rock
+      ctx.fillStyle="#6b5a4a"; ctx.beginPath(); ctx.moveTo(W*0.3,H*0.45); ctx.lineTo(W*0.2,H*0.55); ctx.lineTo(W*0.1,H*0.65); ctx.lineTo(W*0.05,H*0.65); ctx.lineTo(W*0.05,H*0.45); ctx.closePath(); ctx.fill();
+      ctx.fillStyle="#7b6a5a"; ctx.beginPath(); ctx.moveTo(W*0.28,H*0.3); ctx.lineTo(W*0.38,H*0.45); ctx.lineTo(W*0.18,H*0.45); ctx.closePath(); ctx.fill();
+      // Person silhouette hint
+      ctx.fillStyle=c+"88"; ctx.beginPath(); ctx.arc(W*0.32,H*0.24,6,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle=c+"88"; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(W*0.32,H*0.3); ctx.lineTo(W*0.32,H*0.4); ctx.moveTo(W*0.24,H*0.34); ctx.lineTo(W*0.4,H*0.34); ctx.stroke();
+    } else if(feature.id==="swim_up_bar"){
+      drawWater(W*0.05,H*0.4,W*0.9,H*0.48,"#1ca7c0");
+      // Bar counter
+      ctx.fillStyle="#8b6914cc"; ctx.beginPath(); ctx.roundRect(W*0.15,H*0.38,W*0.7,H*0.12,4); ctx.fill();
+      ctx.strokeStyle="rgba(201,168,76,0.6)"; ctx.lineWidth=2; ctx.strokeRect(W*0.15,H*0.38,W*0.7,H*0.12);
+      // Bar stools
+      for(let i=0;i<4;i++){ctx.fillStyle=c+"88"; ctx.beginPath(); ctx.arc(W*0.25+i*W*0.16,H*0.52,6,0,Math.PI*2); ctx.fill();}
+      // Glasses
+      ctx.fillStyle="rgba(255,255,255,0.7)"; ctx.beginPath(); ctx.roundRect(W*0.3,H*0.34,8,10,2); ctx.fill();
+      ctx.beginPath(); ctx.roundRect(W*0.5,H*0.34,8,10,2); ctx.fill();
+    } else if(feature.id==="tanning_ledge"){
+      drawWater(W*0.05,H*0.35,W*0.9,H*0.52,"#1ca7c0");
+      // Ledge
+      ctx.fillStyle="#c9a84c44"; ctx.beginPath(); ctx.roundRect(W*0.08,H*0.38,W*0.84,H*0.08,4); ctx.fill();
+      ctx.strokeStyle="rgba(201,168,76,0.5)"; ctx.lineWidth=1.5; ctx.strokeRect(W*0.08,H*0.38,W*0.84,H*0.08);
+      // Loungers
+      for(let i=0;i<2;i++){ctx.fillStyle=c+"66"; ctx.beginPath(); ctx.roundRect(W*0.2+i*W*0.4,H*0.39,W*0.2,H*0.05,3); ctx.fill();}
+      ctx.fillStyle="rgba(201,168,76,0.7)"; ctx.font="9px Inter"; ctx.textAlign="center"; ctx.fillText("6\" Depth",W*0.5,H*0.55);
+    } else if(feature.id==="fire_feature"){
+      drawWater(W*0.05,H*0.45,W*0.9,H*0.45,"#1a5fa8");
+      // Fire bowls on edge
+      for(let i=0;i<2;i++){
+        const fx=W*(0.2+i*0.6), fy=H*0.38;
+        ctx.fillStyle="#555"; ctx.beginPath(); ctx.roundRect(fx-10,fy,20,12,3); ctx.fill();
+        // Flame
+        const flame=ctx.createRadialGradient(fx,fy,0,fx,fy,18);
+        flame.addColorStop(0,"#fff3"); flame.addColorStop(0.4,"#f59e0bcc"); flame.addColorStop(1,"transparent");
+        ctx.fillStyle=flame; ctx.beginPath(); ctx.ellipse(fx,fy-5,10,18,0,0,Math.PI*2); ctx.fill();
+      }
+    } else if(feature.id==="water_feature"){
+      drawWater(W*0.1,H*0.4,W*0.8,H*0.48,"#1ca7c0");
+      // Deck jets
+      for(let i=0;i<3;i++){
+        ctx.strokeStyle=c+"aa"; ctx.lineWidth=3;
+        ctx.beginPath(); ctx.moveTo(W*0.2+i*W*0.25,H*0.38); ctx.quadraticCurveTo(W*0.28+i*W*0.25,H*0.44,W*0.3+i*W*0.25,H*0.5); ctx.stroke();
+        // Splash
+        ctx.fillStyle="rgba(255,255,255,0.4)"; ctx.beginPath(); ctx.arc(W*0.3+i*W*0.25,H*0.5,4,0,Math.PI*2); ctx.fill();
+      }
+    } else if(feature.id==="slide"){
+      drawWater(W*0.1,H*0.5,W*0.8,H*0.38,"#1ca7c0");
+      // Slide structure
+      ctx.strokeStyle=c; ctx.lineWidth=8; ctx.lineCap="round";
+      ctx.beginPath(); ctx.moveTo(W*0.7,H*0.15); ctx.quadraticCurveTo(W*0.8,H*0.35,W*0.65,H*0.5); ctx.stroke();
+      ctx.strokeStyle=c+"55"; ctx.lineWidth=12;
+      ctx.beginPath(); ctx.moveTo(W*0.7,H*0.15); ctx.quadraticCurveTo(W*0.8,H*0.35,W*0.65,H*0.5); ctx.stroke();
+      // Support poles
+      ctx.strokeStyle="#888"; ctx.lineWidth=3;
+      ctx.beginPath(); ctx.moveTo(W*0.72,H*0.15); ctx.lineTo(W*0.72,H*0.5); ctx.stroke();
+    } else {
+      // Generic fallback
+      const gf=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,W*0.4);
+      gf.addColorStop(0,c+"33"); gf.addColorStop(1,"transparent");
+      ctx.fillStyle=gf; ctx.fillRect(0,0,W,H);
+      drawWater(W*0.1,H*0.4,W*0.8,H*0.45,"#1ca7c0");
+    }
+
+    // Overlay: feature name at bottom
+    const labelGrad=ctx.createLinearGradient(0,H*0.7,0,H);
+    labelGrad.addColorStop(0,"transparent"); labelGrad.addColorStop(1,"rgba(0,0,0,0.75)");
+    ctx.fillStyle=labelGrad; ctx.fillRect(0,H*0.7,W,H*0.3);
+    ctx.fillStyle=c; ctx.font="bold 13px Inter,sans-serif"; ctx.textAlign="center"; ctx.textBaseline="alphabetic";
+    ctx.fillText(feature.icon+" "+feature.label, W/2, H*0.92);
+    ctx.fillStyle="rgba(255,255,255,0.45)"; ctx.font="10px Inter,sans-serif";
+    ctx.fillText(feature.desc, W/2, H*0.97);
   }, [feature]);
 
   return (
@@ -1718,140 +1852,6 @@ function HardscapeDesigner({ hardscapes, toggleHardscape, setHSQty, dailyRenders
       if(!resp.ok){
         const txt = await resp.text().catch(()=>""); let parsed={}; try{parsed=JSON.parse(txt);}catch{}
         const msg = parsed?.error?.message||txt.slice(0,120);
-        if(resp.status===401) throw new Error("Invalid API key - check your xAI key on the Design tab.");
-        if(resp.status===429) throw new Error("Rate limit - wait 60 seconds and try again.");
-        throw new Error(`Grok error ${resp.status}: ${msg}`);
-      }
-
-      const data = await resp.json();
-      const b64r = data?.data?.[0]?.b64_json; const urlr = data?.data?.[0]?.url;
-      if(!b64r&&!urlr) throw new Error("No image returned. Please try again.");
-
-      setProgress(100); setProgressMsg("Done!");
-      const finalImg = b64r ? `data:image/jpeg;base64,${b64r}` : urlr;
-      setRendered(finalImg); setRenderCount(c=>c+1); bumpDailyRender();
-
-      try {
-        const dr = await fetch("https://api.anthropic.com/v1/messages",{ method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ model:"claude-sonnet-4-6", max_tokens:220, messages:[{role:"user",content:`You are a luxury landscape designer. In 2 enthusiastic sentences, describe this outdoor design to an excited homeowner. The design includes: ${hsList}.`}] }) });
-        const dd = await dr.json(); setAiDesc(dd?.content?.[0]?.text||null);
-      } catch{}
-    } catch(err){ clearInterval(interval); setError(err.message||"Something went wrong. Please try again."); }
-    finally { setRendering(false); }
-  };
-
-  return (
-    <div style={{display:"flex",flexDirection:"column",gap:14}}>
-      <div style={{background:"#111827",border:`2px solid ${photo?"rgba(52,211,153,0.45)":"#1e293b"}`,borderRadius:16,overflow:"hidden"}}>
-        <div style={{background:"linear-gradient(135deg,#134e4a,#0f3d38)",padding:"14px 16px"}}>
-          <div style={{fontSize:14,fontWeight:800,color:"#34d399",marginBottom:3}}>🏡 Outdoor Space Designer</div>
-          <div style={{fontSize:12,color:"#6ee7b7",lineHeight:1.5}}>Upload your backyard photo - Select elements below - Grok Aurora renders everything into your real space</div>
-        </div>
-        <div style={{padding:14}}>
-          <div style={{display:"flex",gap:8,marginBottom:photo?10:0}}>
-            <label style={{flex:1,padding:"13px 0",borderRadius:11,background:photo?"rgba(52,211,153,0.1)":"rgba(52,211,153,0.06)",border:`1.5px solid ${photo?"rgba(52,211,153,0.45)":"rgba(52,211,153,0.2)"}`,color:photo?"#34d399":"#6ee7b7",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-              {photo?"✅ Photo loaded - tap to change":"📁 Upload Backyard Photo"}
-              <input type="file" accept="image/*" onChange={handlePhotoUpload} style={{display:"none"}} />
-            </label>
-            {photo&&<button onClick={()=>{setPhoto(null);setRendered(null);setError(null);}} style={{padding:"13px 14px",borderRadius:11,background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",fontWeight:700,cursor:"pointer"}}>✕</button>}
-          </div>
-          {photo&&<div style={{borderRadius:10,overflow:"hidden",border:"1px solid rgba(52,211,153,0.3)"}}><img src={photo} alt="outdoor space" style={{width:"100%",display:"block",maxHeight:200,objectFit:"cover"}} /></div>}
-        </div>
-      </div>
-
-      <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:16,overflow:"hidden"}}>
-        <div style={{display:"flex",overflowX:"auto",borderBottom:"1px solid #1e293b",background:"#0f172a"}}>
-          {HARDSCAPE_CATEGORIES.map(cat=>{
-            const catSelected = cat.items.filter(item=>hardscapes[item.id]!=null).length;
-            const isActive = activeCat===cat.id;
-            return(
-              <button key={cat.id} onClick={()=>setActiveCat(cat.id)} style={{flexShrink:0,padding:"11px 14px",border:"none",cursor:"pointer",background:"transparent",borderBottom:`3px solid ${isActive?cat.color:"transparent"}`,color:isActive?cat.color:"#64748b",transition:"all 0.15s",position:"relative"}}>
-                <div style={{fontSize:13,fontWeight:700,whiteSpace:"nowrap"}}>{cat.icon} {cat.label}</div>
-                {catSelected>0&&(<div style={{position:"absolute",top:6,right:6,width:14,height:14,borderRadius:"50%",background:cat.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:800,color:"white"}}>{catSelected}</div>)}
-              </button>
-            );
-          })}
-        </div>
-        <div style={{padding:14,display:"flex",flexDirection:"column",gap:10}}>
-          {currentCat.items.map(item=>{
-            const active = hardscapes[item.id]!=null;
-            return(
-              <div key={item.id} style={{background:active?`${currentCat.color}11`:"#0f172a",border:`2px solid ${active?currentCat.color:"#1e293b"}`,borderRadius:12,padding:"12px 14px",transition:"all 0.15s"}}>
-                <div style={{display:"flex",alignItems:"center",gap:12}}>
-                  <div style={{width:44,height:44,borderRadius:10,background:active?`${currentCat.color}22`:"#1e293b",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>{item.icon}</div>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontWeight:700,fontSize:14,color:active?currentCat.color:"#e2e8f0",display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-                      {item.label}{active&&<span style={{fontSize:10,background:`${currentCat.color}33`,color:currentCat.color,borderRadius:20,padding:"2px 8px",fontWeight:700}}>ADDED ✓</span>}
-                    </div>
-                    <div style={{fontSize:12,color:"#64748b",marginTop:3}}>{item.desc}</div>
-                    {active&&item.unit!=="unit"&&(
-                      <div style={{display:"flex",alignItems:"center",gap:8,marginTop:8}}>
-                        <span style={{fontSize:11,color:"#64748b"}}>Quantity:</span>
-                        <input type="number" value={hardscapes[item.id]||0} min={0} onChange={e=>setHSQty(item.id,e.target.value)} style={{width:80,background:"#1e293b",border:`1px solid ${currentCat.color}66`,borderRadius:8,padding:"5px 10px",color:currentCat.color,fontSize:14,fontWeight:700,outline:"none"}} />
-                        <span style={{fontSize:11,color:"#64748b"}}>{item.unit}</span>
-                      </div>
-                    )}
-                  </div>
-                  <button onClick={()=>toggleHardscape(item.id)} style={{padding:"9px 16px",borderRadius:10,border:`2px solid ${active?currentCat.color:"#334155"}`,background:active?`${currentCat.color}22`:"#1e293b",color:active?currentCat.color:"#94a3b8",fontWeight:800,fontSize:13,cursor:"pointer",flexShrink:0,transition:"all 0.15s",whiteSpace:"nowrap"}}>
-                    {active?"✓ Added":"+ Add"}
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {totalSelected>0&&(
-        <div style={{background:"rgba(6,182,212,0.07)",border:"1px solid rgba(6,182,212,0.2)",borderRadius:12,padding:12}}>
-          <div style={{fontSize:11,color:"#06b6d4",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:8}}>Your Outdoor Space Design ({totalSelected} elements)</div>
-          <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-            {HARDSCAPE_OPTIONS.filter(h=>hardscapes[h.id]!=null).map(h=>(
-              <span key={h.id} style={{padding:"4px 10px",borderRadius:20,background:"rgba(6,182,212,0.12)",border:"1px solid rgba(6,182,212,0.25)",color:"#06b6d4",fontSize:12,fontWeight:600}}>
-                {h.icon} {h.label}{h.unit!=="unit"?` - ${hardscapes[h.id]} ${h.unit}`:""}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:16,padding:14,display:"flex",flexDirection:"column",gap:12}}>
-        <div>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-            <div style={{fontSize:11,color:"#94a3b8",fontWeight:600}}>Daily Renders Remaining</div>
-            <div style={{fontSize:12,fontWeight:800,color:limitHit?"#ef4444":rendersLeft<=3?"#f59e0b":"#22c55e"}}>{limitHit?"Limit reached":`${rendersLeft} left today`}</div>
-          </div>
-          <div style={{height:5,background:"#1e293b",borderRadius:3,overflow:"hidden"}}><div style={{height:"100%",width:`${Math.min((dailyRenders/dailyLimit)*100,100)}%`,background:limitHit?"#ef4444":rendersLeft<=3?"linear-gradient(90deg,#f59e0b,#ef4444)":"linear-gradient(90deg,#22c55e,#34d399)",borderRadius:3,transition:"width 0.4s"}} /></div>
-          <div style={{fontSize:10,color:"#334155",marginTop:4}}>{dailyRenders} of {dailyLimit} used - Pool + Hardscape renders share this limit - Resets midnight</div>
-        </div>
-
-        <div>
-          <div style={{fontSize:11,color:"#34d399",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:8}}>🎨 Rendering Style</div>
-          <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-            {[{id:"photorealistic",label:"📷 Photorealistic"},{id:"twilight",label:"🌅 Twilight"},{id:"night",label:"🌙 Night"},{id:"magazine",label:"✨ Magazine"}].map(s=>(
-              <button key={s.id} onClick={()=>setStyle(s.id)} style={{padding:"7px 14px",borderRadius:20,border:`2px solid ${style===s.id?"#34d399":"#1e293b"}`,background:style===s.id?"rgba(52,211,153,0.1)":"transparent",color:style===s.id?"#34d399":"#64748b",fontSize:12,fontWeight:600,cursor:"pointer"}}>{s.label}</button>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <div style={{fontSize:11,color:"#34d399",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:8}}>✍️ Additional Instructions</div>
-          <textarea value={tweak} onChange={e=>setTweak(e.target.value)} placeholder="e.g. 'use travertine throughout, add string lights, mature palms in corners'" rows={2}
-            style={{width:"100%",background:"#1e293b",border:"1px solid #334155",borderRadius:10,padding:"9px 12px",color:"#e2e8f0",fontSize:13,outline:"none",resize:"none",boxSizing:"border-box",lineHeight:1.5,fontFamily:"inherit"}} />
-        </div>
-
-        {limitHit ? (
-          <div style={{padding:"14px",borderRadius:12,background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.2)",textAlign:"center"}}>
-            <div style={{fontSize:14,fontWeight:700,color:"#ef4444",marginBottom:4}}>⏰ Daily Limit Reached</div>
-            <div style={{fontSize:12,color:"#94a3b8"}}>All {dailyLimit} renders used today. Resets at midnight.</div>
-          </div>
-        ) : !apiKey ? (
-          <div style={{padding:"14px",borderRadius:12,background:"rgba(52,211,153,0.06)",border:"1px solid rgba(52,211,153,0.2)",textAlign:"center"}}>
-            <div style={{fontSize:13,fontWeight:700,color:"#34d399",marginBottom:4}}>🔑 Grok API Key Required</div>
-            <div style={{fontSize:12,color:"#6ee7b7"}}>Add your xAI API key on the Design tab to activate rendering.</div>
-          </div>
-        ) : (
-          <button onClick={rendering?null:handleRender} style={{width:"100%",padding:"16px",borderRadius:12,background:rendering?"#1e293b":"linear-gradient(135deg,#059669,#047857)",border:"none",color:"white",fontWeight:800,fontSize:15,cursor:rendering?"not-allowed":"pointer",boxShadow:rendering?"none":"0 4px 20px rgba(5,150,105,0.3)",transition:"all 0.2s"}}>
-            {rendering?`⏳ ${progressMsg}`:rendered?"🔄 Generate New Variation":"🚀 Generate Hardscape Rendering"}
           </button>
         )}
 
