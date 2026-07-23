@@ -1,6 +1,6 @@
-import { useState, useMemo, useRef, useEffect, useCallback } from "react";
+﻿import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 
-// ─── AFFILIATE LINKS ──────────────────────────────────────────────────────────
+// â”€â”€â”€ AFFILIATE LINKS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const AFFILIATE_TAGS = { amazon: "YOURTAG-20", homedepot: "YOUR_HD_TAG", lowes: "YOUR_LOWES_TAG", wayfair: "YOUR_WAYFAIR_TAG" };
 const hdLink = (q) => `https://www.homedepot.com/s/${encodeURIComponent(q)}?cm_mmc=afl-ir-${AFFILIATE_TAGS.homedepot}`;
 const lowesLink = (q) => `https://www.lowes.com/search?searchTerm=${encodeURIComponent(q)}&affid=${AFFILIATE_TAGS.lowes}`;
@@ -8,77 +8,77 @@ const wayfairLink = (q) => `https://www.wayfair.com/keyword.php?keyword=${encode
 const amazonLink = (asin) => `https://www.amazon.com/dp/${asin}?tag=${AFFILIATE_TAGS.amazon}`;
 
 const FINISH_LINKS = {
-  plaster:    { name:"White Plaster Pool Finish 50lb Bag", retailer:"Amazon", link:amazonLink("B07PLASTER1"), earn:"3–8%" },
-  pebble:     { name:"Pebble Tec Natural Stone Finish", retailer:"Amazon", link:amazonLink("B07PBTECEF"), earn:"3–8%" },
-  quartz:     { name:"Diamond Brite Quartz Pool Finish", retailer:"Home Depot", link:hdLink("diamond brite quartz pool finish"), earn:"2–8%" },
-  tile:       { name:"Blue Glass Mosaic Pool Tile 4x4", retailer:"Home Depot", link:hdLink("blue glass mosaic pool tile"), earn:"2–8%" },
-  fiberglass: { name:"Fiberglass Pool Gelcoat Repair Kit", retailer:"Amazon", link:amazonLink("B08FGLSKIT"), earn:"3–8%" },
-  glass_bead: { name:"Glass Bead Pool Finish Bag", retailer:"Amazon", link:amazonLink("B09GLSBEAD"), earn:"3–8%" },
+  plaster:    { name:"White Plaster Pool Finish 50lb Bag", retailer:"Amazon", link:amazonLink("B07PLASTER1"), earn:"3â€“8%" },
+  pebble:     { name:"Pebble Tec Natural Stone Finish", retailer:"Amazon", link:amazonLink("B07PBTECEF"), earn:"3â€“8%" },
+  quartz:     { name:"Diamond Brite Quartz Pool Finish", retailer:"Home Depot", link:hdLink("diamond brite quartz pool finish"), earn:"2â€“8%" },
+  tile:       { name:"Blue Glass Mosaic Pool Tile 4x4", retailer:"Home Depot", link:hdLink("blue glass mosaic pool tile"), earn:"2â€“8%" },
+  fiberglass: { name:"Fiberglass Pool Gelcoat Repair Kit", retailer:"Amazon", link:amazonLink("B08FGLSKIT"), earn:"3â€“8%" },
+  glass_bead: { name:"Glass Bead Pool Finish Bag", retailer:"Amazon", link:amazonLink("B09GLSBEAD"), earn:"3â€“8%" },
 };
 const COLOR_LINKS = {
-  arctic:    { name:"Rust-Oleum Pool Paint Arctic White", retailer:"Home Depot", link:hdLink("rustoleum pool paint white"), earn:"2–8%" },
-  caribbean: { name:"Pool Paint Caribbean Blue 1gal", retailer:"Lowe's", link:lowesLink("pool paint caribbean blue"), earn:"1–4%" },
-  tahoe:     { name:"In The Swim Tahoe Blue Pool Paint", retailer:"Amazon", link:amazonLink("B07TAHOEBL"), earn:"3–8%" },
-  midnight:  { name:"Epoxy Pool Paint Midnight Black", retailer:"Amazon", link:amazonLink("B08MIDNPNT"), earn:"3–8%" },
-  seafoam:   { name:"Pool Paint Seafoam Green 1gal", retailer:"Home Depot", link:hdLink("pool paint seafoam green"), earn:"2–8%" },
-  sandstone: { name:"Sundek Pool Deck Sandstone Coat", retailer:"Amazon", link:amazonLink("B07SNDSTN1"), earn:"3–8%" },
-  slate:     { name:"Pool Paint Slate Grey Epoxy", retailer:"Lowe's", link:lowesLink("pool paint slate grey epoxy"), earn:"1–4%" },
-  sapphire:  { name:"Pool Paint Sapphire Blue Premium", retailer:"Amazon", link:amazonLink("B09SAPPHIR"), earn:"3–8%" },
+  arctic:    { name:"Rust-Oleum Pool Paint Arctic White", retailer:"Home Depot", link:hdLink("rustoleum pool paint white"), earn:"2â€“8%" },
+  caribbean: { name:"Pool Paint Caribbean Blue 1gal", retailer:"Lowe's", link:lowesLink("pool paint caribbean blue"), earn:"1â€“4%" },
+  tahoe:     { name:"In The Swim Tahoe Blue Pool Paint", retailer:"Amazon", link:amazonLink("B07TAHOEBL"), earn:"3â€“8%" },
+  midnight:  { name:"Epoxy Pool Paint Midnight Black", retailer:"Amazon", link:amazonLink("B08MIDNPNT"), earn:"3â€“8%" },
+  seafoam:   { name:"Pool Paint Seafoam Green 1gal", retailer:"Home Depot", link:hdLink("pool paint seafoam green"), earn:"2â€“8%" },
+  sandstone: { name:"Sundek Pool Deck Sandstone Coat", retailer:"Amazon", link:amazonLink("B07SNDSTN1"), earn:"3â€“8%" },
+  slate:     { name:"Pool Paint Slate Grey Epoxy", retailer:"Lowe's", link:lowesLink("pool paint slate grey epoxy"), earn:"1â€“4%" },
+  sapphire:  { name:"Pool Paint Sapphire Blue Premium", retailer:"Amazon", link:amazonLink("B09SAPPHIR"), earn:"3â€“8%" },
 };
 const ENTRY_LINKS = {
-  beach_entry:    { name:"Beach Entry Pool Transition Kit", retailer:"Amazon", link:amazonLink("B07BEACHEK"), earn:"3–8%" },
-  baja_shelf:     { name:"Tanning Ledge Lounger (fits Baja shelf)", retailer:"Wayfair", link:wayfairLink("tanning ledge lounger baja shelf pool"), earn:"3–7%" },
-  steps_corner:   { name:"Pool Step Handrail Stainless 60in", retailer:"Lowe's", link:lowesLink("pool step handrail stainless 60"), earn:"1–4%" },
-  steps_end:      { name:"Pool Entry Step Nosing Tile", retailer:"Home Depot", link:hdLink("pool step nosing tile coping"), earn:"2–8%" },
-  steps_curved:   { name:"Roman Step Pool Coping Stone", retailer:"Amazon", link:amazonLink("B07ROMCOPE"), earn:"3–8%" },
-  swim_up_bar:    { name:"Outdoor Bar Stools Waterproof Set 4", retailer:"Wayfair", link:wayfairLink("waterproof outdoor bar stools pool"), earn:"3–7%" },
-  infinity_edge:  { name:"Infinity Edge Catch Basin Kit", retailer:"Amazon", link:amazonLink("B08INFEDGE"), earn:"3–8%" },
-  spa_attached:   { name:"Spa Blower 1.5HP Air Injector", retailer:"Amazon", link:amazonLink("B07SPABLWR"), earn:"3–8%" },
-  grotto:         { name:"Natural Fieldstone Rock Kit Waterfall", retailer:"Home Depot", link:hdLink("natural fieldstone waterfall rock kit"), earn:"2–8%" },
-  diving_rock:    { name:"Duraflex Diving Board 6ft with Base", retailer:"Amazon", link:amazonLink("B07DIVBRD6"), earn:"3–8%" },
-  sun_shelf_umbrella: { name:"9ft Cantilever Pool Umbrella w/ Sleeve", retailer:"Wayfair", link:wayfairLink("cantilever umbrella pool shelf sleeve"), earn:"3–7%" },
-  splash_pad:     { name:"Splash Pad Water Play Mat Kids", retailer:"Amazon", link:amazonLink("B09SPLSHPD"), earn:"3–8%" },
+  beach_entry:    { name:"Beach Entry Pool Transition Kit", retailer:"Amazon", link:amazonLink("B07BEACHEK"), earn:"3â€“8%" },
+  baja_shelf:     { name:"Tanning Ledge Lounger (fits Baja shelf)", retailer:"Wayfair", link:wayfairLink("tanning ledge lounger baja shelf pool"), earn:"3â€“7%" },
+  steps_corner:   { name:"Pool Step Handrail Stainless 60in", retailer:"Lowe's", link:lowesLink("pool step handrail stainless 60"), earn:"1â€“4%" },
+  steps_end:      { name:"Pool Entry Step Nosing Tile", retailer:"Home Depot", link:hdLink("pool step nosing tile coping"), earn:"2â€“8%" },
+  steps_curved:   { name:"Roman Step Pool Coping Stone", retailer:"Amazon", link:amazonLink("B07ROMCOPE"), earn:"3â€“8%" },
+  swim_up_bar:    { name:"Outdoor Bar Stools Waterproof Set 4", retailer:"Wayfair", link:wayfairLink("waterproof outdoor bar stools pool"), earn:"3â€“7%" },
+  infinity_edge:  { name:"Infinity Edge Catch Basin Kit", retailer:"Amazon", link:amazonLink("B08INFEDGE"), earn:"3â€“8%" },
+  spa_attached:   { name:"Spa Blower 1.5HP Air Injector", retailer:"Amazon", link:amazonLink("B07SPABLWR"), earn:"3â€“8%" },
+  grotto:         { name:"Natural Fieldstone Rock Kit Waterfall", retailer:"Home Depot", link:hdLink("natural fieldstone waterfall rock kit"), earn:"2â€“8%" },
+  diving_rock:    { name:"Duraflex Diving Board 6ft with Base", retailer:"Amazon", link:amazonLink("B07DIVBRD6"), earn:"3â€“8%" },
+  sun_shelf_umbrella: { name:"9ft Cantilever Pool Umbrella w/ Sleeve", retailer:"Wayfair", link:wayfairLink("cantilever umbrella pool shelf sleeve"), earn:"3â€“7%" },
+  splash_pad:     { name:"Splash Pad Water Play Mat Kids", retailer:"Amazon", link:amazonLink("B09SPLSHPD"), earn:"3â€“8%" },
 };
 const HARDSCAPE_LINKS = {
-  concrete_deck:   { name:"Quikrete 5000 Concrete Mix 80lb", retailer:"Home Depot", link:hdLink("quikrete 5000 concrete mix 80lb"), earn:"2–8%" },
-  travertine:      { name:"Travertine Pool Coping 12x24 Silver", retailer:"Home Depot", link:hdLink("travertine pool coping 12x24"), earn:"2–8%" },
-  cool_deck:       { name:"Kool Deck Pool Deck Coating 40lb", retailer:"Amazon", link:amazonLink("B07KOOLDCK"), earn:"3–8%" },
-  wood_composite:  { name:"TimberTech Composite Deck Board 16ft", retailer:"Lowe's", link:lowesLink("timbertech composite deck board 16ft"), earn:"1–4%" },
-  fire_pit:        { name:"Propane Fire Pit Table 48in Natural Gas", retailer:"Home Depot", link:hdLink("propane fire pit table 48 inch"), earn:"2–8%" },
-  fire_bowls:      { name:"Concrete Fire Bowl 30in Propane", retailer:"Amazon", link:amazonLink("B08CONCFBL"), earn:"3–8%" },
-  pergola:         { name:"12x12 Cedar Pergola Kit", retailer:"Lowe's", link:lowesLink("12x12 cedar pergola kit"), earn:"1–4%" },
-  retaining_wall:  { name:"Versa-Lok Retaining Wall Block", retailer:"Home Depot", link:hdLink("versalok retaining wall block"), earn:"2–8%" },
-  outdoor_kitchen: { name:"Stainless Built-In Grill 4-Burner", retailer:"Home Depot", link:hdLink("stainless built-in grill 4 burner outdoor"), earn:"2–8%" },
-  landscape_beds:  { name:"Black Landscape Edging 20ft Roll", retailer:"Lowe's", link:lowesLink("black landscape edging 20ft"), earn:"1–4%" },
-  fence:           { name:"Pool Safety Fence 4ft x 12ft Panel", retailer:"Amazon", link:amazonLink("B07SAFEFNC"), earn:"3–8%" },
-  putting_green:   { name:"Artificial Putting Green Turf 5x10", retailer:"Amazon", link:amazonLink("B09PUTTGRN"), earn:"3–8%" },
-  sport_court:     { name:"Sport Court Flooring Tile 20-pack", retailer:"Amazon", link:amazonLink("B08SRTCRTF"), earn:"3–8%" },
-  bocce:           { name:"Bocce Ball Set Professional 8-ball", retailer:"Amazon", link:amazonLink("B07BOCCEST"), earn:"3–8%" },
+  concrete_deck:   { name:"Quikrete 5000 Concrete Mix 80lb", retailer:"Home Depot", link:hdLink("quikrete 5000 concrete mix 80lb"), earn:"2â€“8%" },
+  travertine:      { name:"Travertine Pool Coping 12x24 Silver", retailer:"Home Depot", link:hdLink("travertine pool coping 12x24"), earn:"2â€“8%" },
+  cool_deck:       { name:"Kool Deck Pool Deck Coating 40lb", retailer:"Amazon", link:amazonLink("B07KOOLDCK"), earn:"3â€“8%" },
+  wood_composite:  { name:"TimberTech Composite Deck Board 16ft", retailer:"Lowe's", link:lowesLink("timbertech composite deck board 16ft"), earn:"1â€“4%" },
+  fire_pit:        { name:"Propane Fire Pit Table 48in Natural Gas", retailer:"Home Depot", link:hdLink("propane fire pit table 48 inch"), earn:"2â€“8%" },
+  fire_bowls:      { name:"Concrete Fire Bowl 30in Propane", retailer:"Amazon", link:amazonLink("B08CONCFBL"), earn:"3â€“8%" },
+  pergola:         { name:"12x12 Cedar Pergola Kit", retailer:"Lowe's", link:lowesLink("12x12 cedar pergola kit"), earn:"1â€“4%" },
+  retaining_wall:  { name:"Versa-Lok Retaining Wall Block", retailer:"Home Depot", link:hdLink("versalok retaining wall block"), earn:"2â€“8%" },
+  outdoor_kitchen: { name:"Stainless Built-In Grill 4-Burner", retailer:"Home Depot", link:hdLink("stainless built-in grill 4 burner outdoor"), earn:"2â€“8%" },
+  landscape_beds:  { name:"Black Landscape Edging 20ft Roll", retailer:"Lowe's", link:lowesLink("black landscape edging 20ft"), earn:"1â€“4%" },
+  fence:           { name:"Pool Safety Fence 4ft x 12ft Panel", retailer:"Amazon", link:amazonLink("B07SAFEFNC"), earn:"3â€“8%" },
+  putting_green:   { name:"Artificial Putting Green Turf 5x10", retailer:"Amazon", link:amazonLink("B09PUTTGRN"), earn:"3â€“8%" },
+  sport_court:     { name:"Sport Court Flooring Tile 20-pack", retailer:"Amazon", link:amazonLink("B08SRTCRTF"), earn:"3â€“8%" },
+  bocce:           { name:"Bocce Ball Set Professional 8-ball", retailer:"Amazon", link:amazonLink("B07BOCCEST"), earn:"3â€“8%" },
 };
 
 const ENTRY_FEATURES = [
-  { id:"beach_entry", label:"Beach Entry", icon:"🏖️", desc:"Zero-depth gradual slope entry — resort style", color:"#f59e0b" },
-  { id:"baja_shelf", label:"Baja Shelf / Tanning Ledge", icon:"☀️", desc:"Shallow ledge 6-12 inches deep, perfect for loungers", color:"#06b6d4" },
-  { id:"steps_corner", label:"Corner Steps", icon:"🔢", desc:"Classic corner entry steps with handrail option", color:"#8b5cf6" },
-  { id:"steps_end", label:"End Steps", icon:"⬆️", desc:"Full-width steps at shallow end", color:"#3b82f6" },
-  { id:"steps_curved", label:"Curved / Roman Steps", icon:"🔵", desc:"Elegant curved steps — traditional style", color:"#10b981" },
-  { id:"swim_up_bar", label:"Swim-Up Bar / Ledge", icon:"🍹", desc:"Raised bar area with seating in the water", color:"#ef4444" },
-  { id:"grotto", label:"Grotto / Cave", icon:"🏔️", desc:"Rock waterfall with hidden grotto underneath", color:"#64748b" },
-  { id:"infinity_edge", label:"Infinity / Vanishing Edge", icon:"🌊", desc:"Water spills over one edge — luxury statement", color:"#0ea5e9" },
-  { id:"spa_attached", label:"Attached Spa / Hot Tub", icon:"🛁", desc:"Spillover spa connected to pool", color:"#a855f7" },
-  { id:"splash_pad", label:"Splash Pad Zone", icon:"💦", desc:"Zero-depth play area for kids", color:"#22c55e" },
-  { id:"diving_rock", label:"Diving Rock / Board", icon:"🪨", desc:"Natural rock or diving board platform", color:"#f97316" },
-  { id:"sun_shelf_umbrella", label:"Sun Shelf w/ Umbrella Sleeve", icon:"⛱️", desc:"Tanning ledge with built-in umbrella socket", color:"#eab308" },
+  { id:"beach_entry", label:"Beach Entry", icon:"ðŸ–ï¸", desc:"Zero-depth gradual slope entry â€” resort style", color:"#f59e0b" },
+  { id:"baja_shelf", label:"Baja Shelf / Tanning Ledge", icon:"â˜€ï¸", desc:"Shallow ledge 6-12 inches deep, perfect for loungers", color:"#06b6d4" },
+  { id:"steps_corner", label:"Corner Steps", icon:"ðŸ”¢", desc:"Classic corner entry steps with handrail option", color:"#8b5cf6" },
+  { id:"steps_end", label:"End Steps", icon:"â¬†ï¸", desc:"Full-width steps at shallow end", color:"#3b82f6" },
+  { id:"steps_curved", label:"Curved / Roman Steps", icon:"ðŸ”µ", desc:"Elegant curved steps â€” traditional style", color:"#10b981" },
+  { id:"swim_up_bar", label:"Swim-Up Bar / Ledge", icon:"ðŸ¹", desc:"Raised bar area with seating in the water", color:"#ef4444" },
+  { id:"grotto", label:"Grotto / Cave", icon:"ðŸ”ï¸", desc:"Rock waterfall with hidden grotto underneath", color:"#64748b" },
+  { id:"infinity_edge", label:"Infinity / Vanishing Edge", icon:"ðŸŒŠ", desc:"Water spills over one edge â€” luxury statement", color:"#0ea5e9" },
+  { id:"spa_attached", label:"Attached Spa / Hot Tub", icon:"ðŸ›", desc:"Spillover spa connected to pool", color:"#a855f7" },
+  { id:"splash_pad", label:"Splash Pad Zone", icon:"ðŸ’¦", desc:"Zero-depth play area for kids", color:"#22c55e" },
+  { id:"diving_rock", label:"Diving Rock / Board", icon:"ðŸª¨", desc:"Natural rock or diving board platform", color:"#f97316" },
+  { id:"sun_shelf_umbrella", label:"Sun Shelf w/ Umbrella Sleeve", icon:"â›±ï¸", desc:"Tanning ledge with built-in umbrella socket", color:"#eab308" },
 ];
 
 const POOL_SHAPES = [
-  { id:"rectangle", label:"Rectangle", icon:"▬", desc:"Classic, maximizes swim lanes" },
-  { id:"oval", label:"Oval / Kidney", icon:"⬭", desc:"Organic shape, popular residential" },
-  { id:"lshape", label:"L-Shape", icon:"⌐", desc:"Separate deep & shallow zones" },
-  { id:"freeform", label:"Freeform", icon:"〜", desc:"Custom natural flowing shape" },
-  { id:"lap", label:"Lap Pool", icon:"━", desc:"Long & narrow for fitness swimming" },
-  { id:"greek", label:"Greek / Roman", icon:"🏛️", desc:"Classic rectangular with curved ends" },
-  { id:"figure8", label:"Figure 8", icon:"∞", desc:"Two connected circular areas" },
+  { id:"rectangle", label:"Rectangle", icon:"â–¬", desc:"Classic, maximizes swim lanes" },
+  { id:"oval", label:"Oval / Kidney", icon:"â¬­", desc:"Organic shape, popular residential" },
+  { id:"lshape", label:"L-Shape", icon:"âŒ", desc:"Separate deep & shallow zones" },
+  { id:"freeform", label:"Freeform", icon:"ã€œ", desc:"Custom natural flowing shape" },
+  { id:"lap", label:"Lap Pool", icon:"â”", desc:"Long & narrow for fitness swimming" },
+  { id:"greek", label:"Greek / Roman", icon:"ðŸ›ï¸", desc:"Classic rectangular with curved ends" },
+  { id:"figure8", label:"Figure 8", icon:"âˆž", desc:"Two connected circular areas" },
 ];
 const POOL_FINISHES = [
   { id:"plaster", label:"Plaster", desc:"Classic white, most affordable" },
@@ -105,20 +105,20 @@ const DEPTHS = [
   { id:"diving", label:"Diving (4 / 8 ft)", avg:6, desc:"Required for boards & rocks" },
 ];
 const HARDSCAPE_OPTIONS = [
-  { id:"concrete_deck", label:"Concrete Deck", icon:"🪵", unit:"sq ft" },
-  { id:"travertine", label:"Travertine Pavers", icon:"🟫", unit:"sq ft" },
-  { id:"cool_deck", label:"Kool Deck / Textured", icon:"🔲", unit:"sq ft" },
-  { id:"wood_composite", label:"Composite Decking", icon:"🪵", unit:"sq ft" },
-  { id:"fire_pit", label:"Fire Pit", icon:"🔥", unit:"unit" },
-  { id:"fire_bowls", label:"Fire Bowls", icon:"🏺", unit:"qty" },
-  { id:"pergola", label:"Pergola / Shade", icon:"🏠", unit:"unit" },
-  { id:"retaining_wall", label:"Retaining Wall", icon:"🧱", unit:"linear ft" },
-  { id:"outdoor_kitchen", label:"Outdoor Kitchen", icon:"🍳", unit:"unit" },
-  { id:"landscape_beds", label:"Planting Beds", icon:"🌿", unit:"sq ft" },
-  { id:"fence", label:"Pool Safety Fence", icon:"🚧", unit:"linear ft" },
-  { id:"putting_green", label:"Putting Green", icon:"⛳", unit:"sq ft" },
-  { id:"sport_court", label:"Sport Court", icon:"🏀", unit:"sq ft" },
-  { id:"bocce", label:"Bocce Ball Court", icon:"🎯", unit:"unit" },
+  { id:"concrete_deck", label:"Concrete Deck", icon:"ðŸªµ", unit:"sq ft" },
+  { id:"travertine", label:"Travertine Pavers", icon:"ðŸŸ«", unit:"sq ft" },
+  { id:"cool_deck", label:"Kool Deck / Textured", icon:"ðŸ”²", unit:"sq ft" },
+  { id:"wood_composite", label:"Composite Decking", icon:"ðŸªµ", unit:"sq ft" },
+  { id:"fire_pit", label:"Fire Pit", icon:"ðŸ”¥", unit:"unit" },
+  { id:"fire_bowls", label:"Fire Bowls", icon:"ðŸº", unit:"qty" },
+  { id:"pergola", label:"Pergola / Shade", icon:"ðŸ ", unit:"unit" },
+  { id:"retaining_wall", label:"Retaining Wall", icon:"ðŸ§±", unit:"linear ft" },
+  { id:"outdoor_kitchen", label:"Outdoor Kitchen", icon:"ðŸ³", unit:"unit" },
+  { id:"landscape_beds", label:"Planting Beds", icon:"ðŸŒ¿", unit:"sq ft" },
+  { id:"fence", label:"Pool Safety Fence", icon:"ðŸš§", unit:"linear ft" },
+  { id:"putting_green", label:"Putting Green", icon:"â›³", unit:"sq ft" },
+  { id:"sport_court", label:"Sport Court", icon:"ðŸ€", unit:"sq ft" },
+  { id:"bocce", label:"Bocce Ball Court", icon:"ðŸŽ¯", unit:"unit" },
 ];
 
 const PENTAIR_AMAZON = {
@@ -137,33 +137,33 @@ function getPentairEquipment(gallons, extras) {
   const gpm = Math.ceil(gallons / 480);
   const pump = gallons <= 15000
     ? { model:"Pentair IntelliFlo3 VSF 1.5HP", sku:"011065", asin:PENTAIR_AMAZON.pump_1_5hp, earn:"3-8%",
-        note:`Sized for your ${gallons.toLocaleString()} gal pool. Needs ~${gpm} GPM turnover — this pump delivers 15-140 GPM variable. Wi-Fi + app control. 90% energy savings vs single-speed.` }
+        note:`Sized for your ${gallons.toLocaleString()} gal pool. Needs ~${gpm} GPM turnover â€” this pump delivers 15-140 GPM variable. Wi-Fi + app control. 90% energy savings vs single-speed.` }
     : gallons <= 30000
     ? { model:"Pentair IntelliFlo3 VSF 3HP", sku:"011076", asin:PENTAIR_AMAZON.pump_3hp, earn:"3-8%",
-        note:`Your ${gallons.toLocaleString()} gal pool needs ~${gpm} GPM — the 3HP handles up to 30,000 gal comfortably. Built-in I/O relay board for automation integration.` }
-    : { model:"Pentair IntelliFlo3 VSF 3HP (×2)", sku:"011076x2", asin:PENTAIR_AMAZON.pump_3hp, earn:"3-8%",
+        note:`Your ${gallons.toLocaleString()} gal pool needs ~${gpm} GPM â€” the 3HP handles up to 30,000 gal comfortably. Built-in I/O relay board for automation integration.` }
+    : { model:"Pentair IntelliFlo3 VSF 3HP (Ã—2)", sku:"011076x2", asin:PENTAIR_AMAZON.pump_3hp, earn:"3-8%",
         note:`At ${gallons.toLocaleString()} gal your pool needs ~${gpm} GPM. Two 3HP VSF pumps in parallel deliver the required flow while maintaining efficiency and redundancy.` };
 
-  // Filter sizing: sq ft of filter area should be ≥ (GPM / 0.375) for cartridge
+  // Filter sizing: sq ft of filter area should be â‰¥ (GPM / 0.375) for cartridge
   const filterSqFt = Math.ceil(gpm / 0.375);
   const filter = gallons <= 15000
     ? { model:"Pentair Clean & Clear Plus 320", sku:"160340", asin:PENTAIR_AMAZON.filter_cc320, earn:"3-8%",
-        note:`320 sq ft cartridge filter — right-sized for up to 20,000 gal. No backwash needed, easy quarterly cleaning. Holds debris well between cleanings.` }
+        note:`320 sq ft cartridge filter â€” right-sized for up to 20,000 gal. No backwash needed, easy quarterly cleaning. Holds debris well between cleanings.` }
     : gallons <= 25000
     ? { model:"Pentair Triton II TR-60 Sand", sku:"140210", asin:PENTAIR_AMAZON.filter_triton, earn:"3-8%",
         note:`High-flow sand filter rated for your flow range (~${gpm} GPM). Simple backwash cleaning. Recommended for pools with heavy bather load or nearby trees.` }
     : { model:"Pentair FNS Plus 60 DE Filter", sku:"180010", asin:PENTAIR_AMAZON.filter_fns60, earn:"3-8%",
-        note:`60 sq ft DE filter — finest filtration available, down to 3-5 microns. Best water clarity for your ${gallons.toLocaleString()} gal pool. Backwash every 4-6 weeks.` };
+        note:`60 sq ft DE filter â€” finest filtration available, down to 3-5 microns. Best water clarity for your ${gallons.toLocaleString()} gal pool. Backwash every 4-6 weeks.` };
 
-  // Heater sizing: BTU needed ≈ surface area × temp rise × 12
+  // Heater sizing: BTU needed â‰ˆ surface area Ã— temp rise Ã— 12
   const surfaceArea = Math.round(gallons / (4.25 * 7.48)); // approx sq ft
-  const btuNeeded = surfaceArea * 20 * 12; // 20°F rise, 12 BTU/hr/sq ft
+  const btuNeeded = surfaceArea * 20 * 12; // 20Â°F rise, 12 BTU/hr/sq ft
   const heater = extras.heater
     ? gallons <= 15000
       ? { model:"Pentair MasterTemp 250K BTU Gas", sku:"460736", asin:PENTAIR_AMAZON.heater_250, earn:"3-8%",
-          note:`Your ~${surfaceArea} sq ft pool needs ~${Math.round(btuNeeded/1000)}K BTU. The 250K handles pools up to 15,000 gal efficiently. Heats ~1°F/hr in moderate conditions.` }
+          note:`Your ~${surfaceArea} sq ft pool needs ~${Math.round(btuNeeded/1000)}K BTU. The 250K handles pools up to 15,000 gal efficiently. Heats ~1Â°F/hr in moderate conditions.` }
       : { model:"Pentair MasterTemp 400K BTU Gas", sku:"460805", asin:PENTAIR_AMAZON.heater_400, earn:"3-8%",
-          note:`At ${gallons.toLocaleString()} gal you need high BTU output. The 400K is the industry workhorse — heats your pool in 2-4 hours from cold. Most popular heater in US.` }
+          note:`At ${gallons.toLocaleString()} gal you need high BTU output. The 400K is the industry workhorse â€” heats your pool in 2-4 hours from cold. Most popular heater in US.` }
     : null;
 
   const automation = {
@@ -173,14 +173,14 @@ function getPentairEquipment(gallons, extras) {
 
   const lightQty = gallons <= 20000 ? 1 : gallons <= 40000 ? 2 : 3;
   const lighting = {
-    model:`Pentair IntelliBrite 5G Color LED (×${lightQty})`, sku:"640132", asin:PENTAIR_AMAZON.intellibrite, earn:"3-8%",
+    model:`Pentair IntelliBrite 5G Color LED (Ã—${lightQty})`, sku:"640132", asin:PENTAIR_AMAZON.intellibrite, earn:"3-8%",
     qty: lightQty,
-    note:`${lightQty} light${lightQty>1?"s":""} recommended for your ${gallons.toLocaleString()} gal pool${lightQty>1?" — one at each end for even coverage":""}. 16M colors, app controlled, 5-yr warranty. 75% less energy than incandescent.`
+    note:`${lightQty} light${lightQty>1?"s":""} recommended for your ${gallons.toLocaleString()} gal pool${lightQty>1?" â€” one at each end for even coverage":""}. 16M colors, app controlled, 5-yr warranty. 75% less energy than incandescent.`
   };
 
   const salt = extras.sanitization === "salt"
     ? { model:"Pentair IntelliChlor IC40 + Power Center", sku:"520555+520556", asin:PENTAIR_AMAZON.ic40_bundle, earn:"3-8%",
-        note:`IC40 handles up to 40,000 gal — perfect for your ${gallons.toLocaleString()} gal pool. Self-cleaning cell. Included with IntelliCenter bundle above. Eliminates chlorine purchasing.` }
+        note:`IC40 handles up to 40,000 gal â€” perfect for your ${gallons.toLocaleString()} gal pool. Self-cleaning cell. Included with IntelliCenter bundle above. Eliminates chlorine purchasing.` }
     : { model:"Pentair Rainbow 320 Inline Chlorinator", sku:"R171096", asin:PENTAIR_AMAZON.chlorinator, earn:"3-8%",
         note:`Traditional inline tablet chlorinator. Reliable, simple, low cost to operate. Holds 9 lbs of 3-inch tablets. Good alternative if you prefer not using a salt system.` };
 
@@ -190,13 +190,13 @@ function getPentairEquipment(gallons, extras) {
     : null;
 
   return [
-    { label:"🔄 Pump", ...pump },
-    { label:"🧹 Filter", ...filter },
-    { label:"🎛️ Automation", ...automation },
-    { label:"💡 Lighting", ...lighting },
-    { label:"🧂 Sanitization", ...salt },
-    ...(heater ? [{ label:"🔥 Heater", ...heater }] : []),
-    ...(boost  ? [{ label:"💧 Feature Pump", ...boost }] : []),
+    { label:"ðŸ”„ Pump", ...pump },
+    { label:"ðŸ§¹ Filter", ...filter },
+    { label:"ðŸŽ›ï¸ Automation", ...automation },
+    { label:"ðŸ’¡ Lighting", ...lighting },
+    { label:"ðŸ§‚ Sanitization", ...salt },
+    ...(heater ? [{ label:"ðŸ”¥ Heater", ...heater }] : []),
+    ...(boost  ? [{ label:"ðŸ’§ Feature Pump", ...boost }] : []),
   ];
 }
 
@@ -233,65 +233,65 @@ function calcMaterials(shape,len,wid,depthId,finishId) {
 }
 
 const STEP_GUIDE=[
-  {phase:"Phase 1",title:"Planning & Permits",icon:"📋",days:"2-4 wks",steps:["Survey property & mark utility lines","Submit permit application to county","Order soil test if required","Finalize pool design & dimensions","Approve equipment & finish selections"]},
-  {phase:"Phase 2",title:"Excavation",icon:"🚜",days:"1-3 days",steps:["Mark pool outline with marking paint","Excavate to depth + 12 inches extra","Remove all soil from site","Form & compact the sub-base","Inspect excavation before proceeding"]},
-  {phase:"Phase 3",title:"Steel & Plumbing",icon:"🔩",days:"3-5 days",steps:["Install rebar grid per engineering specs","Place return & suction plumbing lines","Install main drain with dual outlet VGB cover","Run conduit for lighting & automation","Inspect all rough plumbing & steel"]},
-  {phase:"Phase 4",title:"Gunite / Shotcrete",icon:"🏗️",days:"1-2 days",steps:["Wet rebar & forms before shooting","Apply gunite in one continuous pass","Hand-pack trowel all tight areas","Allow 28-day cure minimum","Wet-cure gunite daily for first week"]},
-  {phase:"Phase 5",title:"Tile & Coping",icon:"🟦",days:"3-5 days",steps:["Install waterline tile band","Set bond beam coping stones or pavers","Grout all tile and coping joints","Seal coping to deck joint with flexible sealant","Allow full cure before water fill"]},
-  {phase:"Phase 6",title:"Decking",icon:"🪵",days:"3-7 days",steps:["Form and pour concrete deck or set pavers","Install expansion joints at pool-deck interface","Apply deck surface coating or sealer","Install any hardscape features","Clean all surfaces"]},
-  {phase:"Phase 7",title:"Equipment Install",icon:"⚙️",days:"1-2 days",steps:["Mount pump, filter, heater on equipment pad","Connect all plumbing to equipment","Wire all electrical per local code","Install automation control system","Pressure-test all plumbing lines"]},
-  {phase:"Phase 8",title:"Interior Finish & Fill",icon:"💧",days:"2-3 days",steps:["Apply interior plaster, pebble, or quartz","Begin filling immediately after plaster","Brush plaster continuously during first fill","Start-up chemical balance per plasterer specs","Run pump continuously for first 2 weeks"]},
+  {phase:"Phase 1",title:"Planning & Permits",icon:"ðŸ“‹",days:"2-4 wks",steps:["Survey property & mark utility lines","Submit permit application to county","Order soil test if required","Finalize pool design & dimensions","Approve equipment & finish selections"]},
+  {phase:"Phase 2",title:"Excavation",icon:"ðŸšœ",days:"1-3 days",steps:["Mark pool outline with marking paint","Excavate to depth + 12 inches extra","Remove all soil from site","Form & compact the sub-base","Inspect excavation before proceeding"]},
+  {phase:"Phase 3",title:"Steel & Plumbing",icon:"ðŸ”©",days:"3-5 days",steps:["Install rebar grid per engineering specs","Place return & suction plumbing lines","Install main drain with dual outlet VGB cover","Run conduit for lighting & automation","Inspect all rough plumbing & steel"]},
+  {phase:"Phase 4",title:"Gunite / Shotcrete",icon:"ðŸ—ï¸",days:"1-2 days",steps:["Wet rebar & forms before shooting","Apply gunite in one continuous pass","Hand-pack trowel all tight areas","Allow 28-day cure minimum","Wet-cure gunite daily for first week"]},
+  {phase:"Phase 5",title:"Tile & Coping",icon:"ðŸŸ¦",days:"3-5 days",steps:["Install waterline tile band","Set bond beam coping stones or pavers","Grout all tile and coping joints","Seal coping to deck joint with flexible sealant","Allow full cure before water fill"]},
+  {phase:"Phase 6",title:"Decking",icon:"ðŸªµ",days:"3-7 days",steps:["Form and pour concrete deck or set pavers","Install expansion joints at pool-deck interface","Apply deck surface coating or sealer","Install any hardscape features","Clean all surfaces"]},
+  {phase:"Phase 7",title:"Equipment Install",icon:"âš™ï¸",days:"1-2 days",steps:["Mount pump, filter, heater on equipment pad","Connect all plumbing to equipment","Wire all electrical per local code","Install automation control system","Pressure-test all plumbing lines"]},
+  {phase:"Phase 8",title:"Interior Finish & Fill",icon:"ðŸ’§",days:"2-3 days",steps:["Apply interior plaster, pebble, or quartz","Begin filling immediately after plaster","Brush plaster continuously during first fill","Start-up chemical balance per plasterer specs","Run pump continuously for first 2 weeks"]},
 ];
 
 const SHOP_CATEGORIES=[
-  {id:"tile",label:"Pool Tile",icon:"🟦",products:[
-    {name:"Blue Glass Mosaic Waterline Tile 4x4",retailer:"Home Depot",badge:"Best Seller",img:"🟦",link:hdLink("blue glass mosaic pool tile"),earn:"2-8%"},
-    {name:"Iridescent Waterline Pool Tile",retailer:"Wayfair",badge:"Top Rated",img:"🔷",link:wayfairLink("iridescent pool tile"),earn:"3-7%"},
-    {name:"White Porcelain Pool Tile 6x6",retailer:"Lowe's",badge:"Value",img:"⬜",link:lowesLink("white porcelain pool tile"),earn:"1-4%"},
-    {name:"Pebble Tec Stone Pool Finish Kit",retailer:"Amazon",badge:"Premium",img:"🪨",link:amazonLink("B07PBTECEF"),earn:"3-8%"},
+  {id:"tile",label:"Pool Tile",icon:"ðŸŸ¦",products:[
+    {name:"Blue Glass Mosaic Waterline Tile 4x4",retailer:"Home Depot",badge:"Best Seller",img:"ðŸŸ¦",link:hdLink("blue glass mosaic pool tile"),earn:"2-8%"},
+    {name:"Iridescent Waterline Pool Tile",retailer:"Wayfair",badge:"Top Rated",img:"ðŸ”·",link:wayfairLink("iridescent pool tile"),earn:"3-7%"},
+    {name:"White Porcelain Pool Tile 6x6",retailer:"Lowe's",badge:"Value",img:"â¬œ",link:lowesLink("white porcelain pool tile"),earn:"1-4%"},
+    {name:"Pebble Tec Stone Pool Finish Kit",retailer:"Amazon",badge:"Premium",img:"ðŸª¨",link:amazonLink("B07PBTECEF"),earn:"3-8%"},
   ]},
-  {id:"pavers",label:"Pavers",icon:"🧱",products:[
-    {name:"Travertine Pool Coping 12x24",retailer:"Home Depot",badge:"Top Pick",img:"🟫",link:hdLink("travertine pool coping"),earn:"2-8%"},
-    {name:"Charcoal Concrete Paver 16x16",retailer:"Lowe's",badge:"Budget",img:"⬛",link:lowesLink("concrete paver 16x16"),earn:"1-4%"},
-    {name:"Tumbled Travertine Deck Tile",retailer:"Amazon",badge:"Popular",img:"🟤",link:amazonLink("B089TRVTNE"),earn:"3-8%"},
-    {name:"Bluestone Pool Deck Slabs",retailer:"Wayfair",badge:"Luxury",img:"🔵",link:wayfairLink("bluestone pool deck slabs"),earn:"3-7%"},
+  {id:"pavers",label:"Pavers",icon:"ðŸ§±",products:[
+    {name:"Travertine Pool Coping 12x24",retailer:"Home Depot",badge:"Top Pick",img:"ðŸŸ«",link:hdLink("travertine pool coping"),earn:"2-8%"},
+    {name:"Charcoal Concrete Paver 16x16",retailer:"Lowe's",badge:"Budget",img:"â¬›",link:lowesLink("concrete paver 16x16"),earn:"1-4%"},
+    {name:"Tumbled Travertine Deck Tile",retailer:"Amazon",badge:"Popular",img:"ðŸŸ¤",link:amazonLink("B089TRVTNE"),earn:"3-8%"},
+    {name:"Bluestone Pool Deck Slabs",retailer:"Wayfair",badge:"Luxury",img:"ðŸ”µ",link:wayfairLink("bluestone pool deck slabs"),earn:"3-7%"},
   ]},
-  {id:"lighting",label:"Lighting",icon:"💡",products:[
-    {name:"Pentair IntelliBrite 5G Color LED",retailer:"Amazon",badge:"Best Seller",img:"🔵",link:amazonLink("B01HIOVHGI"),earn:"3-8%"},
-    {name:"Kichler 12V Landscape Path Lights 6-pack",retailer:"Home Depot",badge:"Top Rated",img:"🔆",link:hdLink("kichler landscape path lights"),earn:"2-8%"},
-    {name:"Solar Deck Post Cap Lights",retailer:"Amazon",badge:"Easy Install",img:"☀️",link:amazonLink("B08SOLRDC1"),earn:"3-8%"},
-    {name:"48ft Patio String Lights LED",retailer:"Wayfair",badge:"Ambiance",img:"✨",link:wayfairLink("patio string lights 48ft"),earn:"3-7%"},
+  {id:"lighting",label:"Lighting",icon:"ðŸ’¡",products:[
+    {name:"Pentair IntelliBrite 5G Color LED",retailer:"Amazon",badge:"Best Seller",img:"ðŸ”µ",link:amazonLink("B01HIOVHGI"),earn:"3-8%"},
+    {name:"Kichler 12V Landscape Path Lights 6-pack",retailer:"Home Depot",badge:"Top Rated",img:"ðŸ”†",link:hdLink("kichler landscape path lights"),earn:"2-8%"},
+    {name:"Solar Deck Post Cap Lights",retailer:"Amazon",badge:"Easy Install",img:"â˜€ï¸",link:amazonLink("B08SOLRDC1"),earn:"3-8%"},
+    {name:"48ft Patio String Lights LED",retailer:"Wayfair",badge:"Ambiance",img:"âœ¨",link:wayfairLink("patio string lights 48ft"),earn:"3-7%"},
   ]},
-  {id:"furniture",label:"Furniture",icon:"🪑",products:[
-    {name:"Teak Reclining Sun Lounger Set of 2",retailer:"Wayfair",badge:"Luxury",img:"🪑",link:wayfairLink("teak pool sun lounger set"),earn:"3-7%"},
-    {name:"Aluminum Chaise Lounge Stackable",retailer:"Home Depot",badge:"Durable",img:"🛋️",link:hdLink("aluminum chaise lounge pool"),earn:"2-8%"},
-    {name:"5-Piece Outdoor Dining Wicker Set",retailer:"Wayfair",badge:"Best Seller",img:"🍽️",link:wayfairLink("5 piece outdoor dining wicker"),earn:"3-7%"},
-    {name:"Floating Pool Lounge Chair",retailer:"Amazon",badge:"Fun Pick",img:"🏊",link:amazonLink("B09FLOATCHR"),earn:"3-8%"},
+  {id:"furniture",label:"Furniture",icon:"ðŸª‘",products:[
+    {name:"Teak Reclining Sun Lounger Set of 2",retailer:"Wayfair",badge:"Luxury",img:"ðŸª‘",link:wayfairLink("teak pool sun lounger set"),earn:"3-7%"},
+    {name:"Aluminum Chaise Lounge Stackable",retailer:"Home Depot",badge:"Durable",img:"ðŸ›‹ï¸",link:hdLink("aluminum chaise lounge pool"),earn:"2-8%"},
+    {name:"5-Piece Outdoor Dining Wicker Set",retailer:"Wayfair",badge:"Best Seller",img:"ðŸ½ï¸",link:wayfairLink("5 piece outdoor dining wicker"),earn:"3-7%"},
+    {name:"Floating Pool Lounge Chair",retailer:"Amazon",badge:"Fun Pick",img:"ðŸŠ",link:amazonLink("B09FLOATCHR"),earn:"3-8%"},
   ]},
-  {id:"umbrellas",label:"Shade",icon:"⛱️",products:[
-    {name:"9ft Cantilever Offset Umbrella",retailer:"Wayfair",badge:"Top Rated",img:"☂️",link:wayfairLink("9ft cantilever offset patio umbrella"),earn:"3-7%"},
-    {name:"Coolaroo Shade Sail 16ft Triangle",retailer:"Home Depot",badge:"Popular",img:"🔺",link:hdLink("coolaroo shade sail 16ft"),earn:"2-8%"},
-    {name:"10ft Market Umbrella Solar LED",retailer:"Amazon",badge:"Smart",img:"⛱️",link:amazonLink("B09MKTUMBL"),earn:"3-8%"},
+  {id:"umbrellas",label:"Shade",icon:"â›±ï¸",products:[
+    {name:"9ft Cantilever Offset Umbrella",retailer:"Wayfair",badge:"Top Rated",img:"â˜‚ï¸",link:wayfairLink("9ft cantilever offset patio umbrella"),earn:"3-7%"},
+    {name:"Coolaroo Shade Sail 16ft Triangle",retailer:"Home Depot",badge:"Popular",img:"ðŸ”º",link:hdLink("coolaroo shade sail 16ft"),earn:"2-8%"},
+    {name:"10ft Market Umbrella Solar LED",retailer:"Amazon",badge:"Smart",img:"â›±ï¸",link:amazonLink("B09MKTUMBL"),earn:"3-8%"},
   ]},
-  {id:"fire",label:"Fire Features",icon:"🔥",products:[
-    {name:"Propane Fire Bowl 30in Concrete",retailer:"Amazon",badge:"Best Seller",img:"🔥",link:amazonLink("B08FIREBWL"),earn:"3-8%"},
-    {name:"Natural Gas Fire Pit Table 48in",retailer:"Home Depot",badge:"Premium",img:"🏮",link:hdLink("natural gas fire pit table 48"),earn:"2-8%"},
-    {name:"Fire & Water Bowl Combo",retailer:"Wayfair",badge:"Showpiece",img:"🌋",link:wayfairLink("fire water bowl pool"),earn:"3-7%"},
+  {id:"fire",label:"Fire Features",icon:"ðŸ”¥",products:[
+    {name:"Propane Fire Bowl 30in Concrete",retailer:"Amazon",badge:"Best Seller",img:"ðŸ”¥",link:amazonLink("B08FIREBWL"),earn:"3-8%"},
+    {name:"Natural Gas Fire Pit Table 48in",retailer:"Home Depot",badge:"Premium",img:"ðŸ®",link:hdLink("natural gas fire pit table 48"),earn:"2-8%"},
+    {name:"Fire & Water Bowl Combo",retailer:"Wayfair",badge:"Showpiece",img:"ðŸŒ‹",link:wayfairLink("fire water bowl pool"),earn:"3-7%"},
   ]},
-  {id:"water_features",label:"Water Features",icon:"💧",products:[
-    {name:"Pentair Deck Jet 2-pack",retailer:"Amazon",badge:"Pro Pick",img:"⛲",link:amazonLink("B00DECKJET"),earn:"3-8%"},
-    {name:"Sheer Descent Water Curtain 24in",retailer:"Home Depot",badge:"Luxury",img:"💦",link:hdLink("sheer descent water curtain 24"),earn:"2-8%"},
-    {name:"Stacked Stone Waterfall Kit",retailer:"Lowe's",badge:"Natural",img:"🪨",link:lowesLink("stacked stone waterfall kit pool"),earn:"1-4%"},
+  {id:"water_features",label:"Water Features",icon:"ðŸ’§",products:[
+    {name:"Pentair Deck Jet 2-pack",retailer:"Amazon",badge:"Pro Pick",img:"â›²",link:amazonLink("B00DECKJET"),earn:"3-8%"},
+    {name:"Sheer Descent Water Curtain 24in",retailer:"Home Depot",badge:"Luxury",img:"ðŸ’¦",link:hdLink("sheer descent water curtain 24"),earn:"2-8%"},
+    {name:"Stacked Stone Waterfall Kit",retailer:"Lowe's",badge:"Natural",img:"ðŸª¨",link:lowesLink("stacked stone waterfall kit pool"),earn:"1-4%"},
   ]},
-  {id:"plants",label:"Landscaping",icon:"🌿",products:[
-    {name:"Privacy Arborvitae 4ft Live Tree",retailer:"Home Depot",badge:"Best Seller",img:"🌲",link:hdLink("arborvitae privacy tree 4ft"),earn:"2-8%"},
-    {name:"Bird of Paradise Plant Large",retailer:"Amazon",badge:"Tropical",img:"🌺",link:amazonLink("B07BIRDPRD"),earn:"3-8%"},
-    {name:"Boxwood Hedge Live Plant 3-pack",retailer:"Amazon",badge:"Classic",img:"🟩",link:amazonLink("B09BOXWOOD3"),earn:"3-8%"},
+  {id:"plants",label:"Landscaping",icon:"ðŸŒ¿",products:[
+    {name:"Privacy Arborvitae 4ft Live Tree",retailer:"Home Depot",badge:"Best Seller",img:"ðŸŒ²",link:hdLink("arborvitae privacy tree 4ft"),earn:"2-8%"},
+    {name:"Bird of Paradise Plant Large",retailer:"Amazon",badge:"Tropical",img:"ðŸŒº",link:amazonLink("B07BIRDPRD"),earn:"3-8%"},
+    {name:"Boxwood Hedge Live Plant 3-pack",retailer:"Amazon",badge:"Classic",img:"ðŸŸ©",link:amazonLink("B09BOXWOOD3"),earn:"3-8%"},
   ]},
-  {id:"safety",label:"Safety",icon:"🚧",products:[
-    {name:"Pool Safety Fence 4ft x 12ft Panel",retailer:"Amazon",badge:"Best Seller",img:"🚧",link:amazonLink("B07SAFEFNC"),earn:"3-8%"},
-    {name:"Pool Alarm In-Water Wave Sensor",retailer:"Amazon",badge:"Safety Tech",img:"🔔",link:amazonLink("B08POOLALM"),earn:"3-8%"},
-    {name:"Pool Handrail Stainless 60in",retailer:"Lowe's",badge:"Code Required",img:"🔩",link:lowesLink("pool handrail stainless 60"),earn:"1-4%"},
+  {id:"safety",label:"Safety",icon:"ðŸš§",products:[
+    {name:"Pool Safety Fence 4ft x 12ft Panel",retailer:"Amazon",badge:"Best Seller",img:"ðŸš§",link:amazonLink("B07SAFEFNC"),earn:"3-8%"},
+    {name:"Pool Alarm In-Water Wave Sensor",retailer:"Amazon",badge:"Safety Tech",img:"ðŸ””",link:amazonLink("B08POOLALM"),earn:"3-8%"},
+    {name:"Pool Handrail Stainless 60in",retailer:"Lowe's",badge:"Code Required",img:"ðŸ”©",link:lowesLink("pool handrail stainless 60"),earn:"1-4%"},
   ]},
 ];
 
@@ -303,22 +303,22 @@ const RETAILER_COLORS = {
 };
 
 const NAV_TABS=[
-  {id:0,label:"Design",icon:"🏊"},
-  {id:1,label:"Entry & Features",icon:"🏖️"},
-  {id:2,label:"Hardscapes",icon:"🧱"},
-  {id:3,label:"Yard Planner",icon:"🗺️"},
-  {id:4,label:"Materials",icon:"📊"},
-  {id:5,label:"Cost Est.",icon:"💰"},
-  {id:6,label:"Equipment",icon:"⚙️"},
-  {id:7,label:"Build Guide",icon:"📋"},
-  {id:8,label:"Shop",icon:"🛍️"},
-  {id:9,label:"⚡ Quick Render",icon:""},
-  {id:10,label:"Build Tracker",icon:"🏗️"},
-  {id:11,label:"Settings",icon:"🔧"},
+  {id:0,label:"Design",icon:"ðŸŠ"},
+  {id:1,label:"Entry & Features",icon:"ðŸ–ï¸"},
+  {id:2,label:"Hardscapes",icon:"ðŸ§±"},
+  {id:3,label:"Yard Planner",icon:"ðŸ—ºï¸"},
+  {id:4,label:"Materials",icon:"ðŸ“Š"},
+  {id:5,label:"Cost Est.",icon:"ðŸ’°"},
+  {id:6,label:"Equipment",icon:"âš™ï¸"},
+  {id:7,label:"Build Guide",icon:"ðŸ“‹"},
+  {id:8,label:"Shop",icon:"ðŸ›ï¸"},
+  {id:9,label:"âš¡ Quick Render",icon:""},
+  {id:10,label:"Build Tracker",icon:"ðŸ—ï¸"},
+  {id:11,label:"Settings",icon:"ðŸ”§"},
 ];
 
 
-// ─── CLOUD STORAGE (Supabase) — optional, falls back to localStorage ─────────
+// â”€â”€â”€ CLOUD STORAGE (Supabase) â€” optional, falls back to localStorage â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // To activate: create a free project at supabase.com, then paste your
 // Project URL and anon public key into the Cloud Sync panel on the Design tab.
 // Until configured, everything works exactly as before using localStorage.
@@ -439,7 +439,7 @@ function CloudSyncPanel() {
       if (!sb) throw new Error("Could not initialize client");
       const { error } = await sb.from("pool_projects").select("id").limit(1);
       if (error) throw error;
-      setTestResult({ ok:true, msg:"Connected — cloud sync is active." });
+      setTestResult({ ok:true, msg:"Connected â€” cloud sync is active." });
     } catch (e) {
       setTestResult({ ok:false, msg:`${e.message || "Connection failed"}. Make sure you ran the setup SQL below.` });
     } finally { setTesting(false); }
@@ -453,12 +453,12 @@ function CloudSyncPanel() {
     <div style={{display:"flex",flexDirection:"column",gap:12}}>
       {!connected ? (
         <div style={{background:"linear-gradient(135deg,rgba(34,197,94,0.1),rgba(22,163,74,0.05))",border:"1px solid rgba(34,197,94,0.25)",borderRadius:14,padding:14}}>
-          <div style={{fontSize:13,fontWeight:800,color:"#22c55e",marginBottom:6}}>☁️ Activate Cloud Sync</div>
+          <div style={{fontSize:13,fontWeight:800,color:"#22c55e",marginBottom:6}}>â˜ï¸ Activate Cloud Sync</div>
           <div style={{fontSize:12,color:"#94a3b8",lineHeight:1.6,marginBottom:10}}>
-            Right now your projects only live on this device. Add a free Supabase project to sync across phone, tablet, and desktop — and never lose work when you start a new chat or switch devices.
+            Right now your projects only live on this device. Add a free Supabase project to sync across phone, tablet, and desktop â€” and never lose work when you start a new chat or switch devices.
           </div>
           <div style={{background:"#0f172a",borderRadius:10,padding:12,marginBottom:10}}>
-            {["Go to supabase.com and create a free account + new project","In your project: SQL Editor → paste the setup code below → Run","Project Settings → API → copy the Project URL and anon public key","Paste both below"].map((s,i)=>(
+            {["Go to supabase.com and create a free account + new project","In your project: SQL Editor â†’ paste the setup code below â†’ Run","Project Settings â†’ API â†’ copy the Project URL and anon public key","Paste both below"].map((s,i)=>(
               <div key={i} style={{display:"flex",gap:8,marginBottom:6,alignItems:"flex-start"}}>
                 <span style={{minWidth:18,height:18,borderRadius:"50%",background:"rgba(34,197,94,0.2)",color:"#22c55e",fontSize:9,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{i+1}</span>
                 <span style={{fontSize:12,color:"#64748b"}}>{s}</span>
@@ -466,12 +466,12 @@ function CloudSyncPanel() {
             ))}
           </div>
           <button onClick={()=>setShowSql(p=>!p)} style={{fontSize:11,color:"#22c55e",background:"none",border:"none",cursor:"pointer",padding:0,marginBottom:showSql?8:0}}>
-            {showSql?"▲ Hide setup code":"▼ Show setup SQL code"}
+            {showSql?"â–² Hide setup code":"â–¼ Show setup SQL code"}
           </button>
           {showSql&&(
             <div style={{marginBottom:10}}>
               <pre style={{background:"#0a0e1a",border:"1px solid #1e293b",borderRadius:8,padding:10,fontSize:10,color:"#86efac",overflowX:"auto",whiteSpace:"pre-wrap",margin:0}}>{SUPABASE_SETUP_SQL}</pre>
-              <button onClick={copySql} style={{marginTop:6,padding:"5px 10px",borderRadius:6,background:"rgba(34,197,94,0.1)",border:"1px solid rgba(34,197,94,0.25)",color:"#22c55e",fontSize:11,fontWeight:700,cursor:"pointer"}}>📋 Copy SQL</button>
+              <button onClick={copySql} style={{marginTop:6,padding:"5px 10px",borderRadius:6,background:"rgba(34,197,94,0.1)",border:"1px solid rgba(34,197,94,0.25)",color:"#22c55e",fontSize:11,fontWeight:700,cursor:"pointer"}}>ðŸ“‹ Copy SQL</button>
             </div>
           )}
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
@@ -479,22 +479,22 @@ function CloudSyncPanel() {
             <input type="password" value={keyInput} onChange={e=>setKeyInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&save()} placeholder="anon public key" style={{background:"#1e293b",border:"1px solid #334155",borderRadius:10,padding:"10px 12px",color:"#e2e8f0",fontSize:13,outline:"none"}}/>
             <button onClick={save} disabled={!urlInput.trim()||!keyInput.trim()} style={{padding:"10px 18px",borderRadius:10,background:urlInput.trim()&&keyInput.trim()?"linear-gradient(135deg,#22c55e,#16a34a)":"#1e293b",border:"none",color:"white",fontWeight:700,fontSize:13,cursor:urlInput.trim()&&keyInput.trim()?"pointer":"not-allowed"}}>Connect</button>
           </div>
-          <div style={{marginTop:8,fontSize:11,color:"#64748b"}}>Until connected, projects save to this device only — everything still works, it just won't follow you to other devices.</div>
+          <div style={{marginTop:8,fontSize:11,color:"#64748b"}}>Until connected, projects save to this device only â€” everything still works, it just won't follow you to other devices.</div>
         </div>
       ) : (
         <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,marginBottom:10}}>
             <div>
-              <div style={{fontSize:13,fontWeight:800,color:"#22c55e"}}>✅ Cloud Sync Connected</div>
+              <div style={{fontSize:13,fontWeight:800,color:"#22c55e"}}>âœ… Cloud Sync Connected</div>
               <div style={{fontSize:12,color:"#64748b",marginTop:2}}>{cfg.url}</div>
             </div>
             <button onClick={disconnect} style={{padding:"6px 12px",borderRadius:8,background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",fontSize:11,fontWeight:700,cursor:"pointer",flexShrink:0}}>Disconnect</button>
           </div>
           <button onClick={testConnection} disabled={testing} style={{padding:"8px 14px",borderRadius:8,background:"rgba(6,182,212,0.1)",border:"1px solid rgba(6,182,212,0.25)",color:"#06b6d4",fontSize:12,fontWeight:700,cursor:testing?"not-allowed":"pointer"}}>
-            {testing?"Testing...":"🔄 Test Connection"}
+            {testing?"Testing...":"ðŸ”„ Test Connection"}
           </button>
           {testResult&&(
-            <div style={{marginTop:8,fontSize:12,color:testResult.ok?"#22c55e":"#ef4444",lineHeight:1.5}}>{testResult.ok?"✅":"⚠️"} {testResult.msg}</div>
+            <div style={{marginTop:8,fontSize:12,color:testResult.ok?"#22c55e":"#ef4444",lineHeight:1.5}}>{testResult.ok?"âœ…":"âš ï¸"} {testResult.msg}</div>
           )}
         </div>
       )}
@@ -502,7 +502,7 @@ function CloudSyncPanel() {
   );
 }
 
-// ─── REGRID PARCEL LOOKUP — drop in a real key when ready ─────────────────────
+// â”€â”€â”€ REGRID PARCEL LOOKUP â€” drop in a real key when ready â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Sign up at regrid.com to get real parcel data (lot size, zoning, setbacks).
 // Until a key is added below, the app uses realistic estimated data so the
 // rest of the planning flow works end-to-end.
@@ -532,9 +532,9 @@ async function lookupParcel(addr) {
   if (!p) throw new Error("Address not found");
   return {
     address: p.fields?.address || addr,
-    parcel:  p.fields?.parcelnumb || "—",
-    lot_size: p.fields?.ll_gisacre ? `${Number(p.fields.ll_gisacre).toFixed(2)} acres` : "—",
-    lot_sqft: p.fields?.ll_gissqft ? `${Math.round(p.fields.ll_gissqft).toLocaleString()} sq ft` : "—",
+    parcel:  p.fields?.parcelnumb || "â€”",
+    lot_size: p.fields?.ll_gisacre ? `${Number(p.fields.ll_gisacre).toFixed(2)} acres` : "â€”",
+    lot_sqft: p.fields?.ll_gissqft ? `${Math.round(p.fields.ll_gissqft).toLocaleString()} sq ft` : "â€”",
     zoning:   p.fields?.zoning_description || p.fields?.zoning || "Residential",
     setback_front: "Verify with county", setback_rear: "Verify with county",
     setback_side: "Verify with county", pool_setback: "Verify with county",
@@ -557,7 +557,7 @@ function RegridKeyPanel() {
   if (key) {
     return (
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 12px",background:"rgba(34,197,94,0.08)",border:"1px solid rgba(34,197,94,0.2)",borderRadius:8,marginTop:8}}>
-        <div style={{fontSize:11,fontWeight:700,color:"#22c55e"}}>✅ Regrid live parcel data — active</div>
+        <div style={{fontSize:11,fontWeight:700,color:"#22c55e"}}>âœ… Regrid live parcel data â€” active</div>
         <button onClick={remove} style={{fontSize:11,color:"#64748b",background:"none",border:"none",cursor:"pointer",padding:"8px 4px",minHeight:36}}>Remove</button>
       </div>
     );
@@ -573,11 +573,11 @@ function RegridKeyPanel() {
   );
 }
 
-// ─── 3D POOL PREVIEW ───────────────────────────────────────────────────────────
+// â”€â”€â”€ 3D POOL PREVIEW â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Lightweight hand-rolled 3D renderer (no external libraries) so this works
 // reliably anywhere the app is deployed. Orbit with drag, pinch/scroll to zoom.
 // Performance: uses requestAnimationFrame + refs for hot state so auto-spin
-// and drag never trigger React re-renders — canvas-only updates at display rate.
+// and drag never trigger React re-renders â€” canvas-only updates at display rate.
 function Pool3D({ poolLen, poolWid, poolShape, poolColor, depthId, entries, finishId }) {
   const canvasRef = useRef(null);
   // Ref-based hot state: changes here redraw canvas without touching React
@@ -612,7 +612,7 @@ function Pool3D({ poolLen, poolWid, poolShape, poolColor, depthId, entries, fini
     return { sx: W/2 + x1 * scale * z, sy: H/2 + y1 * scale * z, depth: z2 };
   }, []);
 
-  // Core draw — reads from refs, never triggers React
+  // Core draw â€” reads from refs, never triggers React
   const drawFrame = useCallback(() => {
     const canvas = canvasRef.current; if (!canvas) return;
     const { rotY, rotX, zoom } = stateRef.current;
@@ -726,7 +726,7 @@ function Pool3D({ poolLen, poolWid, poolShape, poolColor, depthId, entries, fini
     return () => { active = false; cancelAnimationFrame(rafRef.current); };
   }, [drawFrame]);
 
-  // Redraw on prop changes (shape/color/finish etc.) — draw is already called by rAF loop so this is a no-op most of the time
+  // Redraw on prop changes (shape/color/finish etc.) â€” draw is already called by rAF loop so this is a no-op most of the time
   useEffect(()=>{ drawFrame(); },[drawFrame]);
 
   const getPos = (e) => {
@@ -758,13 +758,13 @@ function Pool3D({ poolLen, poolWid, poolShape, poolColor, depthId, entries, fini
   return (
     <div style={{display:"flex",flexDirection:"column",gap:10}}>
       <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-        {[{id:"orbit",label:"🔄 Orbit"},{id:"top",label:"⬇️ Top-Down"},{id:"side",label:"➡️ Side"}].map(v=>(
+        {[{id:"orbit",label:"ðŸ”„ Orbit"},{id:"top",label:"â¬‡ï¸ Top-Down"},{id:"side",label:"âž¡ï¸ Side"}].map(v=>(
           <button key={v.id} onClick={()=>{setViewMode(v.id); viewModeRef.current=v.id; if(v.id==="orbit"){ setAutoRotate(true); autoRotateRef.current=true; }}} style={{padding:"10px 14px",minHeight:40,borderRadius:8,border:`2px solid ${viewMode===v.id?"#06b6d4":"#334155"}`,background:viewMode===v.id?"rgba(6,182,212,0.1)":"#111827",color:viewMode===v.id?"#06b6d4":"#94a3b8",fontSize:12,fontWeight:700,cursor:"pointer"}}>{v.label}</button>
         ))}
-        <button onClick={()=>{ const next=!autoRotate; setAutoRotate(next); autoRotateRef.current=next; }} style={{padding:"10px 14px",minHeight:40,borderRadius:8,border:`2px solid ${autoRotate?"#22c55e88":"#334155"}`,background:autoRotate?"rgba(34,197,94,0.1)":"#111827",color:autoRotate?"#22c55e":"#64748b",fontSize:12,fontWeight:700,cursor:"pointer"}}>{autoRotate?"⏸ Pause Spin":"▶️ Auto-Spin"}</button>
+        <button onClick={()=>{ const next=!autoRotate; setAutoRotate(next); autoRotateRef.current=next; }} style={{padding:"10px 14px",minHeight:40,borderRadius:8,border:`2px solid ${autoRotate?"#22c55e88":"#334155"}`,background:autoRotate?"rgba(34,197,94,0.1)":"#111827",color:autoRotate?"#22c55e":"#64748b",fontSize:12,fontWeight:700,cursor:"pointer"}}>{autoRotate?"â¸ Pause Spin":"â–¶ï¸ Auto-Spin"}</button>
         <div style={{marginLeft:"auto",display:"flex",gap:8}}>
           <button onClick={()=>handleZoomBtn(0.15)} style={{width:40,height:40,borderRadius:8,border:"1px solid #334155",background:"#1e293b",color:"#e2e8f0",fontSize:18,fontWeight:700,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
-          <button onClick={()=>handleZoomBtn(-0.15)} style={{width:40,height:40,borderRadius:8,border:"1px solid #334155",background:"#1e293b",color:"#e2e8f0",fontSize:18,fontWeight:700,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
+          <button onClick={()=>handleZoomBtn(-0.15)} style={{width:40,height:40,borderRadius:8,border:"1px solid #334155",background:"#1e293b",color:"#e2e8f0",fontSize:18,fontWeight:700,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>âˆ’</button>
         </div>
       </div>
       <div style={{borderRadius:14,overflow:"hidden",border:"2px solid #334155",boxShadow:"0 4px 24px rgba(0,0,0,0.5)"}}>
@@ -774,12 +774,12 @@ function Pool3D({ poolLen, poolWid, poolShape, poolColor, depthId, entries, fini
           onTouchStart={onDown} onTouchMove={onMove} onTouchEnd={onUp}
           onWheel={onWheel} />
       </div>
-      <div style={{fontSize:11,color:"#64748b",textAlign:"center"}}>🖱️ Drag to rotate - Scroll or +/− to zoom - This is a proportional preview, not a construction-grade model</div>
+      <div style={{fontSize:11,color:"#64748b",textAlign:"center"}}>ðŸ–±ï¸ Drag to rotate - Scroll or +/âˆ’ to zoom - This is a proportional preview, not a construction-grade model</div>
     </div>
   );
 }
 
-// ─── INTERACTIVE PROPERTY MAP ─────────────────────────────────────────────────
+// â”€â”€â”€ INTERACTIVE PROPERTY MAP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function PropertyMap({ poolLen, poolWid, poolShape, poolColor, parcelData }) {
   const canvasRef = useRef(null);
   const [poolPos, setPoolPos] = useState({ x:0.5, y:0.65 });
@@ -1015,7 +1015,7 @@ function PropertyMap({ poolLen, poolWid, poolShape, poolColor, parcelData }) {
       <div class="mb"><label>Front Setback</label><span>${parcelData?.setback_front||"20 ft"}</span></div>
       <div class="mb"><label>Pool Setback</label><span>${parcelData?.pool_setback||"5 ft"}</span></div>
     </div>
-    <div class="footer">For planning reference only. Verify setbacks with your local building department before permits. Generated by Pool Craft Pro · Design Pools. Craft Outdoor Living..</div>
+    <div class="footer">For planning reference only. Verify setbacks with your local building department before permits. Generated by Pool Craft Pro Â· Design Pools. Craft Outdoor Living..</div>
     <script>window.onload=()=>window.print();</script></body></html>`);
     win.document.close();
   };
@@ -1128,7 +1128,7 @@ function PropertyMap({ poolLen, poolWid, poolShape, poolColor, parcelData }) {
       @media print{body{padding:10px}}
     </style></head><body>
       <div class="titleblock">
-        <div><h1>POOL CRAFT PRO — Scaled Site Plan</h1><div class="sub">${parcelData?.address || "Property address not yet entered"}</div></div>
+        <div><h1>POOL CRAFT PRO â€” Scaled Site Plan</h1><div class="sub">${parcelData?.address || "Property address not yet entered"}</div></div>
         <div style="text-align:right"><div class="sub">Generated ${new Date().toLocaleDateString()}</div><div class="sub">Drawing not to engineering scale - reference only</div></div>
       </div>
       <img class="drawing" src="${dataUrl}" />
@@ -1138,7 +1138,7 @@ function PropertyMap({ poolLen, poolWid, poolShape, poolColor, parcelData }) {
         <div class="spec"><label>Parcel / APN</label><span>${parcelData?.parcel||"Not looked up"}</span></div>
         <div class="spec"><label>Front Setback Shown</label><span>20 ft (verify locally)</span></div>
       </div>
-      <div class="footer">This drawing is a proportional site plan generated for early planning and discussion purposes. It is <strong>not</strong> a surveyed or engineer-stamped document. All dimensions, setbacks, and property boundaries must be verified by a licensed surveyor and your local building department before permit submission. Generated by Pool Craft Pro · Design Pools. Craft Outdoor Living..</div>
+      <div class="footer">This drawing is a proportional site plan generated for early planning and discussion purposes. It is <strong>not</strong> a surveyed or engineer-stamped document. All dimensions, setbacks, and property boundaries must be verified by a licensed surveyor and your local building department before permit submission. Generated by Pool Craft Pro Â· Design Pools. Craft Outdoor Living..</div>
       <script>window.onload=()=>setTimeout(()=>window.print(),600);</script>
     </body></html>`);
     win.document.close();
@@ -1150,7 +1150,7 @@ function PropertyMap({ poolLen, poolWid, poolShape, poolColor, parcelData }) {
     <div style={{display:"flex",flexDirection:"column",gap:12}}>
       {!googleKey ? (
         <div style={{background:"linear-gradient(135deg,rgba(6,182,212,0.12),rgba(2,132,199,0.06))",border:"1px solid rgba(6,182,212,0.3)",borderRadius:14,padding:14}}>
-          <div style={{fontSize:13,fontWeight:800,color:"#06b6d4",marginBottom:6}}>🛰️ Activate Real Satellite Imagery</div>
+          <div style={{fontSize:13,fontWeight:800,color:"#06b6d4",marginBottom:6}}>ðŸ›°ï¸ Activate Real Satellite Imagery</div>
           <div style={{fontSize:12,color:"#94a3b8",lineHeight:1.6,marginBottom:10}}>
             Add a free Google Maps API key to see the real satellite view of any property. Takes 5 minutes - free for up to 28,000 map loads/month.
           </div>
@@ -1175,21 +1175,21 @@ function PropertyMap({ poolLen, poolWid, poolShape, poolColor, parcelData }) {
         </div>
       ) : (
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 14px",background:"rgba(34,197,94,0.08)",border:"1px solid rgba(34,197,94,0.25)",borderRadius:10}}>
-          <div style={{fontSize:12,fontWeight:700,color:"#22c55e"}}>✅ Google Maps Satellite - Active</div>
+          <div style={{fontSize:12,fontWeight:700,color:"#22c55e"}}>âœ… Google Maps Satellite - Active</div>
           <button onClick={()=>{setGoogleKey(""); try{localStorage.removeItem("pc_gmaps_key");}catch{} setMapLoaded(false); setMapImgUrl(null);}}
             style={{fontSize:11,color:"#64748b",background:"none",border:"none",cursor:"pointer"}}>Change Key</button>
         </div>
       )}
 
       <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-        <button onClick={()=>setShowSetbacks(p=>!p)} style={{padding:"10px 14px",minHeight:40,borderRadius:8,border:`2px solid ${showSetbacks?"#f59e0b88":"#334155"}`,background:showSetbacks?"rgba(245,158,11,0.1)":"#111827",color:showSetbacks?"#f59e0b":"#64748b",fontSize:12,fontWeight:700,cursor:"pointer"}}>📐 Setbacks {showSetbacks?"On":"Off"}</button>
-        <button onClick={()=>setShowMeasure(p=>!p)} style={{padding:"10px 14px",minHeight:40,borderRadius:8,border:`2px solid ${showMeasure?"#22c55e88":"#334155"}`,background:showMeasure?"rgba(34,197,94,0.1)":"#111827",color:showMeasure?"#22c55e":"#64748b",fontSize:12,fontWeight:700,cursor:"pointer"}}>📏 Measurements {showMeasure?"On":"Off"}</button>
+        <button onClick={()=>setShowSetbacks(p=>!p)} style={{padding:"10px 14px",minHeight:40,borderRadius:8,border:`2px solid ${showSetbacks?"#f59e0b88":"#334155"}`,background:showSetbacks?"rgba(245,158,11,0.1)":"#111827",color:showSetbacks?"#f59e0b":"#64748b",fontSize:12,fontWeight:700,cursor:"pointer"}}>ðŸ“ Setbacks {showSetbacks?"On":"Off"}</button>
+        <button onClick={()=>setShowMeasure(p=>!p)} style={{padding:"10px 14px",minHeight:40,borderRadius:8,border:`2px solid ${showMeasure?"#22c55e88":"#334155"}`,background:showMeasure?"rgba(34,197,94,0.1)":"#111827",color:showMeasure?"#22c55e":"#64748b",fontSize:12,fontWeight:700,cursor:"pointer"}}>ðŸ“ Measurements {showMeasure?"On":"Off"}</button>
         {googleKey&&coords&&<>
           <button onClick={()=>setZoom(z=>Math.min(21,z+1))} style={{width:40,height:40,borderRadius:8,border:"1px solid #334155",background:"#1e293b",color:"#e2e8f0",fontSize:18,fontWeight:700,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
-          <button onClick={()=>setZoom(z=>Math.max(16,z-1))} style={{width:40,height:40,borderRadius:8,border:"1px solid #334155",background:"#1e293b",color:"#e2e8f0",fontSize:18,fontWeight:700,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
+          <button onClick={()=>setZoom(z=>Math.max(16,z-1))} style={{width:40,height:40,borderRadius:8,border:"1px solid #334155",background:"#1e293b",color:"#e2e8f0",fontSize:18,fontWeight:700,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>âˆ’</button>
         </>}
-        <button onClick={printMap} style={{padding:"10px 14px",minHeight:40,borderRadius:8,border:"2px solid rgba(167,139,250,0.4)",background:"rgba(167,139,250,0.1)",color:"#a78bfa",fontSize:12,fontWeight:700,cursor:"pointer",marginLeft:"auto"}}>🖨️ Print Map View</button>
-        <button onClick={printScaledSitePlan} style={{padding:"10px 14px",minHeight:40,borderRadius:8,border:"2px solid rgba(34,197,94,0.4)",background:"rgba(34,197,94,0.1)",color:"#22c55e",fontSize:12,fontWeight:700,cursor:"pointer"}}>📐 Dimensioned Site Plan</button>
+        <button onClick={printMap} style={{padding:"10px 14px",minHeight:40,borderRadius:8,border:"2px solid rgba(167,139,250,0.4)",background:"rgba(167,139,250,0.1)",color:"#a78bfa",fontSize:12,fontWeight:700,cursor:"pointer",marginLeft:"auto"}}>ðŸ–¨ï¸ Print Map View</button>
+        <button onClick={printScaledSitePlan} style={{padding:"10px 14px",minHeight:40,borderRadius:8,border:"2px solid rgba(34,197,94,0.4)",background:"rgba(34,197,94,0.1)",color:"#22c55e",fontSize:12,fontWeight:700,cursor:"pointer"}}>ðŸ“ Dimensioned Site Plan</button>
       </div>
 
       <div style={{borderRadius:14,overflow:"hidden",border:"2px solid #334155",boxShadow:"0 4px 24px rgba(0,0,0,0.5)"}}>
@@ -1200,7 +1200,7 @@ function PropertyMap({ poolLen, poolWid, poolShape, poolColor, parcelData }) {
       </div>
 
       <div style={{padding:"10px 14px",borderRadius:10,background:isOk()?"rgba(34,197,94,0.1)":"rgba(239,68,68,0.1)",border:`1px solid ${isOk()?"rgba(34,197,94,0.3)":"rgba(239,68,68,0.3)"}`,fontSize:13,color:isOk()?"#22c55e":"#ef4444",fontWeight:700}}>
-        {isOk()?"✅ Pool placement within all setback requirements - ready for permit submission":"⚠️ Pool overlaps a setback zone - drag to adjust before submitting permits"}
+        {isOk()?"âœ… Pool placement within all setback requirements - ready for permit submission":"âš ï¸ Pool overlaps a setback zone - drag to adjust before submitting permits"}
       </div>
 
       {parcelData&&(
@@ -1215,13 +1215,13 @@ function PropertyMap({ poolLen, poolWid, poolShape, poolColor, parcelData }) {
       )}
       <RegridKeyPanel />
       <div style={{fontSize:11,color:"#334155",textAlign:"center"}}>
-        {googleKey?"🛰️ Satellite (c) Google Maps - Geocoding (c) OpenStreetMap":"🗺️ Add Google Maps API key above for real satellite imagery - free for 28,000 loads/month"}
+        {googleKey?"ðŸ›°ï¸ Satellite (c) Google Maps - Geocoding (c) OpenStreetMap":"ðŸ—ºï¸ Add Google Maps API key above for real satellite imagery - free for 28,000 loads/month"}
       </div>
     </div>
   );
 }
 
-// ─── AI RENDERING COMPONENT ───────────────────────────────────────────────────
+// â”€â”€â”€ AI RENDERING COMPONENT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, finish, colorId, entries, hardscapes, dailyRenders=0, dailyLimit=10, onRenderComplete=()=>{} }) {
   const [rendering, setRendering] = useState(false);
   const [renderedImage, setRenderedImage] = useState(null);
@@ -1244,11 +1244,11 @@ function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, fin
   const hasKey = !!apiKey.trim();
 
   const STYLES = [
-    { id:"photorealistic", label:"📷 Photorealistic",  hint:"Natural daylight - most realistic" },
-    { id:"twilight",       label:"🌅 Twilight / Dusk",  hint:"Golden hour warm sunset glow" },
-    { id:"night",          label:"🌙 Night Lit",         hint:"Dramatic LED pool lighting at night" },
-    { id:"aerial",         label:"🚁 Aerial / Drone",    hint:"Overhead bird's-eye perspective" },
-    { id:"magazine",       label:"✨ Magazine",          hint:"Luxury design editorial look" },
+    { id:"photorealistic", label:"ðŸ“· Photorealistic",  hint:"Natural daylight - most realistic" },
+    { id:"twilight",       label:"ðŸŒ… Twilight / Dusk",  hint:"Golden hour warm sunset glow" },
+    { id:"night",          label:"ðŸŒ™ Night Lit",         hint:"Dramatic LED pool lighting at night" },
+    { id:"aerial",         label:"ðŸš Aerial / Drone",    hint:"Overhead bird's-eye perspective" },
+    { id:"magazine",       label:"âœ¨ Magazine",          hint:"Luxury design editorial look" },
   ];
 
   const buildPrompt = () => {
@@ -1379,7 +1379,7 @@ function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, fin
       {!hasKey ? (
         <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:16,overflow:"hidden"}}>
           <div style={{background:"linear-gradient(135deg,#4c1d95,#2d1b69)",padding:"16px 18px"}}>
-            <div style={{fontSize:15,fontWeight:800,color:"#e9d5ff",marginBottom:4}}>🚀 Grok Aurora AI Rendering</div>
+            <div style={{fontSize:15,fontWeight:800,color:"#e9d5ff",marginBottom:4}}>ðŸš€ Grok Aurora AI Rendering</div>
             <div style={{fontSize:12,color:"#c4b5fd",lineHeight:1.6}}>The same Aurora AI you use in Super Grok - photorealistically renders your pool into a real backyard photo. Setup takes 2 minutes and only needs to be done once.</div>
           </div>
           <div style={{padding:16}}>
@@ -1403,14 +1403,14 @@ function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, fin
                 style={{padding:"12px 20px",borderRadius:10,background:keyInput.trim()?"linear-gradient(135deg,#7c3aed,#5b21b6)":"#1e293b",border:"none",color:"white",fontWeight:800,fontSize:14,cursor:keyInput.trim()?"pointer":"not-allowed",flexShrink:0}}>Activate</button>
             </div>
             <div style={{marginTop:10,padding:"10px 12px",background:"rgba(124,58,237,0.08)",border:"1px solid rgba(124,58,237,0.2)",borderRadius:8,fontSize:11,color:"#94a3b8",lineHeight:1.6}}>
-              💼 <strong style={{color:"#e2e8f0"}}>For your launched app:</strong> embed the key server-side so customers just tap Generate. Contact xAI sales as you scale for higher rate limits and volume pricing.
+              ðŸ’¼ <strong style={{color:"#e2e8f0"}}>For your launched app:</strong> embed the key server-side so customers just tap Generate. Contact xAI sales as you scale for higher rate limits and volume pricing.
             </div>
           </div>
         </div>
       ) : (
         <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,marginBottom:10}}>
-            <div><div style={{fontSize:13,fontWeight:800,color:"#22c55e"}}>✅ Grok Aurora API - Active</div><div style={{fontSize:12,color:"#64748b",marginTop:2}}>xAI Developer API - Pay-per-render - No daily cap</div></div>
+            <div><div style={{fontSize:13,fontWeight:800,color:"#22c55e"}}>âœ… Grok Aurora API - Active</div><div style={{fontSize:12,color:"#64748b",marginTop:2}}>xAI Developer API - Pay-per-render - No daily cap</div></div>
             <button onClick={removeKey} style={{padding:"6px 12px",borderRadius:8,background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",fontSize:11,fontWeight:700,cursor:"pointer",flexShrink:0}}>Change Key</button>
           </div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
@@ -1425,54 +1425,54 @@ function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, fin
       )}
 
       <div style={{background:"rgba(245,158,11,0.08)",border:"1px solid rgba(245,158,11,0.25)",borderRadius:12,padding:12}}>
-        <div style={{fontSize:11,color:"#f59e0b",fontWeight:700,marginBottom:4}}>⚠️ Important: Developer API vs Super Grok</div>
+        <div style={{fontSize:11,color:"#f59e0b",fontWeight:700,marginBottom:4}}>âš ï¸ Important: Developer API vs Super Grok</div>
         <div style={{fontSize:12,color:"#94a3b8",lineHeight:1.6}}>
           Your Super Grok subscription has a daily render cap. The <strong style={{color:"#e2e8f0"}}>xAI Developer API</strong> (console.x.ai) is completely separate - no daily cap, pay per image. This is what your app needs to serve multiple customers simultaneously.
         </div>
       </div>
 
       <div style={{background:"#0f172a",border:`2px solid ${bgPhoto?"rgba(34,197,94,0.4)":"rgba(6,182,212,0.2)"}`,borderRadius:14,padding:14}}>
-        <div style={{fontSize:11,color:"#06b6d4",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>📸 Backyard Photo - Required</div>
+        <div style={{fontSize:11,color:"#06b6d4",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>ðŸ“¸ Backyard Photo - Required</div>
         <div style={{fontSize:12,color:"#64748b",marginBottom:10}}>Grok edits your actual photo - the pool is rendered realistically into your real space matching lighting, perspective & shadows. Keep photos under 8MB.</div>
         <div style={{display:"flex",gap:8}}>
           <label style={{flex:1,padding:"13px 0",borderRadius:10,background:bgPhoto?"rgba(34,197,94,0.1)":"rgba(6,182,212,0.08)",border:`1px solid ${bgPhoto?"rgba(34,197,94,0.35)":"rgba(6,182,212,0.2)"}`,color:bgPhoto?"#22c55e":"#06b6d4",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-            {bgPhoto?"✅ Photo ready - tap to change":"📁 Upload Backyard Photo"}
+            {bgPhoto?"âœ… Photo ready - tap to change":"ðŸ“ Upload Backyard Photo"}
             <input type="file" accept="image/*" onChange={handlePhotoUpload} style={{display:"none"}} />
           </label>
           <label style={{padding:"13px 18px",borderRadius:10,background:"rgba(6,182,212,0.08)",border:"1px solid rgba(6,182,212,0.2)",color:"#06b6d4",fontSize:22,cursor:"pointer",display:"flex",alignItems:"center",flexShrink:0}}>
-            📷<input type="file" accept="image/*" capture="environment" onChange={handlePhotoUpload} style={{display:"none"}} />
+            ðŸ“·<input type="file" accept="image/*" capture="environment" onChange={handlePhotoUpload} style={{display:"none"}} />
           </label>
-          {bgPhoto&&<button onClick={()=>{setBgPhoto(null);setRenderedImage(null);setError(null);}} style={{padding:"13px 14px",borderRadius:10,background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",fontWeight:700,cursor:"pointer"}}>✕</button>}
+          {bgPhoto&&<button onClick={()=>{setBgPhoto(null);setRenderedImage(null);setError(null);}} style={{padding:"13px 14px",borderRadius:10,background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",fontWeight:700,cursor:"pointer"}}>âœ•</button>}
         </div>
         {bgPhoto&&(
           <div style={{marginTop:10,borderRadius:10,overflow:"hidden",border:"1px solid rgba(34,197,94,0.3)"}}>
             <img src={bgPhoto} alt="backyard" style={{width:"100%",display:"block",maxHeight:200,objectFit:"cover"}} />
-            <div style={{background:"rgba(34,197,94,0.8)",padding:"5px 12px",fontSize:12,color:"white",fontWeight:700}}>✅ Aurora will render your pool into this exact space</div>
+            <div style={{background:"rgba(34,197,94,0.8)",padding:"5px 12px",fontSize:12,color:"white",fontWeight:700}}>âœ… Aurora will render your pool into this exact space</div>
           </div>
         )}
       </div>
 
       <div style={{background:"#0f172a",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
-        <div style={{fontSize:11,color:"#06b6d4",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:10}}>🎨 Rendering Style</div>
+        <div style={{fontSize:11,color:"#06b6d4",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:10}}>ðŸŽ¨ Rendering Style</div>
         <div style={{display:"flex",flexDirection:"column",gap:6}}>
           {STYLES.map(s=>(
             <button key={s.id} onClick={()=>setSelectedStyle(s.id)}
               style={{textAlign:"left",padding:"10px 14px",borderRadius:10,border:`2px solid ${selectedStyle===s.id?"#7c3aed":"#1e293b"}`,background:selectedStyle===s.id?"rgba(124,58,237,0.08)":"transparent",cursor:"pointer",display:"flex",alignItems:"center",gap:10}}>
               <span style={{fontWeight:700,fontSize:13,color:selectedStyle===s.id?"#a78bfa":"#e2e8f0"}}>{s.label}</span>
               <span style={{fontSize:11,color:"#64748b"}}>- {s.hint}</span>
-              {selectedStyle===s.id&&<span style={{marginLeft:"auto",color:"#a78bfa",fontWeight:800,fontSize:14}}>✓</span>}
+              {selectedStyle===s.id&&<span style={{marginLeft:"auto",color:"#a78bfa",fontWeight:800,fontSize:14}}>âœ“</span>}
             </button>
           ))}
         </div>
       </div>
 
       <div style={{background:"#0f172a",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
-        <div style={{fontSize:11,color:"#06b6d4",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>✍️ Tell Grok What to Add</div>
+        <div style={{fontSize:11,color:"#06b6d4",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>âœï¸ Tell Grok What to Add</div>
         <textarea value={userTweak} onChange={e=>setUserTweak(e.target.value)}
           placeholder="e.g. 'add a natural rock waterfall on the left side with tropical palms and a fire pit in the back right corner'" rows={3}
           style={{width:"100%",background:"#1e293b",border:"1px solid #334155",borderRadius:10,padding:"10px 12px",color:"#e2e8f0",fontSize:13,outline:"none",resize:"vertical",boxSizing:"border-box",lineHeight:1.6,fontFamily:"inherit"}} />
         <div style={{marginTop:10}}>
-          <div style={{fontSize:10,color:"#64748b",marginBottom:6,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.05em"}}>Quick add →</div>
+          <div style={{fontSize:10,color:"#64748b",marginBottom:6,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.05em"}}>Quick add â†’</div>
           <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
             {QUICK_TWEAKS.map(qt=>(<button key={qt} onClick={()=>setUserTweak(p=>p?p+", "+qt:qt)} style={{padding:"5px 10px",borderRadius:20,border:"1px solid #334155",background:"#1e293b",color:"#94a3b8",fontSize:11,cursor:"pointer"}}>+ {qt}</button>))}
           </div>
@@ -1481,7 +1481,7 @@ function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, fin
 
       {dailyRenders >= dailyLimit && (
         <div style={{background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.25)",borderRadius:14,padding:16,textAlign:"center"}}>
-          <div style={{fontSize:16,marginBottom:6}}>⏰</div>
+          <div style={{fontSize:16,marginBottom:6}}>â°</div>
           <div style={{fontSize:14,fontWeight:700,color:"#ef4444",marginBottom:4}}>Daily Render Limit Reached</div>
           <div style={{fontSize:12,color:"#94a3b8",marginBottom:4}}>You've used all {dailyLimit} renders for today - pool and hardscape renders share this limit.</div>
           <div style={{fontSize:11,color:"#64748b"}}>Resets at midnight. Contact us to upgrade for more daily renders.</div>
@@ -1491,24 +1491,24 @@ function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, fin
       <button onClick={rendering||dailyRenders>=dailyLimit?null:handleRender}
         style={{width:"100%",padding:"17px",borderRadius:12,background:rendering?"#1e293b":hasKey?"linear-gradient(135deg,#7c3aed,#5b21b6)":"linear-gradient(135deg,#334155,#1e293b)",
           border:"none",color:"white",fontWeight:800,fontSize:16,cursor:rendering?"not-allowed":"pointer",boxShadow:hasKey&&!rendering?"0 4px 24px rgba(124,58,237,0.35)":"none",letterSpacing:"0.02em",transition:"all 0.2s"}}>
-        {rendering ? `⏳ ${progressMsg}` : hasKey ? (renderedImage ? "🔄 Generate New Variation" : "🚀 Generate with Grok Aurora") : "🔑 Activate Grok API to Generate"}
+        {rendering ? `â³ ${progressMsg}` : hasKey ? (renderedImage ? "ðŸ”„ Generate New Variation" : "ðŸš€ Generate with Grok Aurora") : "ðŸ”‘ Activate Grok API to Generate"}
       </button>
 
       {rendering&&(
         <div style={{background:"#0f172a",border:"1px solid #1e293b",borderRadius:12,padding:16}}>
           <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}><span style={{fontSize:12,color:"#a78bfa",fontWeight:600}}>{progressMsg}</span><span style={{fontSize:12,color:"#64748b"}}>{progress}%</span></div>
           <div style={{height:6,background:"#1e293b",borderRadius:3,overflow:"hidden"}}><div style={{height:"100%",width:`${progress}%`,background:"linear-gradient(90deg,#7c3aed,#a78bfa,#06b6d4)",borderRadius:3,transition:"width 2.5s ease"}} /></div>
-          <div style={{marginTop:16,textAlign:"center"}}><div style={{fontSize:36}}>🚀</div><div style={{fontSize:13,color:"#a78bfa",marginTop:6,fontWeight:600}}>Grok Aurora is working on your render...</div><div style={{fontSize:11,color:"#64748b",marginTop:3}}>Photo-realistic results take 20-45 seconds</div></div>
+          <div style={{marginTop:16,textAlign:"center"}}><div style={{fontSize:36}}>ðŸš€</div><div style={{fontSize:13,color:"#a78bfa",marginTop:6,fontWeight:600}}>Grok Aurora is working on your render...</div><div style={{fontSize:11,color:"#64748b",marginTop:3}}>Photo-realistic results take 20-45 seconds</div></div>
         </div>
       )}
 
       {error&&!rendering&&(
         <div style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:12,padding:14}}>
-          <div style={{fontSize:13,color:"#ef4444",fontWeight:700,marginBottom:8}}>⚠️ {error}</div>
+          <div style={{fontSize:13,color:"#ef4444",fontWeight:700,marginBottom:8}}>âš ï¸ {error}</div>
           <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-            {hasKey&&bgPhoto&&!queued&&<button onClick={handleRefresh} style={{padding:"8px 14px",borderRadius:8,background:"rgba(124,58,237,0.12)",border:"1px solid rgba(124,58,237,0.25)",color:"#a78bfa",fontWeight:700,fontSize:12,cursor:"pointer"}}>🔄 Try Again</button>}
-            {queued&&<div style={{fontSize:12,color:"#f59e0b",padding:"8px 0"}}>⏰ Wait 60 seconds then try again.</div>}
-            <button onClick={()=>{removeKey();setShowSetup(true);}} style={{padding:"8px 14px",borderRadius:8,background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",fontWeight:700,fontSize:12,cursor:"pointer"}}>🔑 Re-enter API Key</button>
+            {hasKey&&bgPhoto&&!queued&&<button onClick={handleRefresh} style={{padding:"8px 14px",borderRadius:8,background:"rgba(124,58,237,0.12)",border:"1px solid rgba(124,58,237,0.25)",color:"#a78bfa",fontWeight:700,fontSize:12,cursor:"pointer"}}>ðŸ”„ Try Again</button>}
+            {queued&&<div style={{fontSize:12,color:"#f59e0b",padding:"8px 0"}}>â° Wait 60 seconds then try again.</div>}
+            <button onClick={()=>{removeKey();setShowSetup(true);}} style={{padding:"8px 14px",borderRadius:8,background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",fontWeight:700,fontSize:12,cursor:"pointer"}}>ðŸ”‘ Re-enter API Key</button>
           </div>
         </div>
       )}
@@ -1517,19 +1517,19 @@ function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, fin
         <div style={{background:"#0f172a",border:"2px solid rgba(124,58,237,0.35)",borderRadius:16,overflow:"hidden",boxShadow:"0 8px 40px rgba(124,58,237,0.18)"}}>
           <div style={{position:"relative"}}>
             <img src={renderedImage} alt="Grok Aurora pool rendering" style={{width:"100%",display:"block"}} />
-            <div style={{position:"absolute",top:10,left:10,background:"rgba(124,58,237,0.92)",borderRadius:8,padding:"5px 12px",fontSize:11,color:"white",fontWeight:700}}>🚀 Grok Aurora - Render #{renderCount}</div>
+            <div style={{position:"absolute",top:10,left:10,background:"rgba(124,58,237,0.92)",borderRadius:8,padding:"5px 12px",fontSize:11,color:"white",fontWeight:700}}>ðŸš€ Grok Aurora - Render #{renderCount}</div>
             <div style={{position:"absolute",top:10,right:10,background:"rgba(0,0,0,0.6)",borderRadius:8,padding:"5px 10px",fontSize:10,color:"#94a3b8"}}>Pool Craft Pro</div>
           </div>
           {aiDescription&&(
             <div style={{padding:"14px 16px",background:"rgba(124,58,237,0.06)",borderTop:"1px solid rgba(124,58,237,0.15)"}}>
-              <div style={{fontSize:10,color:"#a78bfa",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:5}}>🤖 AI Designer Notes</div>
+              <div style={{fontSize:10,color:"#a78bfa",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:5}}>ðŸ¤– AI Designer Notes</div>
               <div style={{fontSize:13,color:"#94a3b8",lineHeight:1.65,fontStyle:"italic"}}>{aiDescription}</div>
             </div>
           )}
           <div style={{padding:14}}>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
-              <button onClick={handleRefresh} style={{padding:"12px",borderRadius:10,background:"rgba(124,58,237,0.12)",border:"1px solid rgba(124,58,237,0.3)",color:"#a78bfa",fontWeight:700,fontSize:13,cursor:"pointer"}}>🔄 New Variation</button>
-              <a href={renderedImage} download={`poolcraft-aurora-${renderCount}.jpg`} style={{padding:"12px",borderRadius:10,background:"rgba(34,197,94,0.12)",border:"1px solid rgba(34,197,94,0.3)",color:"#22c55e",fontWeight:700,fontSize:13,textDecoration:"none",textAlign:"center",display:"block"}}>⬇️ Save Image</a>
+              <button onClick={handleRefresh} style={{padding:"12px",borderRadius:10,background:"rgba(124,58,237,0.12)",border:"1px solid rgba(124,58,237,0.3)",color:"#a78bfa",fontWeight:700,fontSize:13,cursor:"pointer"}}>ðŸ”„ New Variation</button>
+              <a href={renderedImage} download={`poolcraft-aurora-${renderCount}.jpg`} style={{padding:"12px",borderRadius:10,background:"rgba(34,197,94,0.12)",border:"1px solid rgba(34,197,94,0.3)",color:"#22c55e",fontWeight:700,fontSize:13,textDecoration:"none",textAlign:"center",display:"block"}}>â¬‡ï¸ Save Image</a>
             </div>
             <div style={{fontSize:11,color:"#334155",textAlign:"center"}}>{len}' x {wid}' {POOL_SHAPES.find(s=>s.id===shape)?.label} - {STYLES.find(s=>s.id===selectedStyle)?.label}</div>
           </div>
@@ -1538,7 +1538,7 @@ function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, fin
 
       {allLinks.length>0&&(
         <div style={{background:"linear-gradient(135deg,rgba(245,158,11,0.1),rgba(217,119,6,0.05))",border:"1px solid rgba(245,158,11,0.22)",borderRadius:14,padding:14}}>
-          <div style={{fontSize:13,fontWeight:800,color:"#f59e0b",marginBottom:10}}>🛒 Shop Everything in This Design</div>
+          <div style={{fontSize:13,fontWeight:800,color:"#f59e0b",marginBottom:10}}>ðŸ›’ Shop Everything in This Design</div>
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
             {allLinks.map((item,i)=>{
               const rc=RETAILER_COLORS[item.retailer]||{bg:"rgba(100,116,139,0.1)",border:"rgba(100,116,139,0.3)",text:"#94a3b8"};
@@ -1551,7 +1551,7 @@ function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, fin
                       <span style={{fontSize:10,color:"#64748b"}}>You earn {item.earn}</span>
                     </div>
                   </div>
-                  <span style={{fontSize:18,color:"#f59e0b",flexShrink:0}}>→</span>
+                  <span style={{fontSize:18,color:"#f59e0b",flexShrink:0}}>â†’</span>
                 </a>
               );
             })}
@@ -1562,7 +1562,7 @@ function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, fin
   );
 }
 
-// ─── FEATURE CARD ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ FEATURE CARD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const FEATURE_DETAILS = {
   beach_entry:"Beach entry pools have a gradual zero-depth slope that transitions from the pool deck directly into the water. Popular for families with young children and older adults. Requires extra excavation and shotcrete work at the shallow end.",
   baja_shelf:"Also called a tanning ledge or sun shelf. A raised platform of 6-12 inches of water, typically 12-18 inches below the main deck. Chairs and tables sit directly in the water.",
@@ -1603,19 +1603,19 @@ function FeatureCard({ feature, active, onToggle }) {
     <div style={{background:"#111827",border:`2px solid ${active ? feature.color : "#1e293b"}`,borderRadius:16,overflow:"hidden",transition:"all 0.2s",boxShadow: active ? `0 0 20px ${feature.color}33` : "none"}}>
       <div style={{position:"relative", cursor:"pointer"}} onClick={()=>setExpanded(p=>!p)}>
         <canvas ref={canvasRef} width={400} height={200} style={{width:"100%", display:"block", borderRadius:"14px 14px 0 0"}} />
-        <div style={{position:"absolute",top:8,right:8,background:"rgba(0,0,0,0.55)",borderRadius:6,padding:"3px 8px",fontSize:10,color:"rgba(255,255,255,0.75)"}}>{expanded ? "▲ Less" : "▼ Details"}</div>
+        <div style={{position:"absolute",top:8,right:8,background:"rgba(0,0,0,0.55)",borderRadius:6,padding:"3px 8px",fontSize:10,color:"rgba(255,255,255,0.75)"}}>{expanded ? "â–² Less" : "â–¼ Details"}</div>
       </div>
       <div style={{padding:"14px 16px"}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
           <div style={{flex:1}}>
             <div style={{fontWeight:700,fontSize:15,color:active?feature.color:"#e2e8f0",display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
               {feature.icon} {feature.label}
-              {active && <span style={{fontSize:10,background:`${feature.color}33`,color:feature.color,borderRadius:20,padding:"2px 10px",fontWeight:700}}>ADDED ✓</span>}
+              {active && <span style={{fontSize:10,background:`${feature.color}33`,color:feature.color,borderRadius:20,padding:"2px 10px",fontWeight:700}}>ADDED âœ“</span>}
             </div>
             <div style={{fontSize:12,color:"#64748b",marginTop:4,lineHeight:1.5}}>{feature.desc}</div>
           </div>
           <button onClick={onToggle} style={{padding:"10px 18px", borderRadius:10, border:`2px solid ${active?feature.color:"#334155"}`,background:active?`${feature.color}22`:"#1e293b",color:active?feature.color:"#94a3b8",fontWeight:800, fontSize:13, cursor:"pointer", flexShrink:0, transition:"all 0.15s",whiteSpace:"nowrap"}}>
-            {active ? "✓ Added" : "+ Add"}
+            {active ? "âœ“ Added" : "+ Add"}
           </button>
         </div>
         {expanded && (
@@ -1628,35 +1628,35 @@ function FeatureCard({ feature, active, onToggle }) {
   );
 }
 
-// ─── HARDSCAPE DESIGNER COMPONENT ────────────────────────────────────────────
+// â”€â”€â”€ HARDSCAPE DESIGNER COMPONENT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const HARDSCAPE_CATEGORIES = [
-  { id: "decking", label: "Decking", icon: "🪵", color: "#d97706", items: [
-      { id:"concrete_deck",   label:"Concrete Deck",       icon:"⬜", unit:"sq ft", desc:"Poured concrete - durable and customizable" },
-      { id:"travertine",      label:"Travertine Pavers",   icon:"🟫", unit:"sq ft", desc:"Natural stone - elegant and cool underfoot" },
-      { id:"cool_deck",       label:"Kool Deck / Textured", icon:"🔲", unit:"sq ft", desc:"Slip-resistant textured coating - stays cool" },
-      { id:"wood_composite",  label:"Composite Decking",   icon:"🪵", unit:"sq ft", desc:"Wood-look composite - low maintenance" },
+  { id: "decking", label: "Decking", icon: "ðŸªµ", color: "#d97706", items: [
+      { id:"concrete_deck",   label:"Concrete Deck",       icon:"â¬œ", unit:"sq ft", desc:"Poured concrete - durable and customizable" },
+      { id:"travertine",      label:"Travertine Pavers",   icon:"ðŸŸ«", unit:"sq ft", desc:"Natural stone - elegant and cool underfoot" },
+      { id:"cool_deck",       label:"Kool Deck / Textured", icon:"ðŸ”²", unit:"sq ft", desc:"Slip-resistant textured coating - stays cool" },
+      { id:"wood_composite",  label:"Composite Decking",   icon:"ðŸªµ", unit:"sq ft", desc:"Wood-look composite - low maintenance" },
   ]},
-  { id: "fire", label: "Fire Features", icon: "🔥", color: "#ef4444", items: [
-      { id:"fire_pit",    label:"Fire Pit",    icon:"🔥", unit:"unit", desc:"Propane or natural gas - gathering centerpiece" },
-      { id:"fire_bowls",  label:"Fire Bowls",  icon:"🏺", unit:"qty",  desc:"Decorative fire bowls - dramatic accent pieces" },
+  { id: "fire", label: "Fire Features", icon: "ðŸ”¥", color: "#ef4444", items: [
+      { id:"fire_pit",    label:"Fire Pit",    icon:"ðŸ”¥", unit:"unit", desc:"Propane or natural gas - gathering centerpiece" },
+      { id:"fire_bowls",  label:"Fire Bowls",  icon:"ðŸº", unit:"qty",  desc:"Decorative fire bowls - dramatic accent pieces" },
   ]},
-  { id: "shade", label: "Shade Structures", icon: "🏠", color: "#8b5cf6", items: [
-      { id:"pergola", label:"Pergola / Shade Structure", icon:"🏠", unit:"unit", desc:"Wood or aluminum overhead structure - defines the space" },
+  { id: "shade", label: "Shade Structures", icon: "ðŸ ", color: "#8b5cf6", items: [
+      { id:"pergola", label:"Pergola / Shade Structure", icon:"ðŸ ", unit:"unit", desc:"Wood or aluminum overhead structure - defines the space" },
   ]},
-  { id: "walls", label: "Retaining Walls", icon: "🧱", color: "#64748b", items: [
-      { id:"retaining_wall", label:"Retaining Wall", icon:"🧱", unit:"linear ft", desc:"Natural stone or block - levels the terrain" },
+  { id: "walls", label: "Retaining Walls", icon: "ðŸ§±", color: "#64748b", items: [
+      { id:"retaining_wall", label:"Retaining Wall", icon:"ðŸ§±", unit:"linear ft", desc:"Natural stone or block - levels the terrain" },
   ]},
-  { id: "kitchen", label: "Outdoor Kitchen", icon: "🍳", color: "#0ea5e9", items: [
-      { id:"outdoor_kitchen", label:"Outdoor Kitchen", icon:"🍳", unit:"unit", desc:"Built-in grill, counters, refrigerator - full outdoor cooking" },
+  { id: "kitchen", label: "Outdoor Kitchen", icon: "ðŸ³", color: "#0ea5e9", items: [
+      { id:"outdoor_kitchen", label:"Outdoor Kitchen", icon:"ðŸ³", unit:"unit", desc:"Built-in grill, counters, refrigerator - full outdoor cooking" },
   ]},
-  { id: "landscape", label: "Landscaping", icon: "🌿", color: "#22c55e", items: [
-      { id:"landscape_beds", label:"Planting Beds",      icon:"🌿", unit:"sq ft",    desc:"Landscape beds with plants, mulch, edging" },
-      { id:"putting_green",  label:"Putting Green",      icon:"⛳", unit:"sq ft",    desc:"Artificial turf putting green - great for entertaining" },
-      { id:"bocce",          label:"Bocce Ball Court",   icon:"🎯", unit:"unit",     desc:"Classic outdoor game court" },
+  { id: "landscape", label: "Landscaping", icon: "ðŸŒ¿", color: "#22c55e", items: [
+      { id:"landscape_beds", label:"Planting Beds",      icon:"ðŸŒ¿", unit:"sq ft",    desc:"Landscape beds with plants, mulch, edging" },
+      { id:"putting_green",  label:"Putting Green",      icon:"â›³", unit:"sq ft",    desc:"Artificial turf putting green - great for entertaining" },
+      { id:"bocce",          label:"Bocce Ball Court",   icon:"ðŸŽ¯", unit:"unit",     desc:"Classic outdoor game court" },
   ]},
-  { id: "safety", label: "Safety & Sport", icon: "🚧", color: "#f59e0b", items: [
-      { id:"fence",       label:"Pool Safety Fence", icon:"🚧", unit:"linear ft", desc:"Code-required safety fence around pool" },
-      { id:"sport_court", label:"Sport Court",       icon:"🏀", unit:"sq ft",    desc:"Basketball, pickleball, or multi-sport court" },
+  { id: "safety", label: "Safety & Sport", icon: "ðŸš§", color: "#f59e0b", items: [
+      { id:"fence",       label:"Pool Safety Fence", icon:"ðŸš§", unit:"linear ft", desc:"Code-required safety fence around pool" },
+      { id:"sport_court", label:"Sport Court",       icon:"ðŸ€", unit:"sq ft",    desc:"Basketball, pickleball, or multi-sport court" },
   ]},
 ];
 
@@ -1743,16 +1743,16 @@ function HardscapeDesigner({ hardscapes, toggleHardscape, setHSQty, dailyRenders
     <div style={{display:"flex",flexDirection:"column",gap:14}}>
       <div style={{background:"#111827",border:`2px solid ${photo?"rgba(52,211,153,0.45)":"#1e293b"}`,borderRadius:16,overflow:"hidden"}}>
         <div style={{background:"linear-gradient(135deg,#134e4a,#0f3d38)",padding:"14px 16px"}}>
-          <div style={{fontSize:14,fontWeight:800,color:"#34d399",marginBottom:3}}>🏡 Outdoor Space Designer</div>
+          <div style={{fontSize:14,fontWeight:800,color:"#34d399",marginBottom:3}}>ðŸ¡ Outdoor Space Designer</div>
           <div style={{fontSize:12,color:"#6ee7b7",lineHeight:1.5}}>Upload your backyard photo - Select elements below - Grok Aurora renders everything into your real space</div>
         </div>
         <div style={{padding:14}}>
           <div style={{display:"flex",gap:8,marginBottom:photo?10:0}}>
             <label style={{flex:1,padding:"13px 0",borderRadius:11,background:photo?"rgba(52,211,153,0.1)":"rgba(52,211,153,0.06)",border:`1.5px solid ${photo?"rgba(52,211,153,0.45)":"rgba(52,211,153,0.2)"}`,color:photo?"#34d399":"#6ee7b7",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-              {photo?"✅ Photo loaded - tap to change":"📁 Upload Backyard Photo"}
+              {photo?"âœ… Photo loaded - tap to change":"ðŸ“ Upload Backyard Photo"}
               <input type="file" accept="image/*" onChange={handlePhotoUpload} style={{display:"none"}} />
             </label>
-            {photo&&<button onClick={()=>{setPhoto(null);setRendered(null);setError(null);}} style={{padding:"13px 14px",borderRadius:11,background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",fontWeight:700,cursor:"pointer"}}>✕</button>}
+            {photo&&<button onClick={()=>{setPhoto(null);setRendered(null);setError(null);}} style={{padding:"13px 14px",borderRadius:11,background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",fontWeight:700,cursor:"pointer"}}>âœ•</button>}
           </div>
           {photo&&<div style={{borderRadius:10,overflow:"hidden",border:"1px solid rgba(52,211,153,0.3)"}}><img src={photo} alt="outdoor space" style={{width:"100%",display:"block",maxHeight:200,objectFit:"cover"}} /></div>}
         </div>
@@ -1780,7 +1780,7 @@ function HardscapeDesigner({ hardscapes, toggleHardscape, setHSQty, dailyRenders
                   <div style={{width:44,height:44,borderRadius:10,background:active?`${currentCat.color}22`:"#1e293b",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>{item.icon}</div>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontWeight:700,fontSize:14,color:active?currentCat.color:"#e2e8f0",display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-                      {item.label}{active&&<span style={{fontSize:10,background:`${currentCat.color}33`,color:currentCat.color,borderRadius:20,padding:"2px 8px",fontWeight:700}}>ADDED ✓</span>}
+                      {item.label}{active&&<span style={{fontSize:10,background:`${currentCat.color}33`,color:currentCat.color,borderRadius:20,padding:"2px 8px",fontWeight:700}}>ADDED âœ“</span>}
                     </div>
                     <div style={{fontSize:12,color:"#64748b",marginTop:3}}>{item.desc}</div>
                     {active&&item.unit!=="unit"&&(
@@ -1792,7 +1792,7 @@ function HardscapeDesigner({ hardscapes, toggleHardscape, setHSQty, dailyRenders
                     )}
                   </div>
                   <button onClick={()=>toggleHardscape(item.id)} style={{padding:"9px 16px",borderRadius:10,border:`2px solid ${active?currentCat.color:"#334155"}`,background:active?`${currentCat.color}22`:"#1e293b",color:active?currentCat.color:"#94a3b8",fontWeight:800,fontSize:13,cursor:"pointer",flexShrink:0,transition:"all 0.15s",whiteSpace:"nowrap"}}>
-                    {active?"✓ Added":"+ Add"}
+                    {active?"âœ“ Added":"+ Add"}
                   </button>
                 </div>
               </div>
@@ -1825,33 +1825,33 @@ function HardscapeDesigner({ hardscapes, toggleHardscape, setHSQty, dailyRenders
         </div>
 
         <div>
-          <div style={{fontSize:11,color:"#34d399",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:8}}>🎨 Rendering Style</div>
+          <div style={{fontSize:11,color:"#34d399",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:8}}>ðŸŽ¨ Rendering Style</div>
           <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-            {[{id:"photorealistic",label:"📷 Photorealistic"},{id:"twilight",label:"🌅 Twilight"},{id:"night",label:"🌙 Night"},{id:"magazine",label:"✨ Magazine"}].map(s=>(
+            {[{id:"photorealistic",label:"ðŸ“· Photorealistic"},{id:"twilight",label:"ðŸŒ… Twilight"},{id:"night",label:"ðŸŒ™ Night"},{id:"magazine",label:"âœ¨ Magazine"}].map(s=>(
               <button key={s.id} onClick={()=>setStyle(s.id)} style={{padding:"7px 14px",borderRadius:20,border:`2px solid ${style===s.id?"#34d399":"#1e293b"}`,background:style===s.id?"rgba(52,211,153,0.1)":"transparent",color:style===s.id?"#34d399":"#64748b",fontSize:12,fontWeight:600,cursor:"pointer"}}>{s.label}</button>
             ))}
           </div>
         </div>
 
         <div>
-          <div style={{fontSize:11,color:"#34d399",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:8}}>✍️ Additional Instructions</div>
+          <div style={{fontSize:11,color:"#34d399",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:8}}>âœï¸ Additional Instructions</div>
           <textarea value={tweak} onChange={e=>setTweak(e.target.value)} placeholder="e.g. 'use travertine throughout, add string lights, mature palms in corners'" rows={2}
             style={{width:"100%",background:"#1e293b",border:"1px solid #334155",borderRadius:10,padding:"9px 12px",color:"#e2e8f0",fontSize:13,outline:"none",resize:"none",boxSizing:"border-box",lineHeight:1.5,fontFamily:"inherit"}} />
         </div>
 
         {limitHit ? (
           <div style={{padding:"14px",borderRadius:12,background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.2)",textAlign:"center"}}>
-            <div style={{fontSize:14,fontWeight:700,color:"#ef4444",marginBottom:4}}>⏰ Daily Limit Reached</div>
+            <div style={{fontSize:14,fontWeight:700,color:"#ef4444",marginBottom:4}}>â° Daily Limit Reached</div>
             <div style={{fontSize:12,color:"#94a3b8"}}>All {dailyLimit} renders used today. Resets at midnight.</div>
           </div>
         ) : !apiKey ? (
           <div style={{padding:"14px",borderRadius:12,background:"rgba(52,211,153,0.06)",border:"1px solid rgba(52,211,153,0.2)",textAlign:"center"}}>
-            <div style={{fontSize:13,fontWeight:700,color:"#34d399",marginBottom:4}}>🔑 Grok API Key Required</div>
+            <div style={{fontSize:13,fontWeight:700,color:"#34d399",marginBottom:4}}>ðŸ”‘ Grok API Key Required</div>
             <div style={{fontSize:12,color:"#6ee7b7"}}>Add your xAI API key on the Design tab to activate rendering.</div>
           </div>
         ) : (
           <button onClick={rendering?null:handleRender} style={{width:"100%",padding:"16px",borderRadius:12,background:rendering?"#1e293b":"linear-gradient(135deg,#059669,#047857)",border:"none",color:"white",fontWeight:800,fontSize:15,cursor:rendering?"not-allowed":"pointer",boxShadow:rendering?"none":"0 4px 20px rgba(5,150,105,0.3)",transition:"all 0.2s"}}>
-            {rendering?`⏳ ${progressMsg}`:rendered?"🔄 Generate New Variation":"🚀 Generate Hardscape Rendering"}
+            {rendering?`â³ ${progressMsg}`:rendered?"ðŸ”„ Generate New Variation":"ðŸš€ Generate Hardscape Rendering"}
           </button>
         )}
 
@@ -1864,7 +1864,7 @@ function HardscapeDesigner({ hardscapes, toggleHardscape, setHSQty, dailyRenders
 
         {error&&!rendering&&(
           <div style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:10,padding:12}}>
-            <div style={{fontSize:13,color:"#ef4444",fontWeight:600,marginBottom:8}}>⚠️ {error}</div>
+            <div style={{fontSize:13,color:"#ef4444",fontWeight:600,marginBottom:8}}>âš ï¸ {error}</div>
             <button onClick={()=>setError(null)} style={{padding:"6px 12px",borderRadius:8,background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",fontSize:12,fontWeight:700,cursor:"pointer"}}>Dismiss</button>
           </div>
         )}
@@ -1873,13 +1873,13 @@ function HardscapeDesigner({ hardscapes, toggleHardscape, setHSQty, dailyRenders
           <div style={{background:"#0f172a",border:"2px solid rgba(52,211,153,0.35)",borderRadius:14,overflow:"hidden",boxShadow:"0 6px 30px rgba(52,211,153,0.12)"}}>
             <div style={{position:"relative"}}>
               <img src={rendered} alt="Hardscape rendering" style={{width:"100%",display:"block"}} />
-              <div style={{position:"absolute",top:10,left:10,background:"rgba(5,150,105,0.92)",borderRadius:8,padding:"5px 12px",fontSize:11,color:"white",fontWeight:700}}>🏡 Grok Aurora - Outdoor Design #{renderCount}</div>
+              <div style={{position:"absolute",top:10,left:10,background:"rgba(5,150,105,0.92)",borderRadius:8,padding:"5px 12px",fontSize:11,color:"white",fontWeight:700}}>ðŸ¡ Grok Aurora - Outdoor Design #{renderCount}</div>
               <div style={{position:"absolute",top:10,right:10,background:"rgba(0,0,0,0.6)",borderRadius:8,padding:"4px 10px",fontSize:10,color:"#94a3b8"}}>Pool Craft Pro</div>
             </div>
-            {aiDesc&&(<div style={{padding:"12px 14px",background:"rgba(52,211,153,0.06)",borderTop:"1px solid rgba(52,211,153,0.15)"}}><div style={{fontSize:10,color:"#34d399",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:5}}>🤖 AI Designer Notes</div><div style={{fontSize:13,color:"#94a3b8",lineHeight:1.6,fontStyle:"italic"}}>{aiDesc}</div></div>)}
+            {aiDesc&&(<div style={{padding:"12px 14px",background:"rgba(52,211,153,0.06)",borderTop:"1px solid rgba(52,211,153,0.15)"}}><div style={{fontSize:10,color:"#34d399",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:5}}>ðŸ¤– AI Designer Notes</div><div style={{fontSize:13,color:"#94a3b8",lineHeight:1.6,fontStyle:"italic"}}>{aiDesc}</div></div>)}
             <div style={{padding:12,display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-              <button onClick={()=>{setRendered(null);setAiDesc(null);setError(null);}} style={{padding:"11px",borderRadius:10,background:"rgba(52,211,153,0.1)",border:"1px solid rgba(52,211,153,0.3)",color:"#34d399",fontWeight:700,fontSize:13,cursor:"pointer"}}>🔄 New Variation</button>
-              <a href={rendered} download={`poolcraft-hardscape-${renderCount}.jpg`} style={{padding:"11px",borderRadius:10,background:"rgba(6,182,212,0.1)",border:"1px solid rgba(6,182,212,0.3)",color:"#06b6d4",fontWeight:700,fontSize:13,textDecoration:"none",textAlign:"center",display:"block"}}>⬇️ Save Design</a>
+              <button onClick={()=>{setRendered(null);setAiDesc(null);setError(null);}} style={{padding:"11px",borderRadius:10,background:"rgba(52,211,153,0.1)",border:"1px solid rgba(52,211,153,0.3)",color:"#34d399",fontWeight:700,fontSize:13,cursor:"pointer"}}>ðŸ”„ New Variation</button>
+              <a href={rendered} download={`poolcraft-hardscape-${renderCount}.jpg`} style={{padding:"11px",borderRadius:10,background:"rgba(6,182,212,0.1)",border:"1px solid rgba(6,182,212,0.3)",color:"#06b6d4",fontWeight:700,fontSize:13,textDecoration:"none",textAlign:"center",display:"block"}}>â¬‡ï¸ Save Design</a>
             </div>
           </div>
         )}
@@ -1888,30 +1888,30 @@ function HardscapeDesigner({ hardscapes, toggleHardscape, setHSQty, dailyRenders
   );
 }
 
-// ─── YARD PLANNER ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ YARD PLANNER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const YARD_ELEMENTS = [
-  { id:"pool", cat:"Pool", label:"Swimming Pool", icon:"🏊", color:"#0ea5e9", w:80, h:50, shape:"rect" },
-  { id:"spa", cat:"Pool", label:"Spa / Hot Tub", icon:"🛁", color:"#8b5cf6", w:32, h:32, shape:"circle" },
-  { id:"pergola", cat:"Structures", label:"Pergola", icon:"🏠", color:"#d97706", w:60, h:50, shape:"rect" },
-  { id:"outdoor_kit", cat:"Structures", label:"Outdoor Kitchen", icon:"🍳", color:"#0ea5e9", w:50, h:36, shape:"rect" },
-  { id:"gazebo", cat:"Structures", label:"Gazebo", icon:"⛺", color:"#7c3aed", w:44, h:44, shape:"circle" },
-  { id:"fire_pit", cat:"Fire & Water", label:"Fire Pit", icon:"🔥", color:"#ef4444", w:28, h:28, shape:"circle" },
-  { id:"waterfall", cat:"Fire & Water", label:"Waterfall", icon:"💧", color:"#06b6d4", w:24, h:36, shape:"rect" },
-  { id:"fountain", cat:"Fire & Water", label:"Fountain", icon:"⛲", color:"#22d3ee", w:24, h:24, shape:"circle" },
-  { id:"tree_lg", cat:"Landscaping", label:"Large Tree", icon:"🌳", color:"#16a34a", w:36, h:36, shape:"circle" },
-  { id:"tree_sm", cat:"Landscaping", label:"Small Tree", icon:"🌲", color:"#22c55e", w:24, h:24, shape:"circle" },
-  { id:"palm", cat:"Landscaping", label:"Palm Tree", icon:"🌴", color:"#4ade80", w:22, h:22, shape:"circle" },
-  { id:"shrub", cat:"Landscaping", label:"Shrub / Hedge", icon:"🌿", color:"#86efac", w:20, h:20, shape:"circle" },
-  { id:"planting_bed", cat:"Landscaping", label:"Planting Bed", icon:"🪴", color:"#a3e635", w:50, h:28, shape:"rect" },
-  { id:"patio", cat:"Hardscape", label:"Patio / Deck", icon:"🪵", color:"#d97706", w:80, h:60, shape:"rect" },
-  { id:"pathway", cat:"Hardscape", label:"Pathway", icon:"🛤️", color:"#a8a29e", w:16, h:60, shape:"rect" },
-  { id:"ret_wall", cat:"Hardscape", label:"Retaining Wall", icon:"🧱", color:"#78716c", w:80, h:14, shape:"rect" },
-  { id:"sport_court", cat:"Hardscape", label:"Sport Court", icon:"🏀", color:"#f59e0b", w:70, h:50, shape:"rect" },
-  { id:"table_set", cat:"Furniture", label:"Dining Set", icon:"🍽️", color:"#94a3b8", w:36, h:36, shape:"rect" },
-  { id:"loungers", cat:"Furniture", label:"Lounge Chairs", icon:"🪑", color:"#f59e0b", w:40, h:20, shape:"rect" },
-  { id:"umbrella", cat:"Furniture", label:"Patio Umbrella", icon:"⛱️", color:"#ec4899", w:24, h:24, shape:"circle" },
-  { id:"fence_pool", cat:"Safety", label:"Pool Safety Fence", icon:"🚧", color:"#f59e0b", w:100, h:8, shape:"rect" },
-  { id:"lighting", cat:"Safety", label:"Outdoor Lighting", icon:"💡", color:"#fbbf24", w:10, h:10, shape:"circle" },
+  { id:"pool", cat:"Pool", label:"Swimming Pool", icon:"ðŸŠ", color:"#0ea5e9", w:80, h:50, shape:"rect" },
+  { id:"spa", cat:"Pool", label:"Spa / Hot Tub", icon:"ðŸ›", color:"#8b5cf6", w:32, h:32, shape:"circle" },
+  { id:"pergola", cat:"Structures", label:"Pergola", icon:"ðŸ ", color:"#d97706", w:60, h:50, shape:"rect" },
+  { id:"outdoor_kit", cat:"Structures", label:"Outdoor Kitchen", icon:"ðŸ³", color:"#0ea5e9", w:50, h:36, shape:"rect" },
+  { id:"gazebo", cat:"Structures", label:"Gazebo", icon:"â›º", color:"#7c3aed", w:44, h:44, shape:"circle" },
+  { id:"fire_pit", cat:"Fire & Water", label:"Fire Pit", icon:"ðŸ”¥", color:"#ef4444", w:28, h:28, shape:"circle" },
+  { id:"waterfall", cat:"Fire & Water", label:"Waterfall", icon:"ðŸ’§", color:"#06b6d4", w:24, h:36, shape:"rect" },
+  { id:"fountain", cat:"Fire & Water", label:"Fountain", icon:"â›²", color:"#22d3ee", w:24, h:24, shape:"circle" },
+  { id:"tree_lg", cat:"Landscaping", label:"Large Tree", icon:"ðŸŒ³", color:"#16a34a", w:36, h:36, shape:"circle" },
+  { id:"tree_sm", cat:"Landscaping", label:"Small Tree", icon:"ðŸŒ²", color:"#22c55e", w:24, h:24, shape:"circle" },
+  { id:"palm", cat:"Landscaping", label:"Palm Tree", icon:"ðŸŒ´", color:"#4ade80", w:22, h:22, shape:"circle" },
+  { id:"shrub", cat:"Landscaping", label:"Shrub / Hedge", icon:"ðŸŒ¿", color:"#86efac", w:20, h:20, shape:"circle" },
+  { id:"planting_bed", cat:"Landscaping", label:"Planting Bed", icon:"ðŸª´", color:"#a3e635", w:50, h:28, shape:"rect" },
+  { id:"patio", cat:"Hardscape", label:"Patio / Deck", icon:"ðŸªµ", color:"#d97706", w:80, h:60, shape:"rect" },
+  { id:"pathway", cat:"Hardscape", label:"Pathway", icon:"ðŸ›¤ï¸", color:"#a8a29e", w:16, h:60, shape:"rect" },
+  { id:"ret_wall", cat:"Hardscape", label:"Retaining Wall", icon:"ðŸ§±", color:"#78716c", w:80, h:14, shape:"rect" },
+  { id:"sport_court", cat:"Hardscape", label:"Sport Court", icon:"ðŸ€", color:"#f59e0b", w:70, h:50, shape:"rect" },
+  { id:"table_set", cat:"Furniture", label:"Dining Set", icon:"ðŸ½ï¸", color:"#94a3b8", w:36, h:36, shape:"rect" },
+  { id:"loungers", cat:"Furniture", label:"Lounge Chairs", icon:"ðŸª‘", color:"#f59e0b", w:40, h:20, shape:"rect" },
+  { id:"umbrella", cat:"Furniture", label:"Patio Umbrella", icon:"â›±ï¸", color:"#ec4899", w:24, h:24, shape:"circle" },
+  { id:"fence_pool", cat:"Safety", label:"Pool Safety Fence", icon:"ðŸš§", color:"#f59e0b", w:100, h:8, shape:"rect" },
+  { id:"lighting", cat:"Safety", label:"Outdoor Lighting", icon:"ðŸ’¡", color:"#fbbf24", w:10, h:10, shape:"circle" },
 ];
 const YARD_CATS = [...new Set(YARD_ELEMENTS.map(e=>e.cat))];
 
@@ -2027,7 +2027,7 @@ function YardPlanner({ poolLen, poolWid, poolShape, poolColor, parcelData }) {
     <h2>Pool Craft Pro - Yard Layout Plan</h2><p>${address || "Property Site Plan"} - Generated ${new Date().toLocaleDateString()}</p>
     <div class="map-wrap"><iframe src="${mapSrc}" allowfullscreen></iframe></div>
     ${elList ? `<div class="elements"><strong>Design elements placed:</strong> ${elList}</div>` : ""}
-    <div class="footer">Satellite imagery is for planning reference only. Verify all setbacks and measurements with your local building department before construction. Generated by Pool Craft Pro · Design Pools. Craft Outdoor Living..</div>
+    <div class="footer">Satellite imagery is for planning reference only. Verify all setbacks and measurements with your local building department before construction. Generated by Pool Craft Pro Â· Design Pools. Craft Outdoor Living..</div>
     <script>window.onload=()=>setTimeout(()=>window.print(),1500);</script></body></html>`);
     win.document.close();
   };
@@ -2037,52 +2037,52 @@ function YardPlanner({ poolLen, poolWid, poolShape, poolColor, parcelData }) {
   return (
     <div style={{display:"flex",flexDirection:"column",gap:14}}>
       <div style={{background:"linear-gradient(135deg,#1e3a5f,#1a3a2a)",border:"1px solid #1e293b",borderRadius:16,padding:16}}>
-        <div style={{fontSize:14,fontWeight:800,color:"#e2e8f0",marginBottom:4}}>🗺️ Yard & Landscape Planner</div>
+        <div style={{fontSize:14,fontWeight:800,color:"#e2e8f0",marginBottom:4}}>ðŸ—ºï¸ Yard & Landscape Planner</div>
         <div style={{fontSize:12,color:"#94a3b8",lineHeight:1.6}}>Enter any address to load the real satellite view of that property from Google Maps. Then drag and drop design elements directly onto the aerial photo to plan the full outdoor space.</div>
       </div>
 
       <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
-        <div style={{fontSize:11,color:"#06b6d4",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:10}}>📍 Property Address - Loads Real Satellite View</div>
+        <div style={{fontSize:11,color:"#06b6d4",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:10}}>ðŸ“ Property Address - Loads Real Satellite View</div>
         <div style={{display:"flex",gap:8}}>
           <input type="text" placeholder="123 Main St, City, State" value={address} onChange={e => setAddress(e.target.value)} onKeyDown={e => e.key === "Enter" && handleSearch()} style={{flex:1,background:"#1e293b",border:"1px solid #334155",borderRadius:10,padding:"11px 14px",color:"#e2e8f0",fontSize:14,outline:"none"}} />
           <button onClick={handleSearch} style={{padding:"11px 20px",borderRadius:10,background:"linear-gradient(135deg,#06b6d4,#0284c7)",border:"none",color:"white",fontWeight:800,fontSize:14,cursor:"pointer",flexShrink:0}}>Search</button>
         </div>
-        {parcelData && <div style={{marginTop:8,fontSize:11,color:"#06b6d4"}}>✅ Loaded from Design tab: {parcelData.address} - APN {parcelData.parcel}</div>}
-        {!mapSrc && <div style={{marginTop:8,fontSize:11,color:"#64748b"}}>💡 Tip: Search the address on the Design tab first to also load parcel data and setback info</div>}
+        {parcelData && <div style={{marginTop:8,fontSize:11,color:"#06b6d4"}}>âœ… Loaded from Design tab: {parcelData.address} - APN {parcelData.parcel}</div>}
+        {!mapSrc && <div style={{marginTop:8,fontSize:11,color:"#64748b"}}>ðŸ’¡ Tip: Search the address on the Design tab first to also load parcel data and setback info</div>}
       </div>
 
       <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,overflow:"hidden"}}>
         {!mapSrc ? (
           <div style={{height:340,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:12,background:"#0f172a"}}>
-            <div style={{fontSize:48}}>🛰️</div>
+            <div style={{fontSize:48}}>ðŸ›°ï¸</div>
             <div style={{fontSize:14,fontWeight:700,color:"#94a3b8"}}>Enter an address above to load satellite view</div>
             <div style={{fontSize:12,color:"#64748b"}}>Real Google Maps satellite imagery will appear here</div>
           </div>
         ) : (
           <div>
             <div style={{padding:"10px 14px",background:"#0f172a",display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,flexWrap:"wrap"}}>
-              <div style={{fontSize:12,fontWeight:700,color:"#22c55e",display:"flex",alignItems:"center",gap:6}}>🛰️ Google Maps Satellite - {address}</div>
+              <div style={{fontSize:12,fontWeight:700,color:"#22c55e",display:"flex",alignItems:"center",gap:6}}>ðŸ›°ï¸ Google Maps Satellite - {address}</div>
               <div style={{display:"flex",gap:8,alignItems:"center"}}>
                 <span style={{fontSize:11,color:"#64748b"}}>Zoom:</span>
-                <button onClick={()=>handleZoom(-1)} style={{width:36,height:36,borderRadius:8,border:"1px solid #334155",background:"#1e293b",color:"#e2e8f0",fontSize:18,fontWeight:700,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
+                <button onClick={()=>handleZoom(-1)} style={{width:36,height:36,borderRadius:8,border:"1px solid #334155",background:"#1e293b",color:"#e2e8f0",fontSize:18,fontWeight:700,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>âˆ’</button>
                 <span style={{fontSize:12,fontWeight:700,color:"#06b6d4",minWidth:20,textAlign:"center"}}>{zoom}</span>
                 <button onClick={()=>handleZoom(1)} style={{width:36,height:36,borderRadius:8,border:"1px solid #334155",background:"#1e293b",color:"#e2e8f0",fontSize:18,fontWeight:700,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
-                <button onClick={()=>{ setMapSrc(null); setPlaced([]); setSelected(null); }} style={{padding:"8px 14px",minHeight:36,borderRadius:8,border:"1px solid rgba(239,68,68,0.25)",background:"rgba(239,68,68,0.08)",color:"#ef4444",fontSize:12,fontWeight:700,cursor:"pointer"}}>✕ Clear</button>
+                <button onClick={()=>{ setMapSrc(null); setPlaced([]); setSelected(null); }} style={{padding:"8px 14px",minHeight:36,borderRadius:8,border:"1px solid rgba(239,68,68,0.25)",background:"rgba(239,68,68,0.08)",color:"#ef4444",fontSize:12,fontWeight:700,cursor:"pointer"}}>âœ• Clear</button>
               </div>
             </div>
             <div ref={mapContainerRef} style={{position:"relative",width:"100%",paddingBottom:"80%",background:"#0a0a0a"}}>
               <iframe src={mapSrc} style={{position:"absolute",inset:0,width:"100%",height:"100%",border:"none"}} onLoad={()=>setMapLoading(false)} allowFullScreen title="Satellite Map" />
               <YardOverlayCanvas placed={placed} setPlaced={setPlaced} selected={selected} setSelected={setSelected} showDims={showDims} />
-              {mapLoading && (<div style={{position:"absolute",inset:0,background:"rgba(11,17,32,0.7)",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:10}}><div style={{fontSize:32}}>🛰️</div><div style={{fontSize:13,color:"#06b6d4",fontWeight:600}}>Loading satellite imagery...</div></div>)}
+              {mapLoading && (<div style={{position:"absolute",inset:0,background:"rgba(11,17,32,0.7)",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:10}}><div style={{fontSize:32}}>ðŸ›°ï¸</div><div style={{fontSize:13,color:"#06b6d4",fontWeight:600}}>Loading satellite imagery...</div></div>)}
             </div>
-            <div style={{padding:"8px 14px",background:"#0f172a",fontSize:11,color:"#64748b",display:"flex",alignItems:"center",gap:6}}><span>📌</span> Drag elements from the palette below onto the map - Tap to select - Drag to reposition</div>
+            <div style={{padding:"8px 14px",background:"#0f172a",fontSize:11,color:"#64748b",display:"flex",alignItems:"center",gap:6}}><span>ðŸ“Œ</span> Drag elements from the palette below onto the map - Tap to select - Drag to reposition</div>
           </div>
         )}
       </div>
 
       {mapSrc && (
         <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-          {[{label:`📏 Labels ${showDims?"On":"Off"}`, action:()=>setShowDims(p=>!p), active:showDims, color:"#22c55e"},{label:"🖨️ Print / Export", action:printMap, active:false, color:"#a78bfa"},{label:"🗑 Clear Elements", action:clearAll, active:false, color:"#ef4444"}].map(btn=>(
+          {[{label:`ðŸ“ Labels ${showDims?"On":"Off"}`, action:()=>setShowDims(p=>!p), active:showDims, color:"#22c55e"},{label:"ðŸ–¨ï¸ Print / Export", action:printMap, active:false, color:"#a78bfa"},{label:"ðŸ—‘ Clear Elements", action:clearAll, active:false, color:"#ef4444"}].map(btn=>(
             <button key={btn.label} onClick={btn.action} style={{padding:"7px 12px",borderRadius:8,border:`2px solid ${btn.active?btn.color+"88":"#334155"}`,background:btn.active?`${btn.color}18`:"#111827",color:btn.active?btn.color:"#64748b",fontSize:11,fontWeight:700,cursor:"pointer"}}>{btn.label}</button>
           ))}
         </div>
@@ -2093,16 +2093,16 @@ function YardPlanner({ poolLen, poolWid, poolShape, poolColor, parcelData }) {
           <div style={{fontSize:11,color:"#94a3b8",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:10}}>{selectedEl.icon} {selectedEl.label} - Selected</div>
           <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center"}}>
             <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:11,color:"#64748b"}}>Width:</span>
-              <button onClick={()=>resizeSelected("w",-8)} style={{width:36,height:36,borderRadius:8,border:"1px solid #334155",background:"#1e293b",color:"#e2e8f0",fontSize:16,fontWeight:700,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
+              <button onClick={()=>resizeSelected("w",-8)} style={{width:36,height:36,borderRadius:8,border:"1px solid #334155",background:"#1e293b",color:"#e2e8f0",fontSize:16,fontWeight:700,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>âˆ’</button>
               <span style={{fontSize:12,fontWeight:700,color:selectedEl.color,minWidth:30,textAlign:"center"}}>{selectedEl.w}px</span>
               <button onClick={()=>resizeSelected("w",8)} style={{width:36,height:36,borderRadius:8,border:"1px solid #334155",background:"#1e293b",color:"#e2e8f0",fontSize:16,fontWeight:700,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
             </div>
             <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:11,color:"#64748b"}}>Height:</span>
-              <button onClick={()=>resizeSelected("h",-8)} style={{width:36,height:36,borderRadius:8,border:"1px solid #334155",background:"#1e293b",color:"#e2e8f0",fontSize:16,fontWeight:700,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
+              <button onClick={()=>resizeSelected("h",-8)} style={{width:36,height:36,borderRadius:8,border:"1px solid #334155",background:"#1e293b",color:"#e2e8f0",fontSize:16,fontWeight:700,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>âˆ’</button>
               <span style={{fontSize:12,fontWeight:700,color:selectedEl.color,minWidth:30,textAlign:"center"}}>{selectedEl.h}px</span>
               <button onClick={()=>resizeSelected("h",8)} style={{width:36,height:36,borderRadius:8,border:"1px solid #334155",background:"#1e293b",color:"#e2e8f0",fontSize:16,fontWeight:700,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
             </div>
-            <button onClick={removeSelected} style={{padding:"8px 16px",minHeight:36,borderRadius:8,background:"rgba(239,68,68,0.12)",border:"1px solid rgba(239,68,68,0.25)",color:"#ef4444",fontSize:12,fontWeight:700,cursor:"pointer",marginLeft:"auto"}}>🗑 Remove</button>
+            <button onClick={removeSelected} style={{padding:"8px 16px",minHeight:36,borderRadius:8,background:"rgba(239,68,68,0.12)",border:"1px solid rgba(239,68,68,0.25)",color:"#ef4444",fontSize:12,fontWeight:700,cursor:"pointer",marginLeft:"auto"}}>ðŸ—‘ Remove</button>
           </div>
         </div>
       )}
@@ -2139,7 +2139,7 @@ function YardPlanner({ poolLen, poolWid, poolShape, poolColor, parcelData }) {
   );
 }
 
-// ─── SPLASH SCREEN ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ SPLASH SCREEN â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function SplashScreen({ onDone }) {
   useEffect(() => { setTimeout(onDone, 2400); }, []);
   return (
@@ -2176,7 +2176,7 @@ function SplashScreen({ onDone }) {
   );
 }
 
-// ─── COST ESTIMATOR ────────────────────────────────────────────────────────────
+// â”€â”€â”€ COST ESTIMATOR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const COST_RANGES = {
   plaster: { low:5, high:8, unit:"sq ft", label:"Plaster Finish" },
   pebble: { low:8, high:14, unit:"sq ft", label:"Pebble Tec Finish" },
@@ -2213,7 +2213,7 @@ const COST_RANGES = {
   sport_court: { low:6, high:20, unit:"sq ft", label:"Sport Court" },
   bocce: { low:2000, high:6000, unit:"unit", label:"Bocce Court" },
 };
-function fmt(n) { if (!Number.isFinite(n)) return "—"; if (n >= 1000) return `$${(n/1000).toFixed(n%1000===0?0:1)}k`; return `$${n.toLocaleString()}`; }
+function fmt(n) { if (!Number.isFinite(n)) return "â€”"; if (n >= 1000) return `$${(n/1000).toFixed(n%1000===0?0:1)}k`; return `$${n.toLocaleString()}`; }
 
 function computeCostItems({ shape, len, wid, depthId, finishId, entries, hardscapes, extras, localRates }) {
   len = Number.isFinite(len) && len > 0 ? len : 1;
@@ -2277,18 +2277,18 @@ function CostEstimator({ shape, len, wid, depthId, finishId, colorId, entries, h
   return (
     <div style={{display:"flex",flexDirection:"column",gap:14}}>
       <div style={{background:"rgba(245,158,11,0.08)",border:"1px solid rgba(245,158,11,0.25)",borderRadius:14,padding:14}}>
-        <div style={{fontSize:12,fontWeight:700,color:"#f59e0b",marginBottom:4}}>📊 {mult!==1||laborMult!==1?"Cost Ranges Adjusted to Your Local Rates":"Typical Cost Ranges - For Budgeting Reference Only"}</div>
+        <div style={{fontSize:12,fontWeight:700,color:"#f59e0b",marginBottom:4}}>ðŸ“Š {mult!==1||laborMult!==1?"Cost Ranges Adjusted to Your Local Rates":"Typical Cost Ranges - For Budgeting Reference Only"}</div>
         <div style={{fontSize:12,color:"#94a3b8",lineHeight:1.6}}>{mult!==1||laborMult!==1?"You've customized these from national averages. Adjust further below.":"These are typical national cost ranges. Adjust to your local market below, or get 3 contractor quotes for exact pricing."}</div>
       </div>
 
       <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,overflow:"hidden"}}>
         <button onClick={()=>setShowLocalRates(p=>!p)} style={{width:"100%",background:"none",border:"none",cursor:"pointer",padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",textAlign:"left"}}>
-          <span style={{fontSize:13,fontWeight:700,color:"#06b6d4"}}>⚙️ Adjust to Your Local Market</span>
-          <span style={{color:"#64748b",fontSize:14}}>{showLocalRates?"▲":"▼"}</span>
+          <span style={{fontSize:13,fontWeight:700,color:"#06b6d4"}}>âš™ï¸ Adjust to Your Local Market</span>
+          <span style={{color:"#64748b",fontSize:14}}>{showLocalRates?"â–²":"â–¼"}</span>
         </button>
         {showLocalRates&&(
           <div style={{padding:"0 16px 16px",display:"flex",flexDirection:"column",gap:12}}>
-            <div style={{fontSize:11,color:"#64748b",lineHeight:1.6}}>National averages are a starting point. If your local material costs or labor rates run higher or lower, adjust the multipliers below — every number in this estimate updates instantly.</div>
+            <div style={{fontSize:11,color:"#64748b",lineHeight:1.6}}>National averages are a starting point. If your local material costs or labor rates run higher or lower, adjust the multipliers below â€” every number in this estimate updates instantly.</div>
             <div>
               <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
                 <span style={{fontSize:12,color:"#94a3b8",fontWeight:600}}>Material & Equipment Costs</span>
@@ -2310,15 +2310,15 @@ function CostEstimator({ shape, len, wid, depthId, finishId, colorId, entries, h
 
       <div style={{background:"linear-gradient(135deg,#0f2027,#1a3a4a)",border:"1px solid rgba(6,182,212,0.3)",borderRadius:16,padding:20,textAlign:"center"}}>
         <div style={{fontSize:12,color:"#64748b",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>Estimated Total Project Range</div>
-        <div style={{fontSize:36,fontWeight:900,color:"#06b6d4",letterSpacing:"-1px"}}>{fmt(totalLow)} – {fmt(totalHigh)}</div>
+        <div style={{fontSize:36,fontWeight:900,color:"#06b6d4",letterSpacing:"-1px"}}>{fmt(totalLow)} â€“ {fmt(totalHigh)}</div>
         <div style={{fontSize:12,color:"#64748b",marginTop:6}}>{len}'x{wid}' {POOL_SHAPES.find(s=>s.id===shape)?.label} - {POOL_FINISHES.find(f=>f.id===finishId)?.label} finish - {Object.keys(entries).length} features</div>
       </div>
 
       <button onClick={()=>generateProposal({ projectName, clientName, shape, len, wid, depthId, finishId, colorId, entries, hardscapes, materials, items, totalLow, totalHigh })}
         style={{width:"100%",padding:"15px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#7c3aed,#5b21b6)",color:"white",fontWeight:800,fontSize:14,cursor:"pointer",boxShadow:"0 4px 20px rgba(124,58,237,0.3)",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-        📑 Generate Client Proposal {clientName?`for ${clientName}`:""}
+        ðŸ“‘ Generate Client Proposal {clientName?`for ${clientName}`:""}
       </button>
-      <div style={{fontSize:11,color:"#64748b",textAlign:"center",marginTop:-8}}>A polished, presentation-ready document for closing the sale — different from the internal Materials PDF.</div>
+      <div style={{fontSize:11,color:"#64748b",textAlign:"center",marginTop:-8}}>A polished, presentation-ready document for closing the sale â€” different from the internal Materials PDF.</div>
 
       {cats.map(cat => {
         const catItems = items.filter(i=>i.cat===cat);
@@ -2330,17 +2330,17 @@ function CostEstimator({ shape, len, wid, depthId, finishId, colorId, entries, h
           <div key={cat} style={{background:"#111827",border:`1px solid #1e293b`,borderRadius:14,overflow:"hidden"}}>
             <button onClick={()=>toggleExp(cat)} style={{width:"100%",background:"none",border:"none",cursor:"pointer",padding:"14px 16px",display:"flex",alignItems:"center",gap:12,textAlign:"left"}}>
               <div style={{flex:1}}>
-                <div style={{fontWeight:700,fontSize:14,color}}>{cat === "Pool Structure" ? "🏗️" : cat === "Entry & Features" ? "🏖️" : cat === "Hardscapes" ? "🧱" : cat === "Equipment" ? "⚙️" : "👷"} {cat}</div>
-                <div style={{fontSize:12,color:"#64748b",marginTop:3}}>{fmt(catLow)} – {fmt(catHigh)} <span style={{color:"#334155"}}>- ~{pct}% of total</span></div>
+                <div style={{fontWeight:700,fontSize:14,color}}>{cat === "Pool Structure" ? "ðŸ—ï¸" : cat === "Entry & Features" ? "ðŸ–ï¸" : cat === "Hardscapes" ? "ðŸ§±" : cat === "Equipment" ? "âš™ï¸" : "ðŸ‘·"} {cat}</div>
+                <div style={{fontSize:12,color:"#64748b",marginTop:3}}>{fmt(catLow)} â€“ {fmt(catHigh)} <span style={{color:"#334155"}}>- ~{pct}% of total</span></div>
               </div>
               <div style={{width:60,height:6,background:"#1e293b",borderRadius:3,overflow:"hidden",flexShrink:0}}><div style={{height:"100%",width:`${pct}%`,background:color,borderRadius:3}} /></div>
-              <span style={{color:"#64748b",fontSize:14}}>{expanded[cat]?"▲":"▼"}</span>
+              <span style={{color:"#64748b",fontSize:14}}>{expanded[cat]?"â–²":"â–¼"}</span>
             </button>
             {expanded[cat] && (
               <div style={{borderTop:"1px solid #1e293b"}}>
                 {catItems.map((item,i)=>(<div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 16px",borderBottom:"1px solid #0f172a"}}>
                   <div><div style={{fontSize:13,fontWeight:600,color:"#e2e8f0"}}>{item.label}</div><div style={{fontSize:11,color:"#64748b",marginTop:2}}>{item.qty} {item.unit}</div></div>
-                  <div style={{textAlign:"right",flexShrink:0}}><div style={{fontSize:13,fontWeight:700,color}}>{fmt(item.low)} – {fmt(item.high)}</div></div>
+                  <div style={{textAlign:"right",flexShrink:0}}><div style={{fontSize:13,fontWeight:700,color}}>{fmt(item.low)} â€“ {fmt(item.high)}</div></div>
                 </div>))}
               </div>
             )}
@@ -2355,8 +2355,8 @@ function CostEstimator({ shape, len, wid, depthId, finishId, colorId, entries, h
           const gallonsBasis = Math.round(footprintSf*({shallow:3.5,standard:4.25,deep:4.75,diving:6}[depthId]||4.25)*7.48);
           const safeGallons = gallonsBasis > 0 ? gallonsBasis : null;
           return [
-            { label:"Cost Per Gallon", val: safeGallons ? `${fmt(Math.round(totalLow/safeGallons))} – ${fmt(Math.round(totalHigh/safeGallons))}` : "—" },
-            { label:"Cost Per Sq Ft", val: safeArea ? `${fmt(Math.round(totalLow/safeArea))} – ${fmt(Math.round(totalHigh/safeArea))}` : "—" },
+            { label:"Cost Per Gallon", val: safeGallons ? `${fmt(Math.round(totalLow/safeGallons))} â€“ ${fmt(Math.round(totalHigh/safeGallons))}` : "â€”" },
+            { label:"Cost Per Sq Ft", val: safeArea ? `${fmt(Math.round(totalLow/safeArea))} â€“ ${fmt(Math.round(totalHigh/safeArea))}` : "â€”" },
             { label:"Midpoint Est.", val:fmt(Math.round((totalLow+totalHigh)/2)) },
           ];
         })().map((s,i)=>(
@@ -2371,7 +2371,7 @@ function CostEstimator({ shape, len, wid, depthId, finishId, colorId, entries, h
   );
 }
 
-// ─── SHARE DESIGN ──────────────────────────────────────────────────────────────
+// â”€â”€â”€ SHARE DESIGN â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function ShareDesign({ projectName, clientName, clientEmail, clientPhone, shape, len, wid, depthId, finishId, colorId, entries, hardscapes, materials, onClose }) {
   const [copied, setCopied] = useState(false);
   const finishLabel = POOL_FINISHES.find(f=>f.id===finishId)?.label||finishId;
@@ -2403,30 +2403,30 @@ function ShareDesign({ projectName, clientName, clientEmail, clientPhone, shape,
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.8)",zIndex:999,display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
       <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:"20px 20px 0 0",width:"100%",maxWidth:500,maxHeight:"85vh",overflow:"hidden",display:"flex",flexDirection:"column"}}>
         <div style={{padding:"18px 20px 14px",borderBottom:"1px solid #1e293b",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <div style={{fontSize:15,fontWeight:800,color:"#e2e8f0"}}>📤 Share Design</div>
-          <button onClick={onClose} style={{background:"none",border:"none",color:"#64748b",fontSize:22,cursor:"pointer",padding:10,margin:-10,minWidth:44,minHeight:44}}>✕</button>
+          <div style={{fontSize:15,fontWeight:800,color:"#e2e8f0"}}>ðŸ“¤ Share Design</div>
+          <button onClick={onClose} style={{background:"none",border:"none",color:"#64748b",fontSize:22,cursor:"pointer",padding:10,margin:-10,minWidth:44,minHeight:44}}>âœ•</button>
         </div>
         <div style={{overflowY:"auto",flex:1,padding:16,display:"flex",flexDirection:"column",gap:12}}>
           {hasContact && (
             <div style={{background:"rgba(34,197,94,0.08)",border:"1px solid rgba(34,197,94,0.25)",borderRadius:12,padding:14}}>
               <div style={{fontSize:11,color:"#22c55e",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:10}}>Send directly to {clientName||"client"}</div>
               <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-                {clientEmail && <button onClick={()=>shareVia("email",true)} style={{flex:1,minWidth:140,padding:"11px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#22c55e,#16a34a)",color:"white",fontWeight:700,fontSize:13,cursor:"pointer"}}>📧 Email {clientEmail}</button>}
-                {clientPhone && <button onClick={()=>shareVia("sms",true)} style={{flex:1,minWidth:140,padding:"11px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#22c55e,#16a34a)",color:"white",fontWeight:700,fontSize:13,cursor:"pointer"}}>💬 Text {clientPhone}</button>}
+                {clientEmail && <button onClick={()=>shareVia("email",true)} style={{flex:1,minWidth:140,padding:"11px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#22c55e,#16a34a)",color:"white",fontWeight:700,fontSize:13,cursor:"pointer"}}>ðŸ“§ Email {clientEmail}</button>}
+                {clientPhone && <button onClick={()=>shareVia("sms",true)} style={{flex:1,minWidth:140,padding:"11px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#22c55e,#16a34a)",color:"white",fontWeight:700,fontSize:13,cursor:"pointer"}}>ðŸ’¬ Text {clientPhone}</button>}
               </div>
             </div>
           )}
           <div>
             <div style={{fontSize:11,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:8}}>{hasContact?"Or share another way":"Share Via"}</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8}}>
-              {[{id:"copy",icon:"📋",label:"Copy",action:copyToClipboard},{id:"sms",icon:"💬",label:"Text",action:()=>shareVia("sms")},{id:"email",icon:"📧",label:"Email",action:()=>shareVia("email")},{id:"whatsapp",icon:"💚",label:"WhatsApp",action:()=>shareVia("whatsapp")}].map(btn=>(
+              {[{id:"copy",icon:"ðŸ“‹",label:"Copy",action:copyToClipboard},{id:"sms",icon:"ðŸ’¬",label:"Text",action:()=>shareVia("sms")},{id:"email",icon:"ðŸ“§",label:"Email",action:()=>shareVia("email")},{id:"whatsapp",icon:"ðŸ’š",label:"WhatsApp",action:()=>shareVia("whatsapp")}].map(btn=>(
                 <button key={btn.id} onClick={btn.action} style={{padding:"12px 8px",borderRadius:12,border:"1px solid #334155",background:copied&&btn.id==="copy"?"rgba(34,197,94,0.15)":"#0f172a",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:6,transition:"all 0.15s"}}>
                   <span style={{fontSize:22}}>{btn.icon}</span><span style={{fontSize:11,fontWeight:700,color:copied&&btn.id==="copy"?"#22c55e":"#94a3b8"}}>{btn.id==="copy"&&copied?"Copied!":btn.label}</span>
                 </button>
               ))}
             </div>
           </div>
-          {typeof navigator.share !== "undefined" && (<button onClick={()=>navigator.share({title:`Pool Design: ${projectName}`,text:summaryText})} style={{width:"100%",padding:"13px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#06b6d4,#0284c7)",color:"white",fontWeight:800,fontSize:14,cursor:"pointer"}}>📱 Share via Phone / System Share</button>)}
+          {typeof navigator.share !== "undefined" && (<button onClick={()=>navigator.share({title:`Pool Design: ${projectName}`,text:summaryText})} style={{width:"100%",padding:"13px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#06b6d4,#0284c7)",color:"white",fontWeight:800,fontSize:14,cursor:"pointer"}}>ðŸ“± Share via Phone / System Share</button>)}
           <div>
             <div style={{fontSize:11,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:8}}>Design Summary Preview</div>
             <div style={{background:"#0f172a",border:"1px solid #1e293b",borderRadius:12,padding:14,fontFamily:"monospace",fontSize:11,color:"#94a3b8",lineHeight:1.7,whiteSpace:"pre-wrap",maxHeight:240,overflowY:"auto"}}>{summaryText}</div>
@@ -2437,7 +2437,7 @@ function ShareDesign({ projectName, clientName, clientEmail, clientPhone, shape,
   );
 }
 
-// ─── ONBOARDING ───────────────────────────────────────────────────────────────
+// â”€â”€â”€ ONBOARDING â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function OnboardingModal({ onComplete, userMode, setUserMode, setLen, setWid, setShape, setDepthId, setFinishId }) {
   const [step, setStep] = useState(0);
   const [demoLen, setDemoLen] = useState(30);
@@ -2462,10 +2462,10 @@ function OnboardingModal({ onComplete, userMode, setUserMode, setLen, setWid, se
             <ellipse cx="23" cy="15" rx="2.5" ry="4" fill="white" opacity="0.4" transform="rotate(-15 23 15)"/>
             <text x="30" y="34" fontFamily="Georgia,serif" fontWeight="700" fontSize="34" fill="url(#oG)">P</text>
           </svg>
-          <div style={{fontSize:13,color:"#94a3b8",lineHeight:1.7}}>The most complete pool design tool ever built for contractors and homeowners. Design, estimate, render, and close — all in one place.</div>
+          <div style={{fontSize:13,color:"#94a3b8",lineHeight:1.7}}>The most complete pool design tool ever built for contractors and homeowners. Design, estimate, render, and close â€” all in one place.</div>
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:4}}>
-          {[{icon:"⚡",label:"AI Renderings",sub:"Grok Aurora"},{icon:"📊",label:"Materials Calc",sub:"Real engineering math"},{icon:"🗺️",label:"Yard Planner",sub:"Drag & drop"},{icon:"💰",label:"Cost Estimator",sub:"Local market rates"},{icon:"📄",label:"Client Proposals",sub:"Close the deal"},{icon:"🏗️",label:"Build Tracker",sub:"Post-sale tool"}].map(f=>(
+          {[{icon:"âš¡",label:"AI Renderings",sub:"Grok Aurora"},{icon:"ðŸ“Š",label:"Materials Calc",sub:"Real engineering math"},{icon:"ðŸ—ºï¸",label:"Yard Planner",sub:"Drag & drop"},{icon:"ðŸ’°",label:"Cost Estimator",sub:"Local market rates"},{icon:"ðŸ“„",label:"Client Proposals",sub:"Close the deal"},{icon:"ðŸ—ï¸",label:"Build Tracker",sub:"Post-sale tool"}].map(f=>(
             <div key={f.label} style={{background:"rgba(201,168,76,0.08)",border:"1px solid rgba(201,168,76,0.18)",borderRadius:10,padding:"10px 12px"}}>
               <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}><span style={{fontSize:18}}>{f.icon}</span><span style={{fontSize:12,fontWeight:700,color:"#e2e8f0"}}>{f.label}</span></div>
               <div style={{fontSize:10,color:"#64748b",paddingLeft:26}}>{f.sub}</div>
@@ -2475,22 +2475,22 @@ function OnboardingModal({ onComplete, userMode, setUserMode, setLen, setWid, se
       </div>
     )},
     // Step 1: Who are you
-    { icon:"👤", title:"Who's designing today?", subtitle:"We'll tailor the experience for you", content:(
+    { icon:"ðŸ‘¤", title:"Who's designing today?", subtitle:"We'll tailor the experience for you", content:(
       <div style={{display:"flex",flexDirection:"column",gap:10}}>
-        {[{id:"contractor",icon:"👷",title:"Pool Contractor / Builder",desc:"Full technical detail — specs, permits, client quotes, build tracking"},{id:"homeowner",icon:"🏠",title:"Homeowner / DIY",desc:"Guided visual design — easy material lists, contractor comparison"},{id:"designer",icon:"🎨",title:"Landscape Designer",desc:"Visual design focus — yard planning, hardscapes, AI renderings"}].map(m=>(
+        {[{id:"contractor",icon:"ðŸ‘·",title:"Pool Contractor / Builder",desc:"Full technical detail â€” specs, permits, client quotes, build tracking"},{id:"homeowner",icon:"ðŸ ",title:"Homeowner / DIY",desc:"Guided visual design â€” easy material lists, contractor comparison"},{id:"designer",icon:"ðŸŽ¨",title:"Landscape Designer",desc:"Visual design focus â€” yard planning, hardscapes, AI renderings"}].map(m=>(
           <button key={m.id} onClick={()=>setUserMode(m.id)} style={{textAlign:"left",padding:"14px 16px",borderRadius:12,border:`2px solid ${userMode===m.id?"#c9a84c":"#1e293b"}`,background:userMode===m.id?"rgba(201,168,76,0.08)":"#0f172a",cursor:"pointer",display:"flex",gap:14,alignItems:"flex-start",transition:"all 0.15s"}}>
             <span style={{fontSize:28,flexShrink:0}}>{m.icon}</span>
             <div style={{flex:1}}>
               <div style={{fontWeight:700,fontSize:14,color:userMode===m.id?"#c9a84c":"#e2e8f0",marginBottom:3}}>{m.title}</div>
               <div style={{fontSize:12,color:"#64748b",lineHeight:1.5}}>{m.desc}</div>
             </div>
-            {userMode===m.id&&<span style={{color:"#c9a84c",fontSize:18,flexShrink:0}}>✓</span>}
+            {userMode===m.id&&<span style={{color:"#c9a84c",fontSize:18,flexShrink:0}}>âœ“</span>}
           </button>
         ))}
       </div>
     )},
     // Step 2: Design your first pool (guided)
-    { icon:"🏊", title:"Design your first pool", subtitle:"Adjust below — you can change everything later", content:(
+    { icon:"ðŸŠ", title:"Design your first pool", subtitle:"Adjust below â€” you can change everything later", content:(
       <div style={{display:"flex",flexDirection:"column",gap:14}}>
         <div style={{background:"#0f172a",border:"1px solid #1e293b",borderRadius:12,padding:14}}>
           <div style={{fontSize:11,color:"#c9a84c",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:10}}>Shape</div>
@@ -2504,9 +2504,9 @@ function OnboardingModal({ onComplete, userMode, setUserMode, setLen, setWid, se
           {[{label:"Length (ft)",val:demoLen,set:setDemoLen,min:10,max:120},{label:"Width (ft)",val:demoWid,set:setDemoWid,min:8,max:60}].map(f=>(
             <div key={f.label} style={{background:"#0f172a",border:"1px solid #1e293b",borderRadius:12,padding:12}}>
               <div style={{fontSize:11,color:"#c9a84c",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4}}>{f.label}</div>
-              <div style={{fontSize:24,fontWeight:900,color:"#e2e8f0",textAlign:"center",marginBottom:6}}>{f.val}′</div>
+              <div style={{fontSize:24,fontWeight:900,color:"#e2e8f0",textAlign:"center",marginBottom:6}}>{f.val}â€²</div>
               <input type="range" min={f.min} max={f.max} value={f.val} onChange={e=>f.set(Number(e.target.value))} style={{width:"100%",accentColor:"#c9a84c"}}/>
-              <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"#334155",marginTop:2}}><span>{f.min}′</span><span>{f.max}′</span></div>
+              <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"#334155",marginTop:2}}><span>{f.min}â€²</span><span>{f.max}â€²</span></div>
             </div>
           ))}
         </div>
@@ -2525,36 +2525,36 @@ function OnboardingModal({ onComplete, userMode, setUserMode, setLen, setWid, se
           </div>
         </div>
         <div style={{background:"rgba(34,197,94,0.08)",border:"1px solid rgba(34,197,94,0.2)",borderRadius:10,padding:10,fontSize:12,color:"#22c55e",display:"flex",gap:8,alignItems:"center"}}>
-          <span>✓</span><span>Your {demoLen}′×{demoWid}′ {POOL_SHAPES.find(s=>s.id===demoShape)?.label} pool is ready — click Next to apply these settings</span>
+          <span>âœ“</span><span>Your {demoLen}â€²Ã—{demoWid}â€² {POOL_SHAPES.find(s=>s.id===demoShape)?.label} pool is ready â€” click Next to apply these settings</span>
         </div>
       </div>
     )},
     // Step 3: Cloud sync
-    { icon:"☁️", title:"Sync across all devices", subtitle:"Optional — set up later anytime from Settings", content:(
+    { icon:"â˜ï¸", title:"Sync across all devices", subtitle:"Optional â€” set up later anytime from Settings", content:(
       <div style={{display:"flex",flexDirection:"column",gap:12}}>
         <div style={{background:"rgba(34,197,94,0.08)",border:"1px solid rgba(34,197,94,0.2)",borderRadius:12,padding:16}}>
-          <div style={{fontSize:13,fontWeight:700,color:"#22c55e",marginBottom:6}}>☁️ Cloud Sync via Supabase (Free)</div>
+          <div style={{fontSize:13,fontWeight:700,color:"#22c55e",marginBottom:6}}>â˜ï¸ Cloud Sync via Supabase (Free)</div>
           <div style={{fontSize:12,color:"#94a3b8",lineHeight:1.7}}>By default, projects save only to this device. Connect a free Supabase database (5 minutes, one time) and your projects follow you to any iPhone, iPad, or computer.</div>
         </div>
         <div style={{background:"#0f172a",border:"1px solid #1e293b",borderRadius:12,padding:14,fontSize:12,color:"#64748b",lineHeight:1.7}}>
           <div style={{fontWeight:700,color:"#94a3b8",marginBottom:6}}>To set up cloud sync:</div>
-          {["Go to supabase.com — create a free project","Run the setup SQL (in your Settings tab → Cloud Sync)","Paste your project URL and anon key in Settings"].map((s,i)=>(
+          {["Go to supabase.com â€” create a free project","Run the setup SQL (in your Settings tab â†’ Cloud Sync)","Paste your project URL and anon key in Settings"].map((s,i)=>(
             <div key={i} style={{display:"flex",gap:8,marginBottom:4}}><span style={{color:"#c9a84c",flexShrink:0}}>{i+1}.</span>{s}</div>
           ))}
         </div>
-        <div style={{fontSize:12,color:"#64748b",textAlign:"center"}}>You can skip this now and set it up later from the Settings tab ⚙️</div>
+        <div style={{fontSize:12,color:"#64748b",textAlign:"center"}}>You can skip this now and set it up later from the Settings tab âš™ï¸</div>
       </div>
     )},
     // Step 4: Ready
-    { icon:"✅", title:"You're all set!", subtitle:"Your pool design is loaded and ready", content:(
+    { icon:"âœ…", title:"You're all set!", subtitle:"Your pool design is loaded and ready", content:(
       <div style={{display:"flex",flexDirection:"column",gap:14,alignItems:"center"}}>
         <div style={{background:"linear-gradient(135deg,rgba(201,168,76,0.12),rgba(168,135,58,0.06))",border:"1px solid rgba(201,168,76,0.25)",borderRadius:14,padding:20,width:"100%",textAlign:"center"}}>
-          <div style={{fontFamily:"Georgia,serif",fontSize:22,fontWeight:700,color:"#e2e8f0",marginBottom:4}}>{demoLen}′ × {demoWid}′ {POOL_SHAPES.find(s=>s.id===demoShape)?.label}</div>
-          <div style={{fontSize:13,color:"#c9a84c"}}>{POOL_FINISHES.find(f=>f.id===demoFinish)?.label} Finish · {DEPTHS.find(d=>d.id===demoDepth)?.label}</div>
+          <div style={{fontFamily:"Georgia,serif",fontSize:22,fontWeight:700,color:"#e2e8f0",marginBottom:4}}>{demoLen}â€² Ã— {demoWid}â€² {POOL_SHAPES.find(s=>s.id===demoShape)?.label}</div>
+          <div style={{fontSize:13,color:"#c9a84c"}}>{POOL_FINISHES.find(f=>f.id===demoFinish)?.label} Finish Â· {DEPTHS.find(d=>d.id===demoDepth)?.label}</div>
         </div>
         <div style={{background:"#0f172a",border:"1px solid #1e293b",borderRadius:12,padding:14,width:"100%"}}>
           <div style={{fontSize:12,fontWeight:700,color:"#94a3b8",marginBottom:10}}>Quick tips to get started:</div>
-          {[{icon:"🏊",tip:"Use the 3D preview on the Design tab — drag to rotate it"},{icon:"⚡",tip:"Try Quick Render — stand in a backyard and render your pool live"},{icon:"💰",tip:"Cost Est. tab builds a client proposal with one tap"},{icon:"📂",tip:"Save projects with client names using the 💾 button above"},{icon:"🔧",tip:"Add your xAI key in Settings to unlock AI photo rendering"}].map((t,i)=>(
+          {[{icon:"ðŸŠ",tip:"Use the 3D preview on the Design tab â€” drag to rotate it"},{icon:"âš¡",tip:"Try Quick Render â€” stand in a backyard and render your pool live"},{icon:"ðŸ’°",tip:"Cost Est. tab builds a client proposal with one tap"},{icon:"ðŸ“‚",tip:"Save projects with client names using the ðŸ’¾ button above"},{icon:"ðŸ”§",tip:"Add your xAI key in Settings to unlock AI photo rendering"}].map((t,i)=>(
             <div key={i} style={{display:"flex",gap:10,marginBottom:8,alignItems:"flex-start"}}>
               <span style={{fontSize:16,flexShrink:0}}>{t.icon}</span>
               <span style={{fontSize:12,color:"#64748b",lineHeight:1.5}}>{t.tip}</span>
@@ -2597,9 +2597,9 @@ function OnboardingModal({ onComplete, userMode, setUserMode, setLen, setWid, se
         <div style={{padding:20,overflowY:"auto",flex:1}}>{current.content}</div>
         {/* Actions */}
         <div style={{padding:"0 20px 20px",display:"flex",gap:10,flexShrink:0}}>
-          {step > 0 && <button onClick={()=>setStep(s=>s-1)} style={{flex:1,padding:"13px",borderRadius:10,border:"1px solid #334155",background:"#1e293b",color:"#94a3b8",fontWeight:700,fontSize:14,cursor:"pointer"}}>← Back</button>}
+          {step > 0 && <button onClick={()=>setStep(s=>s-1)} style={{flex:1,padding:"13px",borderRadius:10,border:"1px solid #334155",background:"#1e293b",color:"#94a3b8",fontWeight:700,fontSize:14,cursor:"pointer"}}>â† Back</button>}
           <button onClick={handleNext} style={{flex:2,padding:"13px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#c9a84c,#a8873a)",color:"#0a0f1e",fontWeight:800,fontSize:14,cursor:"pointer"}}>
-            {isLast ? "Start Designing 🏊" : step === 2 ? "Apply My Pool →" : "Next →"}
+            {isLast ? "Start Designing ðŸŠ" : step === 2 ? "Apply My Pool â†’" : "Next â†’"}
           </button>
         </div>
         {!isLast && <div style={{textAlign:"center",paddingBottom:16,flexShrink:0}}><button onClick={()=>{ try{localStorage.setItem("pc_onboarded","1");}catch{} onComplete(); }} style={{background:"none",border:"none",color:"#334155",fontSize:12,cursor:"pointer"}}>Skip setup</button></div>}
@@ -2608,7 +2608,7 @@ function OnboardingModal({ onComplete, userMode, setUserMode, setLen, setWid, se
   );
 }
 
-// ─── PROJECT MANAGER (cloud-aware) ─────────────────────────────────────────────
+// â”€â”€â”€ PROJECT MANAGER (cloud-aware) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function ProjectManager({ currentProjectId, onLoad, onClose }) {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -2655,18 +2655,18 @@ function ProjectManager({ currentProjectId, onLoad, onClose }) {
         <div style={{padding:"18px 20px",borderBottom:"1px solid #1e293b"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
             <div style={{fontSize:15,fontWeight:800,color:"#e2e8f0",display:"flex",alignItems:"center",gap:8}}>
-              📂 Projects {cloudConnected&&<span style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:"rgba(34,197,94,0.15)",border:"1px solid rgba(34,197,94,0.3)",color:"#22c55e",fontWeight:700}}>☁️ Synced</span>}
+              ðŸ“‚ Projects {cloudConnected&&<span style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:"rgba(34,197,94,0.15)",border:"1px solid rgba(34,197,94,0.3)",color:"#22c55e",fontWeight:700}}>â˜ï¸ Synced</span>}
             </div>
-            <button onClick={onClose} style={{background:"none",border:"none",color:"#64748b",fontSize:22,cursor:"pointer",padding:10,margin:-10,minWidth:44,minHeight:44}}>✕</button>
+            <button onClick={onClose} style={{background:"none",border:"none",color:"#64748b",fontSize:22,cursor:"pointer",padding:10,margin:-10,minWidth:44,minHeight:44}}>âœ•</button>
           </div>
-          {projects.length>3&&(<input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Search by project or client name..." style={{width:"100%",background:"#1e293b",border:"1px solid #334155",borderRadius:10,padding:"9px 12px",color:"#e2e8f0",fontSize:13,outline:"none",boxSizing:"border-box"}} />)}
+          {projects.length>3&&(<input value={search} onChange={e=>setSearch(e.target.value)} placeholder="ðŸ” Search by project or client name..." style={{width:"100%",background:"#1e293b",border:"1px solid #334155",borderRadius:10,padding:"9px 12px",color:"#e2e8f0",fontSize:13,outline:"none",boxSizing:"border-box"}} />)}
         </div>
         <div style={{overflowY:"auto",flex:1,padding:16}}>
           {loading ? (
             <div style={{textAlign:"center",padding:"40px 20px",color:"#64748b",fontSize:13}}>Loading projects...</div>
           ) : filtered.length === 0 ? (
             <div style={{textAlign:"center",padding:"40px 20px"}}>
-              <div style={{fontSize:40,marginBottom:10}}>📂</div>
+              <div style={{fontSize:40,marginBottom:10}}>ðŸ“‚</div>
               <div style={{fontSize:14,color:"#64748b"}}>{search?"No projects match your search":"No saved projects yet"}</div>
               <div style={{fontSize:12,color:"#334155",marginTop:6}}>Use the Save button to store your current design</div>
             </div>
@@ -2679,9 +2679,9 @@ function ProjectManager({ currentProjectId, onLoad, onClose }) {
                 return (
                   <div key={clientName}>
                     <button onClick={()=>toggleCollapsed(clientName)} style={{width:"100%",background:"none",border:"none",cursor:"pointer",display:"flex",alignItems:"center",gap:8,padding:"4px 0 8px",textAlign:"left"}}>
-                      <span style={{color:"#64748b",fontSize:11}}>{isCollapsed?"▶":"▼"}</span>
+                      <span style={{color:"#64748b",fontSize:11}}>{isCollapsed?"â–¶":"â–¼"}</span>
                       <span style={{fontSize:12,fontWeight:800,color:isUnassigned?"#64748b":"#06b6d4",textTransform:"uppercase",letterSpacing:"0.06em"}}>
-                        {isUnassigned?"👤 Unassigned":`👤 ${clientName}`}
+                        {isUnassigned?"ðŸ‘¤ Unassigned":`ðŸ‘¤ ${clientName}`}
                       </span>
                       <span style={{fontSize:11,color:"#334155",fontWeight:600}}>({projectsInGroup.length})</span>
                     </button>
@@ -2691,7 +2691,7 @@ function ProjectManager({ currentProjectId, onLoad, onClose }) {
                           <div key={p.id} style={{background:String(p.id)===String(currentProjectId)?"rgba(6,182,212,0.07)":"#0f172a",border:`1px solid ${String(p.id)===String(currentProjectId)?"rgba(6,182,212,0.3)":"#1e293b"}`,borderRadius:12,padding:14}}>
                             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10}}>
                               <div style={{flex:1,minWidth:0}}>
-                                <div style={{fontWeight:700,fontSize:14,color:"#e2e8f0",marginBottom:4}}>{p.name}{String(p.id)===String(currentProjectId)&&<span style={{fontSize:10,color:"#06b6d4",fontWeight:700,marginLeft:8}}>● CURRENT</span>}</div>
+                                <div style={{fontWeight:700,fontSize:14,color:"#e2e8f0",marginBottom:4}}>{p.name}{String(p.id)===String(currentProjectId)&&<span style={{fontSize:10,color:"#06b6d4",fontWeight:700,marginLeft:8}}>â— CURRENT</span>}</div>
                                 <div style={{fontSize:11,color:"#64748b",marginBottom:6}}>{formatDate(p.savedAt)} - {p.shape} {p.len}'x{p.wid}' - {p.gallons?.toLocaleString()} gal</div>
                                 <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
                                   {p.entryCount>0&&<span style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:"rgba(6,182,212,0.1)",border:"1px solid rgba(6,182,212,0.2)",color:"#06b6d4"}}>{p.entryCount} features</span>}
@@ -2704,12 +2704,12 @@ function ProjectManager({ currentProjectId, onLoad, onClose }) {
                                     <button onClick={()=>{ const el=document.getElementById(`client-input-${p.id}`); setProjectClient(p, el?el.value:""); setRenamingClient(null); }} style={{padding:"9px 14px",minHeight:38,borderRadius:8,background:"rgba(34,197,94,0.15)",border:"1px solid rgba(34,197,94,0.3)",color:"#22c55e",fontSize:12,fontWeight:700,cursor:"pointer"}}>Save</button>
                                   </div>
                                 ) : (
-                                  <button onClick={()=>setRenamingClient(p.id)} style={{marginTop:8,fontSize:11,color:"#64748b",background:"none",border:"none",cursor:"pointer",padding:"8px 0",minHeight:36}}>{p.clientName?`✏️ Reassign client`:"+ Assign to a client"}</button>
+                                  <button onClick={()=>setRenamingClient(p.id)} style={{marginTop:8,fontSize:11,color:"#64748b",background:"none",border:"none",cursor:"pointer",padding:"8px 0",minHeight:36}}>{p.clientName?`âœï¸ Reassign client`:"+ Assign to a client"}</button>
                                 )}
                               </div>
                               <div style={{display:"flex",gap:6,flexShrink:0}}>
                                 <button onClick={()=>onLoad(p)} style={{padding:"9px 16px",minHeight:40,borderRadius:8,border:"none",background:"linear-gradient(135deg,#06b6d4,#0284c7)",color:"white",fontWeight:700,fontSize:12,cursor:"pointer"}}>Load</button>
-                                {confirmDelete===p.id ? (<button onClick={()=>deleteProject(p.id)} style={{padding:"9px 14px",minHeight:40,borderRadius:8,border:"1px solid rgba(239,68,68,0.4)",background:"rgba(239,68,68,0.15)",color:"#ef4444",fontWeight:700,fontSize:12,cursor:"pointer"}}>Confirm</button>) : (<button onClick={()=>setConfirmDelete(p.id)} style={{width:40,height:40,borderRadius:8,border:"1px solid #334155",background:"#1e293b",color:"#64748b",fontWeight:700,fontSize:14,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>🗑</button>)}
+                                {confirmDelete===p.id ? (<button onClick={()=>deleteProject(p.id)} style={{padding:"9px 14px",minHeight:40,borderRadius:8,border:"1px solid rgba(239,68,68,0.4)",background:"rgba(239,68,68,0.15)",color:"#ef4444",fontWeight:700,fontSize:12,cursor:"pointer"}}>Confirm</button>) : (<button onClick={()=>setConfirmDelete(p.id)} style={{width:40,height:40,borderRadius:8,border:"1px solid #334155",background:"#1e293b",color:"#64748b",fontWeight:700,fontSize:14,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>ðŸ—‘</button>)}
                               </div>
                             </div>
                           </div>
@@ -2723,14 +2723,14 @@ function ProjectManager({ currentProjectId, onLoad, onClose }) {
           )}
         </div>
         {!cloudConnected&&projects.length>0&&(
-          <div style={{padding:"10px 16px",borderTop:"1px solid #1e293b",fontSize:11,color:"#64748b",textAlign:"center"}}>💡 These projects are saved to this device only. Connect Cloud Sync on the Design tab to access them anywhere.</div>
+          <div style={{padding:"10px 16px",borderTop:"1px solid #1e293b",fontSize:11,color:"#64748b",textAlign:"center"}}>ðŸ’¡ These projects are saved to this device only. Connect Cloud Sync on the Design tab to access them anywhere.</div>
         )}
       </div>
     </div>
   );
 }
 
-// ─── PDF EXPORT ────────────────────────────────────────────────────────────────
+// â”€â”€â”€ PDF EXPORT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function generatePDF({ projectName, shape, len, wid, depthId, finishId, colorId, materials, equipment, entries, hardscapes, parcelData }) {
   const finishLabel = POOL_FINISHES.find(f=>f.id===finishId)?.label || finishId;
   const colorLabel = POOL_COLORS.find(c=>c.id===colorId)?.label || colorId;
@@ -2740,19 +2740,19 @@ function generatePDF({ projectName, shape, len, wid, depthId, finishId, colorId,
   const activeHardscapes = HARDSCAPE_OPTIONS.filter(h=>hardscapes[h.id]!=null);
   const date = new Date().toLocaleDateString("en-US",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
   const win = window.open("","_blank"); if (!win) return;
-  win.document.write(`<!DOCTYPE html><html><head><title>Pool Craft Pro — ${projectName}</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:system-ui,sans-serif;background:#fff;color:#1e293b;padding:40px}.header{background:linear-gradient(135deg,#0f2027,#203a43);color:white;padding:32px;border-radius:12px;margin-bottom:28px}.logo{font-size:24px;font-weight:800;margin-bottom:4px}.project-name{font-size:20px;font-weight:800;margin:12px 0 4px}.section{margin-bottom:24px}.section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#06b6d4;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #e2e8f0}.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px}.card-label{font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:#94a3b8;margin-bottom:3px}.card-value{font-size:15px;font-weight:800;color:#0f172a}.material-row{display:flex;justify-content:space-between;padding:9px 12px;border-bottom:1px solid #f1f5f9}.eq-row{display:flex;justify-content:space-between;align-items:flex-start;padding:9px 12px;border-bottom:1px solid #f1f5f9}.chip{display:inline-block;padding:3px 10px;border-radius:20px;background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;font-size:12px;font-weight:600;margin:3px}.footer{margin-top:36px;padding-top:18px;border-top:2px solid #e2e8f0;font-size:11px;color:#94a3b8}@media print{body{padding:20px}}</style></head><body>
-  <div class="header"><div class="logo"><strong style="font-size:18px;color:#1a2f5e;font-family:Georgia,serif;letter-spacing:2px">POOL <span style="color:#c9a84c">CRAFT</span> PRO</strong><br><span style="font-size:11px;color:#94a3b8">Design Pools. Craft Outdoor Living.<</div><div class="project-name">${projectName}</div><div style="font-size:12px;color:#94a3b8">Generated ${date}</div>${parcelData?`<div style="font-size:12px;color:#94a3b8;margin-top:6px">📍 ${parcelData.address}</div>`:""}</div>
+  win.document.write(`<!DOCTYPE html><html><head><title>Pool Craft Pro â€” ${projectName}</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:system-ui,sans-serif;background:#fff;color:#1e293b;padding:40px}.header{background:linear-gradient(135deg,#0f2027,#203a43);color:white;padding:32px;border-radius:12px;margin-bottom:28px}.logo{font-size:24px;font-weight:800;margin-bottom:4px}.project-name{font-size:20px;font-weight:800;margin:12px 0 4px}.section{margin-bottom:24px}.section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#06b6d4;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #e2e8f0}.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px}.card-label{font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:#94a3b8;margin-bottom:3px}.card-value{font-size:15px;font-weight:800;color:#0f172a}.material-row{display:flex;justify-content:space-between;padding:9px 12px;border-bottom:1px solid #f1f5f9}.eq-row{display:flex;justify-content:space-between;align-items:flex-start;padding:9px 12px;border-bottom:1px solid #f1f5f9}.chip{display:inline-block;padding:3px 10px;border-radius:20px;background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;font-size:12px;font-weight:600;margin:3px}.footer{margin-top:36px;padding-top:18px;border-top:2px solid #e2e8f0;font-size:11px;color:#94a3b8}@media print{body{padding:20px}}</style></head><body>
+  <div class="header"><div class="logo"><strong style="font-size:18px;color:#1a2f5e;font-family:Georgia,serif;letter-spacing:2px">POOL <span style="color:#c9a84c">CRAFT</span> PRO</strong><br><span style="font-size:11px;color:#94a3b8">Design Pools. Craft Outdoor Living.<</div><div class="project-name">${projectName}</div><div style="font-size:12px;color:#94a3b8">Generated ${date}</div>${parcelData?`<div style="font-size:12px;color:#94a3b8;margin-top:6px">ðŸ“ ${parcelData.address}</div>`:""}</div>
   <div class="section"><div class="section-title">Pool Design Summary</div><div class="grid-2"><div class="card"><div class="card-label">Size</div><div class="card-value">${len}' x ${wid}'</div></div><div class="card"><div class="card-label">Shape</div><div class="card-value">${shapeLabel}</div></div><div class="card"><div class="card-label">Depth Profile</div><div class="card-value" style="font-size:13px">${depthLabel}</div></div><div class="card"><div class="card-label">Volume</div><div class="card-value">${materials.gallons.toLocaleString()} gal</div></div><div class="card"><div class="card-label">Water Color</div><div class="card-value" style="font-size:13px">${colorLabel}</div></div><div class="card"><div class="card-label">Finish</div><div class="card-value" style="font-size:13px">${finishLabel}</div></div></div></div>
   ${activeEntries.length>0?`<div class="section"><div class="section-title">Pool Features & Entry</div><div>${activeEntries.map(e=>`<span class="chip">${e.icon} ${e.label}</span>`).join("")}</div></div>`:""}
   <div class="section"><div class="section-title">Materials Takeoff</div><div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden">${[{l:"Excavation",v:materials.excavation},{l:"Gunite / Shotcrete",v:materials.gunite},{l:"Rebar (#3)",v:materials.rebar},{l:"Gravel Base",v:materials.gravel},{l:"PVC Plumbing",v:materials.plumbing},{l:"Coping",v:materials.coping},{l:"Interior Finish",v:materials.finish}].map(r=>`<div class="material-row"><span style="font-weight:600">${r.l}</span><span style="font-weight:800;color:#0284c7">${r.v}</span></div>`).join("")}</div></div>
   ${activeHardscapes.length>0?`<div class="section"><div class="section-title">Hardscape Elements</div><div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden">${activeHardscapes.map(h=>`<div class="material-row"><span style="font-weight:600">${h.icon} ${h.label}</span><span style="font-weight:800;color:#0284c7">${h.unit==="unit"?"1 unit":`${hardscapes[h.id]} ${h.unit}`}</span></div>`).join("")}</div></div>`:""}
-  <div class="section"><div class="section-title">Recommended Pentair Equipment</div><div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden">${equipment.map(eq=>`<div class="eq-row"><div><div style="font-size:10px;color:#94a3b8;text-transform:uppercase">${eq.label}</div><div style="font-size:13px;font-weight:700;margin-top:2px">${eq.model}</div><div style="font-size:11px;color:#64748b;margin-top:2px">${eq.note}</div></div><div style="font-size:11px;font-family:monospace;background:#e2e8f0;padding:2px 8px;border-radius:6px;white-space:nowrap">${eq.sku}</div></div>`).join("")}</div></div>
-  <div class="footer">Pool Craft Pro — Design Pools. Craft Outdoor Living.<br>All material quantities are estimates. Verify with your licensed pool contractor. Always obtain proper permits before construction.</div>
+  <div class="section"><div class="section-title">Recommended Pentair Equipment</div><div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden">${equipment.map(eq=>`<div class="eq-row"><div><div style="font-size:10px;color:#94a3b8;text-transform:uppercase">${eq.label}</div><div style="font-size:13px;font-weight:700;margin-top:2px">${eq.model}</div>></div>></div>`).join("")}</div></div>
+  <div class="footer">Pool Craft Pro â€” Design Pools. Craft Outdoor Living.<br>All material quantities are estimates. Verify with your licensed pool contractor. Always obtain proper permits before construction.</div>
   <script>window.onload=()=>setTimeout(()=>window.print(),800);</script></body></html>`);
   win.document.close();
 }
 
-// ─── CLIENT PROPOSAL (sales-facing document) ──────────────────────────────────
+// â”€â”€â”€ CLIENT PROPOSAL (sales-facing document) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Distinct from generatePDF: this is meant to be shown to or emailed directly
 // to the client to close the sale, not an internal materials/build reference.
 function generateProposal({ projectName, clientName, shape, len, wid, depthId, finishId, colorId, entries, hardscapes, materials, items, totalLow, totalHigh }) {
@@ -2768,12 +2768,12 @@ function generateProposal({ projectName, clientName, shape, len, wid, depthId, f
   const catLabels = { "Pool Structure":"Pool Construction", "Entry & Features":"Pool Features & Entries", "Hardscapes":"Outdoor Living & Hardscapes", "Equipment":"Equipment Package", "Labor":"Labor, Permits & Engineering" };
 
   const win = window.open("","_blank"); if (!win) return;
-  win.document.write(`<!DOCTYPE html><html><head><title>Pool Proposal — ${clientName || projectName}</title>
+  win.document.write(`<!DOCTYPE html><html><head><title>Pool Proposal â€” ${clientName || projectName}</title>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:"Inter",system-ui,sans-serif;background:#fff;color:#1e293b;line-height:1.5;-webkit-font-smoothing:antialiased}
-    /* ── COVER ── */
+    /* â”€â”€ COVER â”€â”€ */
     .cover{background:linear-gradient(145deg,#0a0f1e 0%,#0f1e3d 55%,#0a0f1e 100%);color:white;padding:64px 56px 72px;min-height:320px;position:relative;overflow:hidden}
     .cover::before{content:'';position:absolute;top:-30%;right:-10%;width:60%;height:160%;background:radial-gradient(ellipse,rgba(201,168,76,0.12) 0%,transparent 70%);pointer-events:none}
     .cover-logo{display:flex;align-items:center;gap:14px;margin-bottom:52px}
@@ -2787,53 +2787,53 @@ function generateProposal({ projectName, clientName, shape, len, wid, depthId, f
     .cover-meta{font-size:12px;color:#64748b;display:flex;gap:20px;flex-wrap:wrap}
     .cover-meta span{display:flex;align-items:center;gap:6px}
     .cover-divider{width:48px;height:1px;background:rgba(201,168,76,0.4);margin:28px 0}
-    /* ── BODY ── */
+    /* â”€â”€ BODY â”€â”€ */
     .body{padding:52px 56px}
     .section{margin-bottom:40px}
     .section-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.14em;color:#c9a84c;margin-bottom:16px;display:flex;align-items:center;gap:10px}
     .section-label::after{content:'';flex:1;height:1px;background:#e2e8f0}
-    /* ── SPEC GRID ── */
+    /* â”€â”€ SPEC GRID â”€â”€ */
     .spec-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
     .spec{background:#f8fafc;border-radius:8px;padding:16px;border:1px solid #f1f5f9}
     .spec label{font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:6px;font-weight:600}
     .spec span{font-family:"Cormorant Garamond",Georgia,serif;font-size:20px;font-weight:600;color:#0f172a;line-height:1.2}
-    /* ── HIGHLIGHTS ── */
+    /* â”€â”€ HIGHLIGHTS â”€â”€ */
     .highlight-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:4px}
     .highlight{background:linear-gradient(135deg,#0a0f1e,#0f1e3d);border-radius:10px;padding:16px;text-align:center;border:1px solid rgba(201,168,76,0.15)}
     .highlight .val{font-family:"Cormorant Garamond",Georgia,serif;font-size:24px;font-weight:600;color:#c9a84c}
     .highlight .lbl{font-size:10px;color:#64748b;margin-top:4px;text-transform:uppercase;letter-spacing:0.06em}
-    /* ── FEATURES ── */
+    /* â”€â”€ FEATURES â”€â”€ */
     .feature-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
     .feature-pill{background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px}
-    /* ── INVESTMENT TABLE ── */
+    /* â”€â”€ INVESTMENT TABLE â”€â”€ */
     .invest-table{width:100%;border-collapse:collapse}
     .invest-table th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;padding:10px 0;border-bottom:2px solid #0f172a;font-weight:700}
     .invest-table td{padding:14px 0;border-bottom:1px solid #f1f5f9;font-size:14px;vertical-align:top}
     .invest-table .cat-name{font-weight:600;color:#0f172a}
     .invest-table .cat-note{font-size:11px;color:#94a3b8;margin-top:2px}
     .invest-table .amt{text-align:right;font-family:"Cormorant Garamond",Georgia,serif;font-size:17px;font-weight:600;color:#0284c7;white-space:nowrap}
-    /* ── TOTAL BANNER ── */
+    /* â”€â”€ TOTAL BANNER â”€â”€ */
     .total-banner{background:linear-gradient(135deg,#0a0f1e,#1a2f5e);color:white;border-radius:16px;padding:36px 40px;display:flex;justify-content:space-between;align-items:center;margin-top:20px}
     .total-banner .left-side .label{font-size:11px;text-transform:uppercase;letter-spacing:0.1em;color:#8a9ab5;margin-bottom:8px}
     .total-banner .amount{font-family:"Cormorant Garamond",Georgia,serif;font-size:46px;font-weight:300;color:white;letter-spacing:-1px}
     .total-banner .right-side{text-align:right}
     .total-banner .note{font-size:12px;color:#64748b;margin-top:8px}
     .total-banner .gold-badge{background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.3);border-radius:8px;padding:10px 18px;font-size:12px;color:#c9a84c;font-weight:700}
-    /* ── VALIDITY ── */
+    /* â”€â”€ VALIDITY â”€â”€ */
     .validity{background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:14px 18px;font-size:13px;color:#92400e;margin-top:16px;display:flex;gap:10px;align-items:flex-start}
-    /* ── NEXT STEPS ── */
+    /* â”€â”€ NEXT STEPS â”€â”€ */
     .steps{display:grid;grid-template-columns:1fr 1fr;gap:14px}
     .step{display:flex;gap:14px;align-items:flex-start;background:#f8fafc;border-radius:10px;padding:16px;border:1px solid #f1f5f9}
     .step-num{min-width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#c9a84c,#a8873a);color:#0a0f1e;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0}
     .step-text{font-size:13px;color:#374151;line-height:1.5;padding-top:3px}
     .step-text strong{color:#0f172a;display:block;margin-bottom:3px}
-    /* ── MATERIALS PAGE ── */
+    /* â”€â”€ MATERIALS PAGE â”€â”€ */
     .page-break{page-break-before:always}
     .materials-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px}
     .mat-card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;display:flex;justify-content:space-between;align-items:center}
     .mat-label{font-size:12px;color:#64748b;font-weight:500}
     .mat-val{font-family:"Cormorant Garamond",Georgia,serif;font-size:17px;font-weight:600;color:#0284c7}
-    /* ── FOOTER ── */
+    /* â”€â”€ FOOTER â”€â”€ */
     .footer{margin-top:48px;padding-top:20px;border-top:1px solid #e2e8f0;font-size:10px;color:#94a3b8;line-height:1.8;display:flex;justify-content:space-between;align-items:flex-start;gap:24px}
     @media print{
       .cover{padding:40px;min-height:auto}
@@ -2868,9 +2868,9 @@ function generateProposal({ projectName, clientName, shape, len, wid, depthId, f
     <div class="cover-client">${clientName || "Valued Customer"}</div>
     <div class="cover-divider"></div>
     <div class="cover-meta">
-      <span>📋 ${projectName}</span>
-      <span>📅 ${date}</span>
-      <span>📍 Valid through ${validUntil}</span>
+      <span>ðŸ“‹ ${projectName}</span>
+      <span>ðŸ“… ${date}</span>
+      <span>ðŸ“ Valid through ${validUntil}</span>
     </div>
   </div>
 
@@ -2881,7 +2881,7 @@ function generateProposal({ projectName, clientName, shape, len, wid, depthId, f
     <div class="section">
       <div class="section-label">At a Glance</div>
       <div class="highlight-row">
-        <div class="highlight"><div class="val">${len}' × ${wid}'</div><div class="lbl">Dimensions</div></div>
+        <div class="highlight"><div class="val">${len}' Ã— ${wid}'</div><div class="lbl">Dimensions</div></div>
         <div class="highlight"><div class="val">${materials.gallons.toLocaleString()}</div><div class="lbl">Gallons</div></div>
         <div class="highlight"><div class="val">${activeEntries.length + activeHardscapes.length}</div><div class="lbl">Features</div></div>
         <div class="highlight"><div class="val">${shapeLabel}</div><div class="lbl">Shape</div></div>
@@ -2893,7 +2893,7 @@ function generateProposal({ projectName, clientName, shape, len, wid, depthId, f
       <div class="section-label">Pool Specifications</div>
       <div class="spec-grid">
         <div class="spec"><label>Shape</label><span>${shapeLabel}</span></div>
-        <div class="spec"><label>Dimensions</label><span>${len}' × ${wid}'</span></div>
+        <div class="spec"><label>Dimensions</label><span>${len}' Ã— ${wid}'</span></div>
         <div class="spec"><label>Depth Profile</label><span>${depthLabel}</span></div>
         <div class="spec"><label>Water Volume</label><span>${materials.gallons.toLocaleString()} gal</span></div>
         <div class="spec"><label>Interior Finish</label><span>${finishLabel}</span></div>
@@ -2929,22 +2929,22 @@ function generateProposal({ projectName, clientName, shape, len, wid, depthId, f
             const ci = items.filter(i=>i.cat===cat);
             const lo = ci.reduce((s,i)=>s+i.low,0), hi = ci.reduce((s,i)=>s+i.high,0);
             const notes = { "Pool Structure":"Excavation, gunite shell, coping, interior finish", "Entry & Features":"All selected water features and specialty entries", "Hardscapes":"Decking, outdoor living structures and surfaces", "Equipment":"Full Pentair equipment package", "Labor":"Labor, permits, engineering, and site prep" };
-            return `<tr><td><div class="cat-name">${catLabels[cat]||cat}</div><div class="cat-note">${notes[cat]||""}</div></td><td class="amt">${fmt(lo)} – ${fmt(hi)}</td></tr>`;
+            return `<tr><td><div class="cat-name">${catLabels[cat]||cat}</div><div class="cat-note">${notes[cat]||""}</div></td><td class="amt">${fmt(lo)} â€“ ${fmt(hi)}</td></tr>`;
           }).join("")}
         </tbody>
       </table>
       <div class="total-banner">
         <div class="left-side">
           <div class="label">Total Project Investment</div>
-          <div class="amount">${fmt(totalLow)} – ${fmt(totalHigh)}</div>
+          <div class="amount">${fmt(totalLow)} â€“ ${fmt(totalHigh)}</div>
           <div class="note">Final pricing confirmed after site visit & contract</div>
         </div>
         <div class="right-side">
-          <div class="gold-badge">💰 Midpoint: ${fmt(Math.round((totalLow+totalHigh)/2/1000)*1000)}</div>
+          <div class="gold-badge">ðŸ’° Midpoint: ${fmt(Math.round((totalLow+totalHigh)/2/1000)*1000)}</div>
         </div>
       </div>
       <div class="validity">
-        <span>📅</span>
+        <span>ðŸ“…</span>
         <span>This proposal is valid through <strong>${validUntil}</strong>. Pricing reflects current regional material and labor costs. Subject to site verification and final contract.</span>
       </div>
     </div>
@@ -2956,7 +2956,7 @@ function generateProposal({ projectName, clientName, shape, len, wid, depthId, f
         <div class="step"><div class="step-num">1</div><div class="step-text"><strong>Site Visit</strong>We schedule an in-person visit to confirm measurements, access, soil conditions, and any site-specific requirements.</div></div>
         <div class="step"><div class="step-num">2</div><div class="step-text"><strong>Final Contract</strong>We finalize your contract with locked pricing, material selections confirmed, and a projected construction start date.</div></div>
         <div class="step"><div class="step-num">3</div><div class="step-text"><strong>Permits Filed</strong>We submit your permit application to the local building department and coordinate with the utility locate service.</div></div>
-        <div class="step"><div class="step-num">4</div><div class="step-text"><strong>Build Begins</strong>Construction starts — typically 6-10 weeks from groundbreaking to your first swim.</div></div>
+        <div class="step"><div class="step-num">4</div><div class="step-text"><strong>Build Begins</strong>Construction starts â€” typically 6-10 weeks from groundbreaking to your first swim.</div></div>
       </div>
     </div>
 
@@ -2978,7 +2978,7 @@ function generateProposal({ projectName, clientName, shape, len, wid, depthId, f
           <div style="font-size:10px;color:#c9a84c;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:6px">Materials Reference</div>
           <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:28px;font-weight:300">Estimated Quantities</div>
         </div>
-        <div style="font-size:12px;color:#94a3b8;text-align:right">${len}' × ${wid}' ${shapeLabel}<br>${clientName||projectName}</div>
+        <div style="font-size:12px;color:#94a3b8;text-align:right">${len}' Ã— ${wid}' ${shapeLabel}<br>${clientName||projectName}</div>
       </div>
       <div class="materials-grid">
         <div class="mat-card"><span class="mat-label">Excavation</span><span class="mat-val">${materials.excavation}</span></div>
@@ -2992,10 +2992,10 @@ function generateProposal({ projectName, clientName, shape, len, wid, depthId, f
       </div>
       <div style="margin-top:24px;padding:14px 18px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;font-size:12px;color:#64748b;line-height:1.7">
         <strong style="color:#0f172a;display:block;margin-bottom:4px">About These Estimates</strong>
-        Rebar calculated at #3 bar on 12" grid spacing with 15% lap splice allowance, displayed in sticks (20 ft) and total linear feet. Excavation includes 15% over-dig for formwork. Gunite at 4" shell thickness. All quantities for reference — final takeoff by licensed contractor.
+        Rebar calculated at #3 bar on 12" grid spacing with 15% lap splice allowance, displayed in sticks (20 ft) and total linear feet. Excavation includes 15% over-dig for formwork. Gunite at 4" shell thickness. All quantities for reference â€” final takeoff by licensed contractor.
       </div>
       <div class="footer" style="margin-top:32px">
-        <div>Materials estimates are for budgeting reference only. Actual quantities determined by licensed contractor after final engineering drawings. Prepared by Pool Craft Pro · poolcraftpro.ai</div>
+        <div>Materials estimates are for budgeting reference only. Actual quantities determined by licensed contractor after final engineering drawings. Prepared by Pool Craft Pro Â· poolcraftpro.ai</div>
         <div style="text-align:right;flex-shrink:0;font-family:'Cormorant Garamond',Georgia,serif;font-size:13px;font-weight:600;color:#94a3b8;letter-spacing:1px">POOL CRAFT PRO</div>
       </div>
     </div>
@@ -3006,7 +3006,7 @@ function generateProposal({ projectName, clientName, shape, len, wid, depthId, f
   win.document.close();
 }
 
-// ─── SETTINGS SCREEN ─────────────────────────────────────────────────────────
+// â”€â”€â”€ SETTINGS SCREEN â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // One place for all API keys, affiliate tags, and app preferences.
 // Replaces the scattered key panels across tabs.
 function SettingsScreen({ userMode, setUserMode, onSwitchMode }) {
@@ -3015,7 +3015,7 @@ function SettingsScreen({ userMode, setUserMode, onSwitchMode }) {
   const [regridKey, setRegridKey] = useState(()=>{ try{return localStorage.getItem("pc_regrid_key")||"";}catch{return "";} });
   const supabaseCfg = getSupabaseConfig();
   const [sbUrl, setSbUrl] = useState(supabaseCfg.url);
-  const [sbKey, setSbKey] = useState(supabaseCfg.key?"●●●●●●●●":"");
+  const [sbKey, setSbKey] = useState(supabaseCfg.key?"â—â—â—â—â—â—â—â—":"");
   const [amazonTag, setAmazonTag] = useState(()=>{ try{return localStorage.getItem("pc_tag_amazon")||AFFILIATE_TAGS.amazon;}catch{return AFFILIATE_TAGS.amazon;} });
   const [hdTag, setHdTag] = useState(()=>{ try{return localStorage.getItem("pc_tag_hd")||AFFILIATE_TAGS.homedepot;}catch{return AFFILIATE_TAGS.homedepot;} });
   const [saved, setSaved] = useState(null);
@@ -3029,19 +3029,19 @@ function SettingsScreen({ userMode, setUserMode, onSwitchMode }) {
     <div style={{background:"#0f172a",border:`1px solid ${isSet?"rgba(34,197,94,0.3)":"#1e293b"}`,borderRadius:12,padding:14,marginBottom:10}}>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
         <div style={{fontSize:13,fontWeight:700,color:"#e2e8f0"}}>{label}</div>
-        {isSet ? <span style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:"rgba(34,197,94,0.15)",border:"1px solid rgba(34,197,94,0.3)",color:"#22c55e",fontWeight:700}}>✅ Active</span>
-               : <span style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:"rgba(245,158,11,0.1)",border:"1px solid rgba(245,158,11,0.3)",color:"#f59e0b",fontWeight:700}}>⚠️ Not set</span>}
+        {isSet ? <span style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:"rgba(34,197,94,0.15)",border:"1px solid rgba(34,197,94,0.3)",color:"#22c55e",fontWeight:700}}>âœ… Active</span>
+               : <span style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:"rgba(245,158,11,0.1)",border:"1px solid rgba(245,158,11,0.3)",color:"#f59e0b",fontWeight:700}}>âš ï¸ Not set</span>}
       </div>
       {hint&&<div style={{fontSize:11,color:"#64748b",marginBottom:8,lineHeight:1.5}}>{hint}</div>}
       <div style={{display:"flex",gap:8}}>
         <input type="password" value={value} onChange={e=>setValue(e.target.value)} placeholder={placeholder}
           style={{flex:1,background:"#1e293b",border:`1px solid ${saved===label?"#22c55e":"#334155"}`,borderRadius:8,padding:"9px 12px",color:"#e2e8f0",fontSize:13,outline:"none"}}/>
-        <button onClick={()=>save(label, value, storageKey)} disabled={!value.trim()||value==="●●●●●●●●"}
-          style={{padding:"9px 16px",borderRadius:8,background:value.trim()&&value!=="●●●●●●●●"?"linear-gradient(135deg,#22c55e,#16a34a)":"#1e293b",border:"none",color:"white",fontWeight:700,fontSize:12,cursor:"pointer",flexShrink:0}}>
-          {saved===label?"✓ Saved!":"Save"}
+        <button onClick={()=>save(label, value, storageKey)} disabled={!value.trim()||value==="â—â—â—â—â—â—â—â—"}
+          style={{padding:"9px 16px",borderRadius:8,background:value.trim()&&value!=="â—â—â—â—â—â—â—â—"?"linear-gradient(135deg,#22c55e,#16a34a)":"#1e293b",border:"none",color:"white",fontWeight:700,fontSize:12,cursor:"pointer",flexShrink:0}}>
+          {saved===label?"âœ“ Saved!":"Save"}
         </button>
         {isSet&&<button onClick={()=>{ save(label,"",storageKey); setValue(""); }}
-          style={{padding:"9px 12px",borderRadius:8,background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",fontWeight:700,fontSize:12,cursor:"pointer",flexShrink:0}}>✕</button>}
+          style={{padding:"9px 12px",borderRadius:8,background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",fontWeight:700,fontSize:12,cursor:"pointer",flexShrink:0}}>âœ•</button>}
       </div>
     </div>
   );
@@ -3049,20 +3049,20 @@ function SettingsScreen({ userMode, setUserMode, onSwitchMode }) {
   return (
     <div style={{display:"flex",flexDirection:"column",gap:14}}>
       <div style={{background:"linear-gradient(135deg,rgba(6,182,212,0.12),rgba(2,132,199,0.06))",border:"1px solid rgba(6,182,212,0.25)",borderRadius:14,padding:14}}>
-        <div style={{fontSize:14,fontWeight:800,color:"#06b6d4",marginBottom:4}}>🔧 App Settings</div>
+        <div style={{fontSize:14,fontWeight:800,color:"#06b6d4",marginBottom:4}}>ðŸ”§ App Settings</div>
         <div style={{fontSize:12,color:"#94a3b8",lineHeight:1.6}}>All your API keys and affiliate tags live here. Keys are stored only on your device and never sent to anyone other than the service they're for.</div>
       </div>
 
       {/* User Mode */}
       <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
-        <div style={{fontSize:12,fontWeight:700,color:"#06b6d4",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:10}}>👤 Your Profile</div>
+        <div style={{fontSize:12,fontWeight:700,color:"#06b6d4",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:10}}>ðŸ‘¤ Your Profile</div>
         <div style={{display:"flex",flexDirection:"column",gap:8}}>
-          {[{id:"contractor",icon:"👷",label:"Pool Contractor / Builder",desc:"Full technical detail, permits, client tools"},{id:"homeowner",icon:"🏠",label:"Homeowner / DIY",desc:"Simplified visual design, guided steps"},{id:"designer",icon:"🎨",label:"Landscape Designer",desc:"Visual design focus, hardscapes, renderings"}].map(m=>(
+          {[{id:"contractor",icon:"ðŸ‘·",label:"Pool Contractor / Builder",desc:"Full technical detail, permits, client tools"},{id:"homeowner",icon:"ðŸ ",label:"Homeowner / DIY",desc:"Simplified visual design, guided steps"},{id:"designer",icon:"ðŸŽ¨",label:"Landscape Designer",desc:"Visual design focus, hardscapes, renderings"}].map(m=>(
             <button key={m.id} onClick={()=>{ setUserMode(m.id); try{localStorage.setItem("pc_mode",m.id);}catch{} }}
               style={{textAlign:"left",padding:"12px 14px",borderRadius:10,border:`2px solid ${userMode===m.id?"#06b6d4":"#1e293b"}`,background:userMode===m.id?"rgba(6,182,212,0.08)":"#0f172a",cursor:"pointer",display:"flex",alignItems:"center",gap:12}}>
               <span style={{fontSize:22}}>{m.icon}</span>
               <div><div style={{fontSize:13,fontWeight:700,color:userMode===m.id?"#06b6d4":"#e2e8f0"}}>{m.label}</div><div style={{fontSize:11,color:"#64748b",marginTop:2}}>{m.desc}</div></div>
-              {userMode===m.id&&<span style={{marginLeft:"auto",color:"#06b6d4",fontSize:16}}>✓</span>}
+              {userMode===m.id&&<span style={{marginLeft:"auto",color:"#06b6d4",fontSize:16}}>âœ“</span>}
             </button>
           ))}
         </div>
@@ -3070,30 +3070,30 @@ function SettingsScreen({ userMode, setUserMode, onSwitchMode }) {
 
       {/* AI Rendering */}
       <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
-        <div style={{fontSize:12,fontWeight:700,color:"#a78bfa",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4}}>🚀 Grok Aurora — AI Pool Rendering</div>
+        <div style={{fontSize:12,fontWeight:700,color:"#a78bfa",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4}}>ðŸš€ Grok Aurora â€” AI Pool Rendering</div>
         <div style={{fontSize:11,color:"#64748b",marginBottom:10}}>Powers the AI rendering feature. Get a free key + $25 credits at console.x.ai (separate from your Super Grok subscription).</div>
         <KeyRow label="xAI API Key" value={xaiKey} setValue={setXaiKey} storageKey="xai_dev_key" placeholder="xai-..." isSet={!!xaiKey} hint={null}/>
       </div>
 
       {/* Maps & Parcel */}
       <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
-        <div style={{fontSize:12,fontWeight:700,color:"#06b6d4",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4}}>🛰️ Property Lookup & Maps</div>
+        <div style={{fontSize:12,fontWeight:700,color:"#06b6d4",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4}}>ðŸ›°ï¸ Property Lookup & Maps</div>
         <KeyRow label="Google Maps API Key" value={gmapsKey} setValue={setGmapsKey} storageKey="pc_gmaps_key" placeholder="AIza..." isSet={!!gmapsKey}
-          hint="Free 28,000 map loads/month. Enable at console.cloud.google.com → Maps Static API → Credentials."/>
+          hint="Free 28,000 map loads/month. Enable at console.cloud.google.com â†’ Maps Static API â†’ Credentials."/>
         <KeyRow label="Regrid API Key (Parcel Data)" value={regridKey} setValue={setRegridKey} storageKey="pc_regrid_key" placeholder="Paste Regrid key..." isSet={!!regridKey}
-          hint="Optional — enables real lot size, zoning & setback data. Sign up at regrid.com. App works with estimated data until this is set."/>
+          hint="Optional â€” enables real lot size, zoning & setback data. Sign up at regrid.com. App works with estimated data until this is set."/>
       </div>
 
       {/* Cloud Sync */}
       <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
-        <div style={{fontSize:12,fontWeight:700,color:"#22c55e",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4}}>☁️ Cloud Sync (Supabase)</div>
+        <div style={{fontSize:12,fontWeight:700,color:"#22c55e",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4}}>â˜ï¸ Cloud Sync (Supabase)</div>
         <div style={{fontSize:11,color:"#64748b",marginBottom:10}}>Sync projects across all your devices. Free at supabase.com. Create a project, run the setup SQL, then paste your URL and anon key.</div>
         <CloudSyncPanel />
       </div>
 
       {/* Affiliate Tags */}
       <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
-        <div style={{fontSize:12,fontWeight:700,color:"#f59e0b",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4}}>💰 Affiliate Tags — Your Revenue</div>
+        <div style={{fontSize:12,fontWeight:700,color:"#f59e0b",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4}}>ðŸ’° Affiliate Tags â€” Your Revenue</div>
         <div style={{fontSize:11,color:"#64748b",marginBottom:10}}>Replace the placeholders below with your real affiliate IDs. Every product link in the app includes your tag automatically.</div>
         <KeyRow label="Amazon Associates Tag" value={amazonTag} setValue={setAmazonTag} storageKey="pc_tag_amazon" placeholder="yourname-20" isSet={!amazonTag.includes("YOURTAG")} hint="Sign up at affiliate-program.amazon.com"/>
         <KeyRow label="Home Depot Affiliate Tag" value={hdTag} setValue={setHdTag} storageKey="pc_tag_hd" placeholder="Your HD tag" isSet={!hdTag.includes("YOUR_HD")} hint="Sign up at homedepot.com/affiliate"/>
@@ -3101,16 +3101,16 @@ function SettingsScreen({ userMode, setUserMode, onSwitchMode }) {
 
       {/* Version / About */}
       <div style={{background:"#0f172a",border:"1px solid #1e293b",borderRadius:12,padding:14,textAlign:"center"}}>
-        <div style={{fontSize:13,fontWeight:800,color:"#e2e8f0",marginBottom:4}}</div>
+        <div style={{fontSize:13,fontWeight:800,color:"#e2e8f0",marginBottom:4}}><span style={{color:"#c9a84c"}}>POOL CRAFT PRO</span></div>
       <div style="font-size:20px;font-family:Georgia,serif;font-weight:900;letter-spacing:3px;color:white;margin-bottom:4px">POOL <span style="color:#c9a84c">CRAFT</span> PRO</div>
-      <div style="font-size:11px;color:#94a3b8;letter-spacing:2px">DESIGN POOLS. CRAFT OUTDOOR LIVING.</div
-        <div style={{fontSize:11,color:"#64748b",lineHeight:1.7}}>Version 1.0 · poolcraftpro.ai · Built with React<br/>AI rendering by xAI Grok Aurora · Maps by Google<br/>Parcel data by Regrid · Cloud sync by Supabase</div>
+      
+        <div style={{fontSize:11,color:"#64748b",lineHeight:1.7}}>Version 1.0 Â· poolcraftpro.ai Â· Built with React<br/>AI rendering by xAI Grok Aurora Â· Maps by Google<br/>Parcel data by Regrid Â· Cloud sync by Supabase</div>
       </div>
     </div>
   );
 }
 
-// ─── QUOTE BUILDER ────────────────────────────────────────────────────────────
+// â”€â”€â”€ QUOTE BUILDER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Contractor-facing tool: take the cost estimate, apply a markup, add custom
 // line items, and produce a formal quote with a bottom-line number.
 function QuoteBuilder({ shape, len, wid, depthId, finishId, entries, hardscapes, extras, localRates, projectName, clientName }) {
@@ -3152,7 +3152,7 @@ function QuoteBuilder({ shape, len, wid, depthId, finishId, entries, hardscapes,
     <h1>Construction Quote</h1>
     <div style="font-size:13px;color:#64748b;margin-bottom:20px">${clientName?`Prepared for: ${clientName} | `:""}${projectName} | ${date}</div>
     <h2>Scope</h2>
-    <div class="row"><span>${len}' × ${wid}' ${POOL_SHAPES.find(s=>s.id===shape)?.label||shape}</span><span>${POOL_FINISHES.find(f=>f.id===finishId)?.label||finishId} finish</span></div>
+    <div class="row"><span>${len}' Ã— ${wid}' ${POOL_SHAPES.find(s=>s.id===shape)?.label||shape}</span><span>${POOL_FINISHES.find(f=>f.id===finishId)?.label||finishId} finish</span></div>
     <h2>Cost Breakdown</h2>
     ${[...new Set(items.map(i=>i.cat))].map(cat=>{
       const ci=items.filter(i=>i.cat===cat), lo=ci.reduce((s,i)=>s+i.low,0), hi=ci.reduce((s,i)=>s+i.high,0);
@@ -3163,9 +3163,9 @@ function QuoteBuilder({ shape, len, wid, depthId, finishId, entries, hardscapes,
     ${contingency>0?`<div class="row"><span>Contingency Reserve (${contingency}%)</span><span>${fmt(contingencyAmt)}</span></div>`:""}
     <div class="total-row"><span>Total Quote</span><span>${fmt(grandTotal)}</span></div>
     <div style="margin-top:12px;padding:10px 14px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;font-size:12px;color:#92400e">
-      ⏰ This quote is valid through <strong>${validUntil}</strong>. Pricing is subject to site verification.
+      â° This quote is valid through <strong>${validUntil}</strong>. Pricing is subject to site verification.
     </div>
-    <div class="footer">Quote prepared by Pool Craft Pro · poolcraftpro.ai. This quote is based on a visual design review and estimated material costs. Final pricing is confirmed after a physical site inspection. Excludes engineering fees, utility relocation, and unforeseen site conditions. All work subject to local permit approval.</div>
+    <div class="footer">Quote prepared by Pool Craft Pro Â· poolcraftpro.ai. This quote is based on a visual design review and estimated material costs. Final pricing is confirmed after a physical site inspection. Excludes engineering fees, utility relocation, and unforeseen site conditions. All work subject to local permit approval.</div>
     <script>window.onload=()=>setTimeout(()=>window.print(),600);</script></body></html>`);
     win.document.close();
   };
@@ -3175,8 +3175,8 @@ function QuoteBuilder({ shape, len, wid, depthId, finishId, entries, hardscapes,
   return (
     <div style={{display:"flex",flexDirection:"column",gap:14}}>
       <div style={{background:"linear-gradient(135deg,rgba(245,158,11,0.12),rgba(217,119,6,0.06))",border:"1px solid rgba(245,158,11,0.3)",borderRadius:14,padding:14}}>
-        <div style={{fontSize:14,fontWeight:800,color:"#f59e0b",marginBottom:4}}>📋 Quote Builder</div>
-        <div style={{fontSize:12,color:"#94a3b8",lineHeight:1.6}}>Apply your contractor margin, add custom line items, and generate a formal quote to send to the client. This is separate from the cost estimate — it's the number you stand behind.</div>
+        <div style={{fontSize:14,fontWeight:800,color:"#f59e0b",marginBottom:4}}>ðŸ“‹ Quote Builder</div>
+        <div style={{fontSize:12,color:"#94a3b8",lineHeight:1.6}}>Apply your contractor margin, add custom line items, and generate a formal quote to send to the client. This is separate from the cost estimate â€” it's the number you stand behind.</div>
       </div>
 
       <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:14,display:"flex",flexDirection:"column",gap:12}}>
@@ -3217,7 +3217,7 @@ function QuoteBuilder({ shape, len, wid, depthId, finishId, entries, hardscapes,
             <div key={l.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",background:"#0f172a",borderRadius:8,border:"1px solid #1e293b"}}>
               <span style={{flex:1,fontSize:13,color:"#e2e8f0"}}>{l.label}</span>
               <span style={{fontSize:13,fontWeight:700,color:l.amount<0?"#ef4444":"#22c55e"}}>{l.amount<0?"-":""}{fmt(Math.abs(l.amount))}</span>
-              <button onClick={()=>removeLine(l.id)} style={{background:"none",border:"none",color:"#64748b",cursor:"pointer",fontSize:14,padding:"4px",minWidth:28,minHeight:28}}>✕</button>
+              <button onClick={()=>removeLine(l.id)} style={{background:"none",border:"none",color:"#64748b",cursor:"pointer",fontSize:14,padding:"4px",minWidth:28,minHeight:28}}>âœ•</button>
             </div>
           ))}
         </div>
@@ -3232,8 +3232,8 @@ function QuoteBuilder({ shape, len, wid, depthId, finishId, entries, hardscapes,
       <div style={{background:"linear-gradient(135deg,#0f2027,#1a3a4a)",border:"1px solid rgba(6,182,212,0.3)",borderRadius:16,padding:20,textAlign:"center"}}>
         <div style={{fontSize:11,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>Total Quote</div>
         <div style={{fontSize:40,fontWeight:900,color:"#06b6d4",letterSpacing:"-1px"}}>{fmt(grandTotal)}</div>
-        <div style={{fontSize:12,color:"#64748b",marginTop:6}}>{len}'×{wid}' {POOL_SHAPES.find(s=>s.id===shape)?.label} · {markup}% margin · {contingency}% contingency</div>
-        <button onClick={()=>setShowBreakdown(p=>!p)} style={{marginTop:10,background:"none",border:"none",color:"#64748b",fontSize:12,cursor:"pointer"}}>{showBreakdown?"▲ Hide":"▼ Show"} full breakdown</button>
+        <div style={{fontSize:12,color:"#64748b",marginTop:6}}>{len}'Ã—{wid}' {POOL_SHAPES.find(s=>s.id===shape)?.label} Â· {markup}% margin Â· {contingency}% contingency</div>
+        <button onClick={()=>setShowBreakdown(p=>!p)} style={{marginTop:10,background:"none",border:"none",color:"#64748b",fontSize:12,cursor:"pointer"}}>{showBreakdown?"â–² Hide":"â–¼ Show"} full breakdown</button>
       </div>
 
       {showBreakdown && (
@@ -3250,13 +3250,13 @@ function QuoteBuilder({ shape, len, wid, depthId, finishId, entries, hardscapes,
       )}
 
       <button onClick={printQuote} style={{width:"100%",padding:"16px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#f59e0b,#d97706)",color:"white",fontWeight:800,fontSize:15,cursor:"pointer",boxShadow:"0 4px 20px rgba(245,158,11,0.3)"}}>
-        📄 Print / Export Formal Quote {clientName?`for ${clientName}`:""}
+        ðŸ“„ Print / Export Formal Quote {clientName?`for ${clientName}`:""}
       </button>
     </div>
   );
 }
 
-// ─── BUILD TIMELINE ───────────────────────────────────────────────────────────
+// â”€â”€â”€ BUILD TIMELINE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function BuildTimeline({ shape, len, wid, depthId, entries, hardscapes }) {
   const hasInfinity = !!entries?.infinity_edge;
   const hasSpa = !!entries?.spa_attached;
@@ -3266,20 +3266,20 @@ function BuildTimeline({ shape, len, wid, depthId, entries, hardscapes }) {
   const isLarge = poolVolumeFt3 > 3000;
 
   const phases = [
-    { phase:"Week 1-2", icon:"📋", title:"Design, Permits & Planning", color:"#06b6d4",
+    { phase:"Week 1-2", icon:"ðŸ“‹", title:"Design, Permits & Planning", color:"#06b6d4",
       tasks:["Finalize pool design and sign contract","Submit permit application to local building dept","Engineering drawings completed (structural, electrical)","Utility locate (call 811 before any digging)","HOA approval if applicable"] },
-    { phase:`Week 2-4${isLarge?" (extend 1 wk for large pools)":""}`, icon:"🚜", title:"Excavation & Steel", color:"#f59e0b",
-      tasks:["Excavation: remove soil to pool depth + overdig","Steel rebar grid tied and inspected","Plumbing roughed in (main drains, returns, skimmers)","Steel/plumbing inspection — city inspector visits","Any retaining walls started now"] },
-    { phase:"Week 4-5", icon:"💪", title:"Gunite / Shotcrete Shell", color:"#8b5cf6",
-      tasks:["Gunite crew shoots concrete shell (4 inch thickness)","Shell cures 7-10 days (kept wet — critical step)","Grotto and infinity edge forms built during this phase",`Attached spa ${hasSpa?"shell poured simultaneously":""}`] },
-    { phase:"Week 5-8", icon:"🔧", title:"Plumbing, Electrical & Equipment", color:"#22c55e",
-      tasks:["Finish plumbing — all lines pressure tested","Equipment pad poured (pump, filter, heater location)","Electrical run — bonding, lighting conduit, panel work","Equipment installed: pump, filter, automation system","City electrical and plumbing inspection"] },
-    { phase:`Week 6-9${hardscapeCount>3?" (longer with many hardscapes)":""}`, icon:"🏗️", title:"Deck & Hardscapes", color:"#d97706",
+    { phase:`Week 2-4${isLarge?" (extend 1 wk for large pools)":""}`, icon:"ðŸšœ", title:"Excavation & Steel", color:"#f59e0b",
+      tasks:["Excavation: remove soil to pool depth + overdig","Steel rebar grid tied and inspected","Plumbing roughed in (main drains, returns, skimmers)","Steel/plumbing inspection â€” city inspector visits","Any retaining walls started now"] },
+    { phase:"Week 4-5", icon:"ðŸ’ª", title:"Gunite / Shotcrete Shell", color:"#8b5cf6",
+      tasks:["Gunite crew shoots concrete shell (4 inch thickness)","Shell cures 7-10 days (kept wet â€” critical step)","Grotto and infinity edge forms built during this phase",`Attached spa ${hasSpa?"shell poured simultaneously":""}`] },
+    { phase:"Week 5-8", icon:"ðŸ”§", title:"Plumbing, Electrical & Equipment", color:"#22c55e",
+      tasks:["Finish plumbing â€” all lines pressure tested","Equipment pad poured (pump, filter, heater location)","Electrical run â€” bonding, lighting conduit, panel work","Equipment installed: pump, filter, automation system","City electrical and plumbing inspection"] },
+    { phase:`Week 6-9${hardscapeCount>3?" (longer with many hardscapes)":""}`, icon:"ðŸ—ï¸", title:"Deck & Hardscapes", color:"#d97706",
       tasks:["Concrete forms set for deck and coping","Coping installed (stone, tile, or concrete)","Deck poured and textured or pavers installed",hardscapeCount>0?"Hardscape features built (fire pit, pergola, kitchen, etc.)":"Optional hardscapes if included","Fencing installed around pool perimeter"] },
-    { phase:"Week 9-10", icon:"✨", title:"Tile, Finish & Startup", color:"#ec4899",
-      tasks:["Waterline tile installed","Interior finish applied (plaster, pebble, quartz, or tile)","Pool filled — takes 24-48 hrs typically","Startup chemistry balanced over 28-day cure","Equipment tested and programmed","Final city inspection and certificate of occupancy"] },
-    { phase:"Week 10-11", icon:"🏊", title:"First Swim!", color:"#06b6d4",
-      tasks:["Punch list walk-through with contractor","Homeowner orientation — equipment operation","Chemistry maintained at 2-week, 4-week intervals","Landscaping and site cleanup completed","Warranty documentation handed over"] },
+    { phase:"Week 9-10", icon:"âœ¨", title:"Tile, Finish & Startup", color:"#ec4899",
+      tasks:["Waterline tile installed","Interior finish applied (plaster, pebble, quartz, or tile)","Pool filled â€” takes 24-48 hrs typically","Startup chemistry balanced over 28-day cure","Equipment tested and programmed","Final city inspection and certificate of occupancy"] },
+    { phase:"Week 10-11", icon:"ðŸŠ", title:"First Swim!", color:"#06b6d4",
+      tasks:["Punch list walk-through with contractor","Homeowner orientation â€” equipment operation","Chemistry maintained at 2-week, 4-week intervals","Landscaping and site cleanup completed","Warranty documentation handed over"] },
   ];
 
   const totalWeeks = 10 + (isLarge?2:0) + (hardscapeCount>3?1:0) + (hasGrotto?1:0);
@@ -3287,10 +3287,10 @@ function BuildTimeline({ shape, len, wid, depthId, entries, hardscapes }) {
   return (
     <div style={{display:"flex",flexDirection:"column",gap:14}}>
       <div style={{background:"linear-gradient(135deg,rgba(6,182,212,0.1),rgba(2,132,199,0.05))",border:"1px solid rgba(6,182,212,0.25)",borderRadius:14,padding:14}}>
-        <div style={{fontSize:14,fontWeight:800,color:"#06b6d4",marginBottom:4}}>📅 Build Timeline</div>
+        <div style={{fontSize:14,fontWeight:800,color:"#06b6d4",marginBottom:4}}>ðŸ“… Build Timeline</div>
         <div style={{fontSize:12,color:"#94a3b8",lineHeight:1.6}}>Estimated schedule based on your pool configuration. Timelines vary by contractor, permit speed, and weather.</div>
         <div style={{marginTop:10,display:"flex",gap:10,flexWrap:"wrap"}}>
-          {[{label:"Total Build Time",val:`${totalWeeks}-${totalWeeks+2} weeks`},{label:"Pool Size",val:`${len}'×${wid}'`},{label:"Permit Time",val:"2-4 weeks"}].map(s=>(
+          {[{label:"Total Build Time",val:`${totalWeeks}-${totalWeeks+2} weeks`},{label:"Pool Size",val:`${len}'Ã—${wid}'`},{label:"Permit Time",val:"2-4 weeks"}].map(s=>(
             <div key={s.label} style={{background:"rgba(6,182,212,0.1)",border:"1px solid rgba(6,182,212,0.2)",borderRadius:8,padding:"8px 12px"}}>
               <div style={{fontSize:10,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em"}}>{s.label}</div>
               <div style={{fontSize:14,fontWeight:800,color:"#06b6d4"}}>{s.val}</div>
@@ -3311,7 +3311,7 @@ function BuildTimeline({ shape, len, wid, depthId, entries, hardscapes }) {
           <div style={{padding:"10px 14px"}}>
             {p.tasks.filter(Boolean).map((task,j)=>(
               <div key={j} style={{display:"flex",gap:10,marginBottom:7,alignItems:"flex-start"}}>
-                <span style={{color:p.color,fontSize:12,marginTop:1,flexShrink:0}}>→</span>
+                <span style={{color:p.color,fontSize:12,marginTop:1,flexShrink:0}}>â†’</span>
                 <span style={{fontSize:13,color:"#94a3b8",lineHeight:1.5}}>{task}</span>
               </div>
             ))}
@@ -3320,16 +3320,16 @@ function BuildTimeline({ shape, len, wid, depthId, entries, hardscapes }) {
       ))}
 
       <div style={{background:"rgba(245,158,11,0.08)",border:"1px solid rgba(245,158,11,0.25)",borderRadius:12,padding:14}}>
-        <div style={{fontSize:12,fontWeight:700,color:"#f59e0b",marginBottom:6}}>⚠️ Common Delays to Plan For</div>
-        {["Permits can take 2-8 weeks depending on your county","Rain stops gunite and concrete pours — plan for weather","Equipment supply chain: order Pentair gear before excavation","HOA approval can add 2-4 weeks if required","Inspector availability varies by city — schedule early"].map((d,i)=>(
-          <div key={i} style={{fontSize:12,color:"#94a3b8",marginBottom:5,display:"flex",gap:8}}><span style={{color:"#f59e0b",flexShrink:0}}>•</span>{d}</div>
+        <div style={{fontSize:12,fontWeight:700,color:"#f59e0b",marginBottom:6}}>âš ï¸ Common Delays to Plan For</div>
+        {["Permits can take 2-8 weeks depending on your county","Rain stops gunite and concrete pours â€” plan for weather","Equipment supply chain: order Pentair gear before excavation","HOA approval can add 2-4 weeks if required","Inspector availability varies by city â€” schedule early"].map((d,i)=>(
+          <div key={i} style={{fontSize:12,color:"#94a3b8",marginBottom:5,display:"flex",gap:8}}><span style={{color:"#f59e0b",flexShrink:0}}>â€¢</span>{d}</div>
         ))}
       </div>
     </div>
   );
 }
 
-// ─── QUICK RENDER — Live photo capture + instant AI render ───────────────────
+// â”€â”€â”€ QUICK RENDER â€” Live photo capture + instant AI render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Competes directly with Vip3D YARD: contractor takes a photo in client's
 // backyard during the sales visit, renders the pool right there on the spot.
 function QuickRender({ len, wid, shape, finishId, colorId, entries, hardscapes }) {
@@ -3383,7 +3383,7 @@ function QuickRender({ len, wid, shape, finishId, colorId, entries, hardscapes }
 
   const uploadPhoto = (e) => {
     const file = e.target.files[0]; if (!file) return;
-    if (file.size > 8 * 1024 * 1024) { setError("Photo too large — keep under 8MB"); return; }
+    if (file.size > 8 * 1024 * 1024) { setError("Photo too large â€” keep under 8MB"); return; }
     const reader = new FileReader();
     reader.onload = ev => { setPhoto(ev.target.result); setRendered(null); setError(null); };
     reader.readAsDataURL(file);
@@ -3408,7 +3408,7 @@ function QuickRender({ len, wid, shape, finishId, colorId, entries, hardscapes }
       let prompt = `Edit this backyard photo to add a realistic ${shapeLabel}-shaped swimming pool, ${len} feet by ${wid} feet wide, with ${colorLabel} water and ${finishLabel} interior finish.`;
       if (featureList) prompt += ` Include: ${featureList}.`;
       if (hardList) prompt += ` Also add: ${hardList}.`;
-      prompt += ` The pool must look completely natural and permanently built here — correct perspective, realistic shadows, proper depth, real water reflections. ${styleMap[style]}. Ultra HD photorealistic result.`;
+      prompt += ` The pool must look completely natural and permanently built here â€” correct perspective, realistic shadows, proper depth, real water reflections. ${styleMap[style]}. Ultra HD photorealistic result.`;
 
       const b64 = photo.split(",")[1];
       const mediaType = photo.startsWith("data:image/png") ? "image/png" : "image/jpeg";
@@ -3420,13 +3420,13 @@ function QuickRender({ len, wid, shape, finishId, colorId, entries, hardscapes }
       clearInterval(iv);
       if (!resp.ok) {
         const e = await resp.json().catch(() => ({}));
-        if (resp.status === 401) throw new Error("Invalid API key — check Settings");
-        if (resp.status === 429) throw new Error("Rate limit — wait 60 seconds");
+        if (resp.status === 401) throw new Error("Invalid API key â€” check Settings");
+        if (resp.status === 429) throw new Error("Rate limit â€” wait 60 seconds");
         throw new Error(e?.error?.message || `Error ${resp.status}`);
       }
       const data = await resp.json();
       const b64r = data?.data?.[0]?.b64_json;
-      if (!b64r) throw new Error("No image returned — please try again");
+      if (!b64r) throw new Error("No image returned â€” please try again");
       setProgress(100); setRendered(`data:image/jpeg;base64,${b64r}`);
       // Get AI designer note
       fetch("https://api.anthropic.com/v1/messages", {
@@ -3439,22 +3439,22 @@ function QuickRender({ len, wid, shape, finishId, colorId, entries, hardscapes }
   };
 
   const STYLES = [
-    { id: "photorealistic", label: "📷 Daylight" },
-    { id: "twilight", label: "🌅 Twilight" },
-    { id: "night", label: "🌙 Night" },
-    { id: "magazine", label: "✨ Magazine" },
+    { id: "photorealistic", label: "ðŸ“· Daylight" },
+    { id: "twilight", label: "ðŸŒ… Twilight" },
+    { id: "night", label: "ðŸŒ™ Night" },
+    { id: "magazine", label: "âœ¨ Magazine" },
   ];
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       {/* Header */}
       <div style={{ background: "linear-gradient(135deg,rgba(201,168,76,0.15),rgba(168,135,58,0.08))", border: "1px solid rgba(201,168,76,0.35)", borderRadius: 16, padding: 16 }}>
-        <div style={{ fontSize: 15, fontWeight: 800, color: "#c9a84c", marginBottom: 6 }}>⚡ Quick Render — Close the Deal On-Site</div>
+        <div style={{ fontSize: 15, fontWeight: 800, color: "#c9a84c", marginBottom: 6 }}>âš¡ Quick Render â€” Close the Deal On-Site</div>
         <div style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.7 }}>
-          Stand in the client's backyard → tap the camera → show them their pool rendered into their real yard in under 60 seconds. No laptop needed. No site visit to schedule later. Close the deal right now.
+          Stand in the client's backyard â†’ tap the camera â†’ show them their pool rendered into their real yard in under 60 seconds. No laptop needed. No site visit to schedule later. Close the deal right now.
         </div>
         <div style={{ marginTop: 10, display: "flex", flexWrap: "wrap", gap: 8 }}>
-          {[`${len}'×${wid}' ${shapeLabel}`, colorLabel, finishLabel, ...activeFeatures.slice(0, 2).map(f => f.label)].map(tag => (
+          {[`${len}'Ã—${wid}' ${shapeLabel}`, colorLabel, finishLabel, ...activeFeatures.slice(0, 2).map(f => f.label)].map(tag => (
             <span key={tag} style={{ padding: "3px 10px", borderRadius: 20, background: "rgba(201,168,76,0.12)", border: "1px solid rgba(201,168,76,0.25)", color: "#c9a84c", fontSize: 11, fontWeight: 600 }}>{tag}</span>
           ))}
         </div>
@@ -3467,21 +3467,21 @@ function QuickRender({ len, wid, shape, finishId, colorId, entries, hardscapes }
             <div>
               <video ref={videoRef} autoPlay playsInline muted style={{ width: "100%", display: "block", maxHeight: 320, objectFit: "cover", background: "#000" }} />
               <div style={{ padding: 12, display: "flex", gap: 8 }}>
-                <button onClick={capturePhoto} style={{ flex: 2, padding: 14, borderRadius: 12, border: "none", background: "linear-gradient(135deg,#c9a84c,#a8873a)", color: "#0a0f1e", fontWeight: 900, fontSize: 16, cursor: "pointer" }}>📸 Capture</button>
+                <button onClick={capturePhoto} style={{ flex: 2, padding: 14, borderRadius: 12, border: "none", background: "linear-gradient(135deg,#c9a84c,#a8873a)", color: "#0a0f1e", fontWeight: 900, fontSize: 16, cursor: "pointer" }}>ðŸ“¸ Capture</button>
                 <button onClick={stopCamera} style={{ flex: 1, padding: 14, borderRadius: 12, border: "1px solid #334155", background: "#1e293b", color: "#94a3b8", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>Cancel</button>
               </div>
             </div>
           ) : (
             <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 12 }}>
-              <div style={{ fontSize: 13, color: "#94a3b8", textAlign: "center", lineHeight: 1.6 }}>Step 1 — Get a photo of the client's backyard</div>
-              <button onClick={startCamera} style={{ padding: 16, borderRadius: 12, border: "none", background: "linear-gradient(135deg,#c9a84c,#a8873a)", color: "#0a0f1e", fontWeight: 800, fontSize: 15, cursor: "pointer" }}>📷 Open Camera — Take Live Photo</button>
+              <div style={{ fontSize: 13, color: "#94a3b8", textAlign: "center", lineHeight: 1.6 }}>Step 1 â€” Get a photo of the client's backyard</div>
+              <button onClick={startCamera} style={{ padding: 16, borderRadius: 12, border: "none", background: "linear-gradient(135deg,#c9a84c,#a8873a)", color: "#0a0f1e", fontWeight: 800, fontSize: 15, cursor: "pointer" }}>ðŸ“· Open Camera â€” Take Live Photo</button>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <div style={{ flex: 1, height: 1, background: "#1e293b" }} />
                 <span style={{ fontSize: 11, color: "#64748b" }}>or</span>
                 <div style={{ flex: 1, height: 1, background: "#1e293b" }} />
               </div>
               <label style={{ padding: 14, borderRadius: 12, border: "1px solid #334155", background: "#0f172a", color: "#94a3b8", fontWeight: 700, fontSize: 13, cursor: "pointer", textAlign: "center", display: "block" }}>
-                📁 Upload Existing Photo
+                ðŸ“ Upload Existing Photo
                 <input type="file" accept="image/*" onChange={uploadPhoto} style={{ display: "none" }} />
               </label>
             </div>
@@ -3491,8 +3491,8 @@ function QuickRender({ len, wid, shape, finishId, colorId, entries, hardscapes }
         <div style={{ background: "#111827", border: "1px solid #1e293b", borderRadius: 16, overflow: "hidden" }}>
           <div style={{ position: "relative" }}>
             <img src={photo} alt="Backyard" style={{ width: "100%", display: "block", maxHeight: 260, objectFit: "cover" }} />
-            <div style={{ position: "absolute", top: 10, left: 10, background: "rgba(201,168,76,0.9)", borderRadius: 8, padding: "4px 10px", fontSize: 11, fontWeight: 700, color: "#0a0f1e" }}>✅ Photo Ready</div>
-            <button onClick={() => { setPhoto(null); setRendered(null); setError(null); }} style={{ position: "absolute", top: 8, right: 8, background: "rgba(0,0,0,0.6)", border: "none", color: "white", borderRadius: 8, padding: "6px 10px", fontSize: 12, cursor: "pointer", fontWeight: 700 }}>✕ Retake</button>
+            <div style={{ position: "absolute", top: 10, left: 10, background: "rgba(201,168,76,0.9)", borderRadius: 8, padding: "4px 10px", fontSize: 11, fontWeight: 700, color: "#0a0f1e" }}>âœ… Photo Ready</div>
+            <button onClick={() => { setPhoto(null); setRendered(null); setError(null); }} style={{ position: "absolute", top: 8, right: 8, background: "rgba(0,0,0,0.6)", border: "none", color: "white", borderRadius: 8, padding: "6px 10px", fontSize: 12, cursor: "pointer", fontWeight: 700 }}>âœ• Retake</button>
           </div>
         </div>
       )}
@@ -3507,26 +3507,26 @@ function QuickRender({ len, wid, shape, finishId, colorId, entries, hardscapes }
       {/* Render button */}
       {!rendering && !rendered && (
         <button onClick={renderNow} disabled={!photo} style={{ width: "100%", padding: 18, borderRadius: 14, border: "none", background: photo ? "linear-gradient(135deg,#7c3aed,#5b21b6)" : "#1e293b", color: "white", fontWeight: 900, fontSize: 17, cursor: photo ? "pointer" : "not-allowed", boxShadow: photo ? "0 4px 30px rgba(124,58,237,0.4)" : "none", letterSpacing: "0.02em" }}>
-          🚀 Render Pool Into This Backyard
+          ðŸš€ Render Pool Into This Backyard
         </button>
       )}
 
       {/* Progress */}
       {rendering && (
         <div style={{ background: "#111827", border: "1px solid #1e293b", borderRadius: 14, padding: 20, textAlign: "center" }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>🚀</div>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>ðŸš€</div>
           <div style={{ fontSize: 14, fontWeight: 700, color: "#a78bfa", marginBottom: 10 }}>Grok Aurora is rendering your pool...</div>
           <div style={{ height: 6, background: "#1e293b", borderRadius: 3, overflow: "hidden", marginBottom: 8 }}>
             <div style={{ height: "100%", width: `${progress}%`, background: "linear-gradient(90deg,#7c3aed,#a78bfa,#c9a84c)", borderRadius: 3, transition: "width 3s ease" }} />
           </div>
-          <div style={{ fontSize: 12, color: "#64748b" }}>About 30-45 seconds — worth every one</div>
+          <div style={{ fontSize: 12, color: "#64748b" }}>About 30-45 seconds â€” worth every one</div>
         </div>
       )}
 
       {/* Error */}
       {error && !rendering && (
         <div style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 12, padding: 14 }}>
-          <div style={{ fontSize: 13, color: "#ef4444", fontWeight: 600, marginBottom: 8 }}>⚠️ {error}</div>
+          <div style={{ fontSize: 13, color: "#ef4444", fontWeight: 600, marginBottom: 8 }}>âš ï¸ {error}</div>
           <button onClick={renderNow} style={{ padding: "8px 16px", borderRadius: 8, background: "rgba(124,58,237,0.15)", border: "1px solid rgba(124,58,237,0.3)", color: "#a78bfa", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>Try Again</button>
         </div>
       )}
@@ -3536,18 +3536,18 @@ function QuickRender({ len, wid, shape, finishId, colorId, entries, hardscapes }
         <div style={{ background: "#111827", border: "2px solid rgba(201,168,76,0.4)", borderRadius: 16, overflow: "hidden", boxShadow: "0 8px 40px rgba(201,168,76,0.15)" }}>
           <div style={{ position: "relative" }}>
             <img src={rendered} alt="Pool rendering" style={{ width: "100%", display: "block" }} />
-            <div style={{ position: "absolute", top: 10, left: 10, background: "rgba(201,168,76,0.95)", borderRadius: 8, padding: "5px 12px", fontSize: 11, fontWeight: 800, color: "#0a0f1e" }}>⚡ QUICK RENDER — Pool Craft Pro</div>
+            <div style={{ position: "absolute", top: 10, left: 10, background: "rgba(201,168,76,0.95)", borderRadius: 8, padding: "5px 12px", fontSize: 11, fontWeight: 800, color: "#0a0f1e" }}>âš¡ QUICK RENDER â€” Pool Craft Pro</div>
           </div>
           {aiNote && (
             <div style={{ padding: "14px 16px", background: "rgba(201,168,76,0.06)", borderTop: "1px solid rgba(201,168,76,0.15)" }}>
-              <div style={{ fontSize: 10, color: "#c9a84c", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>🤖 AI Designer Note</div>
+              <div style={{ fontSize: 10, color: "#c9a84c", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>ðŸ¤– AI Designer Note</div>
               <div style={{ fontSize: 13, color: "#94a3b8", lineHeight: 1.65, fontStyle: "italic" }}>{aiNote}</div>
             </div>
           )}
           <div style={{ padding: 14, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-            <button onClick={() => { setRendered(null); setProgress(0); setTimeout(renderNow, 80); }} style={{ padding: 11, borderRadius: 10, border: "1px solid rgba(124,58,237,0.3)", background: "rgba(124,58,237,0.1)", color: "#a78bfa", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>🔄 New</button>
-            <a href={rendered} download="poolcraft-quick-render.jpg" style={{ padding: 11, borderRadius: 10, border: "1px solid rgba(34,197,94,0.3)", background: "rgba(34,197,94,0.1)", color: "#22c55e", fontWeight: 700, fontSize: 12, textDecoration: "none", textAlign: "center", display: "block" }}>⬇️ Save</a>
-            <button onClick={() => { if (navigator.share) navigator.share({ title: "Pool Design", text: "Your pool design from Pool Craft Pro", files: [] }); }} style={{ padding: 11, borderRadius: 10, border: "1px solid rgba(201,168,76,0.3)", background: "rgba(201,168,76,0.1)", color: "#c9a84c", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>📤 Share</button>
+            <button onClick={() => { setRendered(null); setProgress(0); setTimeout(renderNow, 80); }} style={{ padding: 11, borderRadius: 10, border: "1px solid rgba(124,58,237,0.3)", background: "rgba(124,58,237,0.1)", color: "#a78bfa", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>ðŸ”„ New</button>
+            <a href={rendered} download="poolcraft-quick-render.jpg" style={{ padding: 11, borderRadius: 10, border: "1px solid rgba(34,197,94,0.3)", background: "rgba(34,197,94,0.1)", color: "#22c55e", fontWeight: 700, fontSize: 12, textDecoration: "none", textAlign: "center", display: "block" }}>â¬‡ï¸ Save</a>
+            <button onClick={() => { if (navigator.share) navigator.share({ title: "Pool Design", text: "Your pool design from Pool Craft Pro", files: [] }); }} style={{ padding: 11, borderRadius: 10, border: "1px solid rgba(201,168,76,0.3)", background: "rgba(201,168,76,0.1)", color: "#c9a84c", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>ðŸ“¤ Share</button>
           </div>
         </div>
       )}
@@ -3555,9 +3555,9 @@ function QuickRender({ len, wid, shape, finishId, colorId, entries, hardscapes }
   );
 }
 
-// ─── BUILD TRACKER — Post-sale phase tracking with client portal ──────────────
+// â”€â”€â”€ BUILD TRACKER â€” Post-sale phase tracking with client portal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const BUILD_PHASES = [
-  { id: "contract",    label: "Contract & Deposit",         icon: "📝", days: "Day 1",       detail: "Contract signed, deposit received, project activated" },
+  { id: "contract",    label: "Contract & Deposit",         icon: "ðŸ“", days: "Day 1",       detail: "Contract signed, deposit received, project activated" },
       const b64 = photo.split(",")[1];
       const mediaType = photo.startsWith("data:image/png") ? "image/png" : "image/jpeg";
       const resp = await fetch("https://api.x.ai/v1/images/edits", {
@@ -3568,13 +3568,13 @@ const BUILD_PHASES = [
       clearInterval(iv);
       if (!resp.ok) {
         const e = await resp.json().catch(() => ({}));
-        if (resp.status === 401) throw new Error("Invalid API key — check Settings");
-        if (resp.status === 429) throw new Error("Rate limit — wait 60 seconds");
+        if (resp.status === 401) throw new Error("Invalid API key â€” check Settings");
+        if (resp.status === 429) throw new Error("Rate limit â€” wait 60 seconds");
         throw new Error(e?.error?.message || `Error ${resp.status}`);
       }
       const data = await resp.json();
       const b64r = data?.data?.[0]?.b64_json;
-      if (!b64r) throw new Error("No image returned — please try again");
+      if (!b64r) throw new Error("No image returned â€” please try again");
       setProgress(100); setRendered(`data:image/jpeg;base64,${b64r}`);
       // Get AI designer note
       fetch("https://api.anthropic.com/v1/messages", {
@@ -3587,22 +3587,22 @@ const BUILD_PHASES = [
   };
 
   const STYLES = [
-    { id: "photorealistic", label: "📷 Daylight" },
-    { id: "twilight", label: "🌅 Twilight" },
-    { id: "night", label: "🌙 Night" },
-    { id: "magazine", label: "✨ Magazine" },
+    { id: "photorealistic", label: "ðŸ“· Daylight" },
+    { id: "twilight", label: "ðŸŒ… Twilight" },
+    { id: "night", label: "ðŸŒ™ Night" },
+    { id: "magazine", label: "âœ¨ Magazine" },
   ];
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       {/* Header */}
       <div style={{ background: "linear-gradient(135deg,rgba(201,168,76,0.15),rgba(168,135,58,0.08))", border: "1px solid rgba(201,168,76,0.35)", borderRadius: 16, padding: 16 }}>
-        <div style={{ fontSize: 15, fontWeight: 800, color: "#c9a84c", marginBottom: 6 }}>⚡ Quick Render — Close the Deal On-Site</div>
+        <div style={{ fontSize: 15, fontWeight: 800, color: "#c9a84c", marginBottom: 6 }}>âš¡ Quick Render â€” Close the Deal On-Site</div>
         <div style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.7 }}>
-          Stand in the client's backyard → tap the camera → show them their pool rendered into their real yard in under 60 seconds. No laptop needed. No site visit to schedule later. Close the deal right now.
+          Stand in the client's backyard â†’ tap the camera â†’ show them their pool rendered into their real yard in under 60 seconds. No laptop needed. No site visit to schedule later. Close the deal right now.
         </div>
         <div style={{ marginTop: 10, display: "flex", flexWrap: "wrap", gap: 8 }}>
-          {[`${len}'×${wid}' ${shapeLabel}`, colorLabel, finishLabel, ...activeFeatures.slice(0, 2).map(f => f.label)].map(tag => (
+          {[`${len}'Ã—${wid}' ${shapeLabel}`, colorLabel, finishLabel, ...activeFeatures.slice(0, 2).map(f => f.label)].map(tag => (
             <span key={tag} style={{ padding: "3px 10px", borderRadius: 20, background: "rgba(201,168,76,0.12)", border: "1px solid rgba(201,168,76,0.25)", color: "#c9a84c", fontSize: 11, fontWeight: 600 }}>{tag}</span>
           ))}
         </div>
@@ -3615,21 +3615,21 @@ const BUILD_PHASES = [
             <div>
               <video ref={videoRef} autoPlay playsInline muted style={{ width: "100%", display: "block", maxHeight: 320, objectFit: "cover", background: "#000" }} />
               <div style={{ padding: 12, display: "flex", gap: 8 }}>
-                <button onClick={capturePhoto} style={{ flex: 2, padding: 14, borderRadius: 12, border: "none", background: "linear-gradient(135deg,#c9a84c,#a8873a)", color: "#0a0f1e", fontWeight: 900, fontSize: 16, cursor: "pointer" }}>📸 Capture</button>
+                <button onClick={capturePhoto} style={{ flex: 2, padding: 14, borderRadius: 12, border: "none", background: "linear-gradient(135deg,#c9a84c,#a8873a)", color: "#0a0f1e", fontWeight: 900, fontSize: 16, cursor: "pointer" }}>ðŸ“¸ Capture</button>
                 <button onClick={stopCamera} style={{ flex: 1, padding: 14, borderRadius: 12, border: "1px solid #334155", background: "#1e293b", color: "#94a3b8", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>Cancel</button>
               </div>
             </div>
           ) : (
             <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 12 }}>
-              <div style={{ fontSize: 13, color: "#94a3b8", textAlign: "center", lineHeight: 1.6 }}>Step 1 — Get a photo of the client's backyard</div>
-              <button onClick={startCamera} style={{ padding: 16, borderRadius: 12, border: "none", background: "linear-gradient(135deg,#c9a84c,#a8873a)", color: "#0a0f1e", fontWeight: 800, fontSize: 15, cursor: "pointer" }}>📷 Open Camera — Take Live Photo</button>
+              <div style={{ fontSize: 13, color: "#94a3b8", textAlign: "center", lineHeight: 1.6 }}>Step 1 â€” Get a photo of the client's backyard</div>
+              <button onClick={startCamera} style={{ padding: 16, borderRadius: 12, border: "none", background: "linear-gradient(135deg,#c9a84c,#a8873a)", color: "#0a0f1e", fontWeight: 800, fontSize: 15, cursor: "pointer" }}>ðŸ“· Open Camera â€” Take Live Photo</button>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <div style={{ flex: 1, height: 1, background: "#1e293b" }} />
                 <span style={{ fontSize: 11, color: "#64748b" }}>or</span>
                 <div style={{ flex: 1, height: 1, background: "#1e293b" }} />
               </div>
               <label style={{ padding: 14, borderRadius: 12, border: "1px solid #334155", background: "#0f172a", color: "#94a3b8", fontWeight: 700, fontSize: 13, cursor: "pointer", textAlign: "center", display: "block" }}>
-                📁 Upload Existing Photo
+                ðŸ“ Upload Existing Photo
                 <input type="file" accept="image/*" onChange={uploadPhoto} style={{ display: "none" }} />
               </label>
             </div>
@@ -3639,8 +3639,8 @@ const BUILD_PHASES = [
         <div style={{ background: "#111827", border: "1px solid #1e293b", borderRadius: 16, overflow: "hidden" }}>
           <div style={{ position: "relative" }}>
             <img src={photo} alt="Backyard" style={{ width: "100%", display: "block", maxHeight: 260, objectFit: "cover" }} />
-            <div style={{ position: "absolute", top: 10, left: 10, background: "rgba(201,168,76,0.9)", borderRadius: 8, padding: "4px 10px", fontSize: 11, fontWeight: 700, color: "#0a0f1e" }}>✅ Photo Ready</div>
-            <button onClick={() => { setPhoto(null); setRendered(null); setError(null); }} style={{ position: "absolute", top: 8, right: 8, background: "rgba(0,0,0,0.6)", border: "none", color: "white", borderRadius: 8, padding: "6px 10px", fontSize: 12, cursor: "pointer", fontWeight: 700 }}>✕ Retake</button>
+            <div style={{ position: "absolute", top: 10, left: 10, background: "rgba(201,168,76,0.9)", borderRadius: 8, padding: "4px 10px", fontSize: 11, fontWeight: 700, color: "#0a0f1e" }}>âœ… Photo Ready</div>
+            <button onClick={() => { setPhoto(null); setRendered(null); setError(null); }} style={{ position: "absolute", top: 8, right: 8, background: "rgba(0,0,0,0.6)", border: "none", color: "white", borderRadius: 8, padding: "6px 10px", fontSize: 12, cursor: "pointer", fontWeight: 700 }}>âœ• Retake</button>
           </div>
         </div>
       )}
@@ -3655,26 +3655,26 @@ const BUILD_PHASES = [
       {/* Render button */}
       {!rendering && !rendered && (
         <button onClick={renderNow} disabled={!photo} style={{ width: "100%", padding: 18, borderRadius: 14, border: "none", background: photo ? "linear-gradient(135deg,#7c3aed,#5b21b6)" : "#1e293b", color: "white", fontWeight: 900, fontSize: 17, cursor: photo ? "pointer" : "not-allowed", boxShadow: photo ? "0 4px 30px rgba(124,58,237,0.4)" : "none", letterSpacing: "0.02em" }}>
-          🚀 Render Pool Into This Backyard
+          ðŸš€ Render Pool Into This Backyard
         </button>
       )}
 
       {/* Progress */}
       {rendering && (
         <div style={{ background: "#111827", border: "1px solid #1e293b", borderRadius: 14, padding: 20, textAlign: "center" }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>🚀</div>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>ðŸš€</div>
           <div style={{ fontSize: 14, fontWeight: 700, color: "#a78bfa", marginBottom: 10 }}>Grok Aurora is rendering your pool...</div>
           <div style={{ height: 6, background: "#1e293b", borderRadius: 3, overflow: "hidden", marginBottom: 8 }}>
             <div style={{ height: "100%", width: `${progress}%`, background: "linear-gradient(90deg,#7c3aed,#a78bfa,#c9a84c)", borderRadius: 3, transition: "width 3s ease" }} />
           </div>
-          <div style={{ fontSize: 12, color: "#64748b" }}>About 30-45 seconds — worth every one</div>
+          <div style={{ fontSize: 12, color: "#64748b" }}>About 30-45 seconds â€” worth every one</div>
         </div>
       )}
 
       {/* Error */}
       {error && !rendering && (
         <div style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 12, padding: 14 }}>
-          <div style={{ fontSize: 13, color: "#ef4444", fontWeight: 600, marginBottom: 8 }}>⚠️ {error}</div>
+          <div style={{ fontSize: 13, color: "#ef4444", fontWeight: 600, marginBottom: 8 }}>âš ï¸ {error}</div>
           <button onClick={renderNow} style={{ padding: "8px 16px", borderRadius: 8, background: "rgba(124,58,237,0.15)", border: "1px solid rgba(124,58,237,0.3)", color: "#a78bfa", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>Try Again</button>
         </div>
       )}
@@ -3684,18 +3684,18 @@ const BUILD_PHASES = [
         <div style={{ background: "#111827", border: "2px solid rgba(201,168,76,0.4)", borderRadius: 16, overflow: "hidden", boxShadow: "0 8px 40px rgba(201,168,76,0.15)" }}>
           <div style={{ position: "relative" }}>
             <img src={rendered} alt="Pool rendering" style={{ width: "100%", display: "block" }} />
-            <div style={{ position: "absolute", top: 10, left: 10, background: "rgba(201,168,76,0.95)", borderRadius: 8, padding: "5px 12px", fontSize: 11, fontWeight: 800, color: "#0a0f1e" }}>⚡ QUICK RENDER — Pool Craft Pro</div>
+            <div style={{ position: "absolute", top: 10, left: 10, background: "rgba(201,168,76,0.95)", borderRadius: 8, padding: "5px 12px", fontSize: 11, fontWeight: 800, color: "#0a0f1e" }}>âš¡ QUICK RENDER â€” Pool Craft Pro</div>
           </div>
           {aiNote && (
             <div style={{ padding: "14px 16px", background: "rgba(201,168,76,0.06)", borderTop: "1px solid rgba(201,168,76,0.15)" }}>
-              <div style={{ fontSize: 10, color: "#c9a84c", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>🤖 AI Designer Note</div>
+              <div style={{ fontSize: 10, color: "#c9a84c", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>ðŸ¤– AI Designer Note</div>
               <div style={{ fontSize: 13, color: "#94a3b8", lineHeight: 1.65, fontStyle: "italic" }}>{aiNote}</div>
             </div>
           )}
           <div style={{ padding: 14, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-            <button onClick={() => { setRendered(null); setProgress(0); setTimeout(renderNow, 80); }} style={{ padding: 11, borderRadius: 10, border: "1px solid rgba(124,58,237,0.3)", background: "rgba(124,58,237,0.1)", color: "#a78bfa", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>🔄 New</button>
-            <a href={rendered} download="poolcraft-quick-render.jpg" style={{ padding: 11, borderRadius: 10, border: "1px solid rgba(34,197,94,0.3)", background: "rgba(34,197,94,0.1)", color: "#22c55e", fontWeight: 700, fontSize: 12, textDecoration: "none", textAlign: "center", display: "block" }}>⬇️ Save</a>
-            <button onClick={() => { if (navigator.share) navigator.share({ title: "Pool Design", text: "Your pool design from Pool Craft Pro", files: [] }); }} style={{ padding: 11, borderRadius: 10, border: "1px solid rgba(201,168,76,0.3)", background: "rgba(201,168,76,0.1)", color: "#c9a84c", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>📤 Share</button>
+            <button onClick={() => { setRendered(null); setProgress(0); setTimeout(renderNow, 80); }} style={{ padding: 11, borderRadius: 10, border: "1px solid rgba(124,58,237,0.3)", background: "rgba(124,58,237,0.1)", color: "#a78bfa", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>ðŸ”„ New</button>
+            <a href={rendered} download="poolcraft-quick-render.jpg" style={{ padding: 11, borderRadius: 10, border: "1px solid rgba(34,197,94,0.3)", background: "rgba(34,197,94,0.1)", color: "#22c55e", fontWeight: 700, fontSize: 12, textDecoration: "none", textAlign: "center", display: "block" }}>â¬‡ï¸ Save</a>
+            <button onClick={() => { if (navigator.share) navigator.share({ title: "Pool Design", text: "Your pool design from Pool Craft Pro", files: [] }); }} style={{ padding: 11, borderRadius: 10, border: "1px solid rgba(201,168,76,0.3)", background: "rgba(201,168,76,0.1)", color: "#c9a84c", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>ðŸ“¤ Share</button>
           </div>
         </div>
       )}
@@ -3703,28 +3703,28 @@ const BUILD_PHASES = [
   );
 }
 
-// ─── BUILD TRACKER — Post-sale phase tracking with client portal ──────────────
+// â”€â”€â”€ BUILD TRACKER â€” Post-sale phase tracking with client portal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const BUILD_PHASES = [
-  { id: "contract",    label: "Contract & Deposit",         icon: "📝", days: "Day 1",       detail: "Contract signed, deposit received, project activated" },
-  { id: "design",      label: "Final Design Approval",      icon: "✅", days: "Days 1-7",    detail: "Client approves final pool design and selections" },
-  { id: "permits",     label: "Permit Application",         icon: "🏛️", days: "Days 3-21",   detail: "Building permit submitted to local municipality" },
-  { id: "permits_app", label: "Permits Approved",           icon: "✅", days: "Days 14-42",  detail: "All permits approved, ready to schedule excavation" },
-  { id: "locate",      label: "Utility Locate (811)",       icon: "📍", days: "3 days before dig", detail: "All underground utilities marked before excavation" },
-  { id: "excavation",  label: "Excavation",                 icon: "🚜", days: "1-2 days",    detail: "Pool excavated to engineered depth and dimensions" },
-  { id: "steel",       label: "Steel & Plumbing Rough-In",  icon: "🔩", days: "2-3 days",    detail: "Rebar grid tied, main drain and plumbing roughed in" },
-  { id: "inspection1", label: "Steel/Plumbing Inspection",  icon: "🔍", days: "1 day",       detail: "City inspector approves steel and plumbing" },
-  { id: "gunite",      label: "Gunite / Shotcrete",         icon: "💪", days: "1-2 days",    detail: "Concrete shell shot and formed. Curing begins." },
-  { id: "cure",        label: "Shell Curing",               icon: "⏰", days: "7-10 days",   detail: "Shell kept wet daily for proper curing — do not disturb" },
-  { id: "equipment",   label: "Equipment Installation",     icon: "⚙️", days: "1-2 days",    detail: "Pump, filter, heater, automation installed on pad" },
-  { id: "electrical",  label: "Electrical Rough-In",        icon: "⚡", days: "1-2 days",    detail: "All electrical run, bonding complete, lighting conduit" },
-  { id: "inspection2", label: "Electrical Inspection",      icon: "🔍", days: "1 day",       detail: "City inspector approves electrical and bonding" },
-  { id: "deck",        label: "Coping & Deck",              icon: "🏗️", days: "3-5 days",    detail: "Coping installed, deck formed and poured or paved" },
-  { id: "tile",        label: "Waterline Tile",             icon: "🔷", days: "1-2 days",    detail: "Waterline tile installed and grouted" },
-  { id: "plaster",     label: "Interior Finish",            icon: "✨", days: "1 day",       detail: "Pool interior plastered, pebbled, or tiled" },
-  { id: "fill",        label: "Pool Fill",                  icon: "💧", days: "24-48 hrs",   detail: "Pool filled with water — do not stop mid-fill" },
-  { id: "startup",     label: "Equipment Startup",          icon: "🔌", days: "1 day",       detail: "All equipment tested, chemistry balanced, startup complete" },
-  { id: "final_insp",  label: "Final Inspection",           icon: "🏆", days: "1 day",       detail: "City final inspection and certificate of occupancy" },
-  { id: "complete",    label: "Project Complete",           icon: "🎉", days: "",            detail: "Homeowner orientation complete. Enjoy your pool!" },
+  { id: "contract",    label: "Contract & Deposit",         icon: "ðŸ“", days: "Day 1",       detail: "Contract signed, deposit received, project activated" },
+  { id: "design",      label: "Final Design Approval",      icon: "âœ…", days: "Days 1-7",    detail: "Client approves final pool design and selections" },
+  { id: "permits",     label: "Permit Application",         icon: "ðŸ›ï¸", days: "Days 3-21",   detail: "Building permit submitted to local municipality" },
+  { id: "permits_app", label: "Permits Approved",           icon: "âœ…", days: "Days 14-42",  detail: "All permits approved, ready to schedule excavation" },
+  { id: "locate",      label: "Utility Locate (811)",       icon: "ðŸ“", days: "3 days before dig", detail: "All underground utilities marked before excavation" },
+  { id: "excavation",  label: "Excavation",                 icon: "ðŸšœ", days: "1-2 days",    detail: "Pool excavated to engineered depth and dimensions" },
+  { id: "steel",       label: "Steel & Plumbing Rough-In",  icon: "ðŸ”©", days: "2-3 days",    detail: "Rebar grid tied, main drain and plumbing roughed in" },
+  { id: "inspection1", label: "Steel/Plumbing Inspection",  icon: "ðŸ”", days: "1 day",       detail: "City inspector approves steel and plumbing" },
+  { id: "gunite",      label: "Gunite / Shotcrete",         icon: "ðŸ’ª", days: "1-2 days",    detail: "Concrete shell shot and formed. Curing begins." },
+  { id: "cure",        label: "Shell Curing",               icon: "â°", days: "7-10 days",   detail: "Shell kept wet daily for proper curing â€” do not disturb" },
+  { id: "equipment",   label: "Equipment Installation",     icon: "âš™ï¸", days: "1-2 days",    detail: "Pump, filter, heater, automation installed on pad" },
+  { id: "electrical",  label: "Electrical Rough-In",        icon: "âš¡", days: "1-2 days",    detail: "All electrical run, bonding complete, lighting conduit" },
+  { id: "inspection2", label: "Electrical Inspection",      icon: "ðŸ”", days: "1 day",       detail: "City inspector approves electrical and bonding" },
+  { id: "deck",        label: "Coping & Deck",              icon: "ðŸ—ï¸", days: "3-5 days",    detail: "Coping installed, deck formed and poured or paved" },
+  { id: "tile",        label: "Waterline Tile",             icon: "ðŸ”·", days: "1-2 days",    detail: "Waterline tile installed and grouted" },
+  { id: "plaster",     label: "Interior Finish",            icon: "âœ¨", days: "1 day",       detail: "Pool interior plastered, pebbled, or tiled" },
+  { id: "fill",        label: "Pool Fill",                  icon: "ðŸ’§", days: "24-48 hrs",   detail: "Pool filled with water â€” do not stop mid-fill" },
+  { id: "startup",     label: "Equipment Startup",          icon: "ðŸ”Œ", days: "1 day",       detail: "All equipment tested, chemistry balanced, startup complete" },
+  { id: "final_insp",  label: "Final Inspection",           icon: "ðŸ†", days: "1 day",       detail: "City final inspection and certificate of occupancy" },
+  { id: "complete",    label: "Project Complete",           icon: "ðŸŽ‰", days: "",            detail: "Homeowner orientation complete. Enjoy your pool!" },
 ];
 
 function BuildTracker({ projectName, clientName, clientEmail }) {
@@ -3760,12 +3760,12 @@ function BuildTracker({ projectName, clientName, clientEmail }) {
   if (showClientView) return (
     <div style={{ background: "#0a0f1e", minHeight: "100%", padding: 16, fontFamily: "Inter,system-ui,sans-serif" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
-        <button onClick={() => setShowClientView(false)} style={{ background: "none", border: "none", color: "#64748b", fontSize: 20, cursor: "pointer" }}>←</button>
+        <button onClick={() => setShowClientView(false)} style={{ background: "none", border: "none", color: "#64748b", fontSize: 20, cursor: "pointer" }}>â†</button>
         <div>
           <div style={{ fontFamily: "Georgia,serif", fontWeight: 900, fontSize: 14, letterSpacing: "1px" }}>
             <span style={{ color: "#e2e8f0" }}>POOL </span><span style={{ color: "#c9a84c" }}>CRAFT </span><span style={{ color: "#e2e8f0" }}>PRO</span>
           </div>
-          <div style={{ fontSize: 11, color: "#64748b" }}>Client Progress View — {clientName || projectName}</div>
+          <div style={{ fontSize: 11, color: "#64748b" }}>Client Progress View â€” {clientName || projectName}</div>
         </div>
       </div>
       <div style={{ background: "linear-gradient(135deg,#0f1e3d,#1a2f5e)", borderRadius: 16, padding: 20, marginBottom: 16, textAlign: "center" }}>
@@ -3781,12 +3781,12 @@ function BuildTracker({ projectName, clientName, clientEmail }) {
         const isCurrent = !done && p.id === nextPhase?.id;
         return (
           <div key={p.id} style={{ display: "flex", gap: 12, alignItems: "flex-start", marginBottom: 12, opacity: done || isCurrent ? 1 : 0.4 }}>
-            <div style={{ width: 32, height: 32, borderRadius: "50%", background: done ? "linear-gradient(135deg,#c9a84c,#a8873a)" : isCurrent ? "rgba(201,168,76,0.2)" : "#1e293b", border: isCurrent ? "2px solid #c9a84c" : "none", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>{done ? "✓" : p.icon}</div>
+            <div style={{ width: 32, height: 32, borderRadius: "50%", background: done ? "linear-gradient(135deg,#c9a84c,#a8873a)" : isCurrent ? "rgba(201,168,76,0.2)" : "#1e293b", border: isCurrent ? "2px solid #c9a84c" : "none", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>{done ? "âœ“" : p.icon}</div>
             <div style={{ flex: 1, paddingTop: 4 }}>
               <div style={{ fontSize: 13, fontWeight: done ? 700 : 600, color: done ? "#c9a84c" : isCurrent ? "#e2e8f0" : "#64748b" }}>{p.label}</div>
               {done && <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>Completed {formatDate(phases[p.id]?.completedAt)}</div>}
-              {isCurrent && <div style={{ fontSize: 11, color: "#c9a84c", marginTop: 2 }}>⚡ In Progress</div>}
-              {notes[p.id] && <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 4, lineHeight: 1.5 }}>📝 {notes[p.id]}</div>}
+              {isCurrent && <div style={{ fontSize: 11, color: "#c9a84c", marginTop: 2 }}>âš¡ In Progress</div>}
+              {notes[p.id] && <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 4, lineHeight: 1.5 }}>ðŸ“ {notes[p.id]}</div>}
             </div>
           </div>
         );
@@ -3798,7 +3798,7 @@ function BuildTracker({ projectName, clientName, clientEmail }) {
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       {/* Header */}
       <div style={{ background: "linear-gradient(135deg,rgba(74,122,181,0.15),rgba(26,47,94,0.1))", border: "1px solid rgba(74,122,181,0.3)", borderRadius: 16, padding: 16 }}>
-        <div style={{ fontSize: 15, fontWeight: 800, color: "#7ab0e8", marginBottom: 4 }}>🏗️ Build Tracker — {projectName}</div>
+        <div style={{ fontSize: 15, fontWeight: 800, color: "#7ab0e8", marginBottom: 4 }}>ðŸ—ï¸ Build Tracker â€” {projectName}</div>
         <div style={{ fontSize: 12, color: "#94a3b8", marginBottom: 12, lineHeight: 1.6 }}>Track every construction phase and share real-time progress with your client. Reduces client anxiety, reduces calls, closes more referrals.</div>
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           <div style={{ flex: 1 }}>
@@ -3810,9 +3810,9 @@ function BuildTracker({ projectName, clientName, clientEmail }) {
               <div style={{ height: "100%", width: `${pct}%`, background: "linear-gradient(90deg,#c9a84c,#e8c96a)", borderRadius: 4, transition: "width 0.4s" }} />
             </div>
           </div>
-          <button onClick={() => setShowClientView(true)} style={{ padding: "8px 14px", borderRadius: 10, border: "1px solid rgba(201,168,76,0.35)", background: "rgba(201,168,76,0.1)", color: "#c9a84c", fontSize: 12, fontWeight: 700, cursor: "pointer", flexShrink: 0 }}>👤 Client View</button>
+          <button onClick={() => setShowClientView(true)} style={{ padding: "8px 14px", borderRadius: 10, border: "1px solid rgba(201,168,76,0.35)", background: "rgba(201,168,76,0.1)", color: "#c9a84c", fontSize: 12, fontWeight: 700, cursor: "pointer", flexShrink: 0 }}>ðŸ‘¤ Client View</button>
         </div>
-        {clientEmail && <div style={{ marginTop: 10, fontSize: 11, color: "#64748b" }}>💡 Share the Client View link with {clientName || clientEmail} so they can check progress anytime</div>}
+        {clientEmail && <div style={{ marginTop: 10, fontSize: 11, color: "#64748b" }}>ðŸ’¡ Share the Client View link with {clientName || clientEmail} so they can check progress anytime</div>}
       </div>
 
       {/* Phase list */}
@@ -3823,7 +3823,7 @@ function BuildTracker({ projectName, clientName, clientEmail }) {
           <div key={p.id} style={{ background: "#111827", border: `1px solid ${done ? "rgba(201,168,76,0.3)" : isNext ? "rgba(74,122,181,0.3)" : "#1e293b"}`, borderRadius: 12, padding: 14, opacity: done || isNext ? 1 : 0.65 }}>
             <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
               <button onClick={() => togglePhase(p.id)} style={{ width: 32, height: 32, borderRadius: "50%", border: `2px solid ${done ? "#c9a84c" : isNext ? "#7ab0e8" : "#334155"}`, background: done ? "rgba(201,168,76,0.15)" : "#1e293b", color: done ? "#c9a84c" : "#64748b", fontSize: 14, cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                {done ? "✓" : p.icon}
+                {done ? "âœ“" : p.icon}
               </button>
               <div style={{ flex: 1 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
@@ -3831,16 +3831,16 @@ function BuildTracker({ projectName, clientName, clientEmail }) {
                   <div style={{ fontSize: 10, color: "#64748b", flexShrink: 0 }}>{p.days}</div>
                 </div>
                 <div style={{ fontSize: 11, color: "#64748b", marginTop: 3, lineHeight: 1.5 }}>{p.detail}</div>
-                {done && <div style={{ fontSize: 10, color: "#a8873a", marginTop: 4 }}>✓ Completed {formatDate(phases[p.id]?.completedAt)}</div>}
-                {notes[p.id] && <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 6, padding: "6px 10px", background: "#0f172a", borderRadius: 8 }}>📝 {notes[p.id]}</div>}
+                {done && <div style={{ fontSize: 10, color: "#a8873a", marginTop: 4 }}>âœ“ Completed {formatDate(phases[p.id]?.completedAt)}</div>}
+                {notes[p.id] && <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 6, padding: "6px 10px", background: "#0f172a", borderRadius: 8 }}>ðŸ“ {notes[p.id]}</div>}
                 {editingNote === p.id ? (
                   <div style={{ marginTop: 8, display: "flex", gap: 6 }}>
                     <input autoFocus value={noteInput} onChange={e => setNoteInput(e.target.value)} onKeyDown={e => e.key === "Enter" && saveNote(p.id)} placeholder="Add a note for this phase..." style={{ flex: 1, background: "#1e293b", border: "1px solid #334155", borderRadius: 8, padding: "7px 10px", color: "#e2e8f0", fontSize: 12, outline: "none" }} />
                     <button onClick={() => saveNote(p.id)} style={{ padding: "7px 12px", borderRadius: 8, background: "rgba(201,168,76,0.15)", border: "1px solid rgba(201,168,76,0.3)", color: "#c9a84c", fontWeight: 700, fontSize: 11, cursor: "pointer" }}>Save</button>
-                    <button onClick={() => { setEditingNote(null); setNoteInput(""); }} style={{ padding: "7px 10px", borderRadius: 8, border: "1px solid #334155", background: "#1e293b", color: "#64748b", fontSize: 11, cursor: "pointer" }}>✕</button>
+                    <button onClick={() => { setEditingNote(null); setNoteInput(""); }} style={{ padding: "7px 10px", borderRadius: 8, border: "1px solid #334155", background: "#1e293b", color: "#64748b", fontSize: 11, cursor: "pointer" }}>âœ•</button>
                   </div>
                 ) : (
-                  <button onClick={() => { setEditingNote(p.id); setNoteInput(notes[p.id] || ""); }} style={{ marginTop: 6, fontSize: 10, color: "#64748b", background: "none", border: "none", cursor: "pointer", padding: 0 }}>{notes[p.id] ? "✏️ Edit note" : "+ Add note"}</button>
+                  <button onClick={() => { setEditingNote(p.id); setNoteInput(notes[p.id] || ""); }} style={{ marginTop: 6, fontSize: 10, color: "#64748b", background: "none", border: "none", cursor: "pointer", padding: 0 }}>{notes[p.id] ? "âœï¸ Edit note" : "+ Add note"}</button>
                 )}
               </div>
             </div>
@@ -3851,9 +3851,9 @@ function BuildTracker({ projectName, clientName, clientEmail }) {
   );
 }
 
-// ─── MAIN APP ─────────────────────────────────────────────────────────────────
-// ─── AUTH SYSTEM ─────────────────────────────────────────────────────────────
-// Your Supabase credentials — customers never see these
+// â”€â”€â”€ MAIN APP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â”€â”€ AUTH SYSTEM â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Your Supabase credentials â€” customers never see these
 // They are loaded from environment variables on Vercel
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "";
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
@@ -3911,7 +3911,7 @@ function AuthScreen({ onAuth }) {
     setLoading(true);
     try {
       const sb = await loadSupabase();
-      if (!sb) throw new Error("Service unavailable — please try again");
+      if (!sb) throw new Error("Service unavailable â€” please try again");
       if (mode === "signup") {
         const { data, error: e } = await sb.auth.signUp({ email: email.trim(), password, options: { data: { full_name: name.trim() } } });
         if (e) throw e;
@@ -3924,12 +3924,12 @@ function AuthScreen({ onAuth }) {
       } else {
         const { error: e } = await sb.auth.resetPasswordForEmail(email.trim());
         if (e) throw e;
-        setSuccess("Password reset link sent — check your email.");
+        setSuccess("Password reset link sent â€” check your email.");
       }
     } catch (e) {
       const msg = e.message || "Something went wrong";
       if (msg.includes("Invalid login")) setError("Incorrect email or password");
-      else if (msg.includes("already registered")) setError("Account exists — try signing in");
+      else if (msg.includes("already registered")) setError("Account exists â€” try signing in");
       else setError(msg);
     } finally { setLoading(false); }
   };
@@ -3958,3 +3958,5 @@ function AuthScreen({ onAuth }) {
             <span style={{ color:"#e2e8f0" }}>POOL </span><span style={{ color:"#c9a84c" }}>CRAFT </span><span style={{ color:"#e2e8f0" }}>PRO</span>
           </div>
           <div style={{ fontSize:11, color:"#8a9ab5", letterSpacing:"2px", textTransform:"uppercase", marginTop:6 }}>Design Pools. Craft Outdoor Living.</div>
+
+
