@@ -1588,149 +1588,15 @@ function FeatureCard({ feature, active, onToggle }) {
     const ctx = canvas.getContext("2d", { willReadFrequently: false });
     const W = canvas.width, H = canvas.height;
     ctx.clearRect(0,0,W,H);
-
-    // Background gradient
-    const bg = ctx.createLinearGradient(0,0,W,H);
-    bg.addColorStop(0, "#0a0f1e"); bg.addColorStop(1, "#111827");
-    ctx.fillStyle = bg; ctx.fillRect(0,0,W,H);
-
-    // Feature-specific illustration
-    const c = feature.color;
-    const drawWater = (x,y,w,h,col="#1ca7c0") => {
-      ctx.fillStyle=col+"99"; ctx.beginPath(); ctx.roundRect(x,y,w,h,8); ctx.fill();
-      ctx.strokeStyle="rgba(255,255,255,0.2)"; ctx.lineWidth=1;
-      for(let i=1;i<3;i++){ctx.beginPath();ctx.moveTo(x+w*i/3,y+4);ctx.bezierCurveTo(x+w*i/3+10,y,x+w*i/3+20,y+8,x+w*i/3+30,y+4);ctx.stroke();}
-    };
-
-    if(feature.id==="beach_entry"){
-      // Gradual beach entry with gradient floor
-      const grad=ctx.createLinearGradient(0,H*0.3,W,H*0.85);
-      grad.addColorStop(0,"#c9a84c66"); grad.addColorStop(0.4,"#1ca7c099"); grad.addColorStop(1,"#1a5fa8cc");
-      ctx.fillStyle=grad; ctx.beginPath(); ctx.moveTo(0,H*0.75); ctx.lineTo(W,H*0.45); ctx.lineTo(W,H*0.85); ctx.lineTo(0,H*0.85); ctx.closePath(); ctx.fill();
-      // Sand ripples
-      ctx.strokeStyle="rgba(201,168,76,0.3)"; ctx.lineWidth=1;
-      for(let i=0;i<3;i++){ctx.beginPath();ctx.ellipse(W*0.2+i*30,H*0.72-i*5,40-i*8,6,0,0,Math.PI*2);ctx.stroke();}
-      // Water ripples
-      ctx.strokeStyle="rgba(255,255,255,0.25)"; ctx.lineWidth=1;
-      for(let i=0;i<3;i++){ctx.beginPath();ctx.moveTo(W*0.4+i*40,H*0.55+i*5);ctx.bezierCurveTo(W*0.5+i*40,H*0.52+i*5,W*0.55+i*40,H*0.58+i*5,W*0.65+i*40,H*0.55+i*5);ctx.stroke();}
-    } else if(feature.id==="baja_shelf"){
-      drawWater(W*0.05,H*0.35,W*0.9,H*0.5,"#1ca7c0");
-      // Shallow shelf
-      ctx.fillStyle="#c9a84c55"; ctx.beginPath(); ctx.roundRect(W*0.1,H*0.38,W*0.4,H*0.12,6); ctx.fill();
-      ctx.strokeStyle="rgba(201,168,76,0.6)"; ctx.lineWidth=2; ctx.strokeRect(W*0.1,H*0.38,W*0.4,H*0.12);
-      ctx.fillStyle="rgba(201,168,76,0.8)"; ctx.font="10px Inter,sans-serif"; ctx.textAlign="center"; ctx.fillText("Shallow Shelf 12\"",W*0.3,H*0.47);
-      // Lounge chairs hint
-      ctx.fillStyle=c+"88"; ctx.beginPath(); ctx.roundRect(W*0.15,H*0.4,18,8,3); ctx.fill();
-      ctx.beginPath(); ctx.roundRect(W*0.28,H*0.4,18,8,3); ctx.fill();
-    } else if(feature.id==="spa_attached"){
-      drawWater(W*0.1,H*0.4,W*0.8,H*0.45,"#1a5fa8");
-      // Spa circle
-      ctx.fillStyle="#8b5cf699"; ctx.beginPath(); ctx.arc(W*0.25,H*0.38,W*0.15,0,Math.PI*2); ctx.fill();
-      ctx.strokeStyle="#8b5cf6"; ctx.lineWidth=2; ctx.stroke();
-      // Jets/bubbles
-      for(let i=0;i<6;i++){ctx.fillStyle="rgba(255,255,255,0.5)"; ctx.beginPath(); ctx.arc(W*0.25+Math.cos(i)*W*0.1,H*0.38+Math.sin(i)*H*0.08,2,0,Math.PI*2); ctx.fill();}
-      ctx.fillStyle="rgba(139,92,246,0.8)"; ctx.font="9px Inter,sans-serif"; ctx.textAlign="center"; ctx.fillText("Attached Spa",W*0.25,H*0.38+3);
-    } else if(feature.id==="infinity_edge"){
-      drawWater(W*0.05,H*0.3,W*0.9,H*0.55,"#1ca7c0");
-      // Infinity edge waterfall effect
-      const inf=ctx.createLinearGradient(W*0.75,H*0.3,W*0.95,H*0.85);
-      inf.addColorStop(0,"#1ca7c0cc"); inf.addColorStop(1,"transparent");
-      ctx.fillStyle=inf; ctx.beginPath(); ctx.moveTo(W*0.78,H*0.3); ctx.lineTo(W*0.95,H*0.3); ctx.lineTo(W*0.9,H*0.85); ctx.lineTo(W*0.73,H*0.6); ctx.closePath(); ctx.fill();
-      // Horizon line
-      ctx.strokeStyle="rgba(28,167,192,0.6)"; ctx.lineWidth=1.5;
-      ctx.beginPath(); ctx.moveTo(W*0.78,H*0.3); ctx.lineTo(W*0.95,H*0.3); ctx.stroke();
-      ctx.fillStyle=c+"cc"; ctx.font="9px Inter,sans-serif"; ctx.textAlign="center"; ctx.fillText("∞ Vanishing Edge",W*0.86,H*0.26);
-    } else if(feature.id==="grotto"){
-      // Rock arch
-      ctx.fillStyle="#4a3728cc"; ctx.beginPath(); ctx.arc(W*0.5,H*0.5,W*0.28,Math.PI,Math.PI*2); ctx.fill();
-      ctx.fillStyle="#5a4738cc"; ctx.beginPath(); ctx.arc(W*0.5,H*0.52,W*0.22,Math.PI,Math.PI*2); ctx.fill();
-      drawWater(W*0.25,H*0.52,W*0.5,H*0.3,"#1a5fa8");
-      // Waterfall
-      ctx.strokeStyle="rgba(255,255,255,0.4)"; ctx.lineWidth=3;
-      ctx.beginPath(); ctx.moveTo(W*0.42,H*0.32); ctx.quadraticCurveTo(W*0.44,H*0.42,W*0.42,H*0.52); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(W*0.5,H*0.3); ctx.quadraticCurveTo(W*0.5,H*0.41,W*0.5,H*0.52); ctx.stroke();
-    } else if(feature.id==="waterfall"){
-      drawWater(W*0.1,H*0.5,W*0.8,H*0.38,"#1ca7c0");
-      // Rock formation
-      ctx.fillStyle="#5a4738"; ctx.beginPath(); ctx.roundRect(W*0.3,H*0.25,W*0.4,H*0.28,4); ctx.fill();
-      ctx.fillStyle="#6a5748"; ctx.beginPath(); ctx.roundRect(W*0.35,H*0.2,W*0.3,H*0.1,4); ctx.fill();
-      // Water streams
-      ctx.strokeStyle="rgba(28,167,192,0.7)"; ctx.lineWidth=4;
-      ctx.beginPath(); ctx.moveTo(W*0.4,H*0.35); ctx.quadraticCurveTo(W*0.38,H*0.44,W*0.4,H*0.5); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(W*0.5,H*0.33); ctx.quadraticCurveTo(W*0.5,H*0.43,W*0.5,H*0.5); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(W*0.6,H*0.35); ctx.quadraticCurveTo(W*0.62,H*0.44,W*0.6,H*0.5); ctx.stroke();
-    } else if(feature.id==="diving_rock"){
-      drawWater(W*0.05,H*0.45,W*0.9,H*0.45,"#1a5fa8");
-      // Natural rock
-      ctx.fillStyle="#6b5a4a"; ctx.beginPath(); ctx.moveTo(W*0.3,H*0.45); ctx.lineTo(W*0.2,H*0.55); ctx.lineTo(W*0.1,H*0.65); ctx.lineTo(W*0.05,H*0.65); ctx.lineTo(W*0.05,H*0.45); ctx.closePath(); ctx.fill();
-      ctx.fillStyle="#7b6a5a"; ctx.beginPath(); ctx.moveTo(W*0.28,H*0.3); ctx.lineTo(W*0.38,H*0.45); ctx.lineTo(W*0.18,H*0.45); ctx.closePath(); ctx.fill();
-      // Person silhouette hint
-      ctx.fillStyle=c+"88"; ctx.beginPath(); ctx.arc(W*0.32,H*0.24,6,0,Math.PI*2); ctx.fill();
-      ctx.strokeStyle=c+"88"; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(W*0.32,H*0.3); ctx.lineTo(W*0.32,H*0.4); ctx.moveTo(W*0.24,H*0.34); ctx.lineTo(W*0.4,H*0.34); ctx.stroke();
-    } else if(feature.id==="swim_up_bar"){
-      drawWater(W*0.05,H*0.4,W*0.9,H*0.48,"#1ca7c0");
-      // Bar counter
-      ctx.fillStyle="#8b6914cc"; ctx.beginPath(); ctx.roundRect(W*0.15,H*0.38,W*0.7,H*0.12,4); ctx.fill();
-      ctx.strokeStyle="rgba(201,168,76,0.6)"; ctx.lineWidth=2; ctx.strokeRect(W*0.15,H*0.38,W*0.7,H*0.12);
-      // Bar stools
-      for(let i=0;i<4;i++){ctx.fillStyle=c+"88"; ctx.beginPath(); ctx.arc(W*0.25+i*W*0.16,H*0.52,6,0,Math.PI*2); ctx.fill();}
-      // Glasses
-      ctx.fillStyle="rgba(255,255,255,0.7)"; ctx.beginPath(); ctx.roundRect(W*0.3,H*0.34,8,10,2); ctx.fill();
-      ctx.beginPath(); ctx.roundRect(W*0.5,H*0.34,8,10,2); ctx.fill();
-    } else if(feature.id==="tanning_ledge"){
-      drawWater(W*0.05,H*0.35,W*0.9,H*0.52,"#1ca7c0");
-      // Ledge
-      ctx.fillStyle="#c9a84c44"; ctx.beginPath(); ctx.roundRect(W*0.08,H*0.38,W*0.84,H*0.08,4); ctx.fill();
-      ctx.strokeStyle="rgba(201,168,76,0.5)"; ctx.lineWidth=1.5; ctx.strokeRect(W*0.08,H*0.38,W*0.84,H*0.08);
-      // Loungers
-      for(let i=0;i<2;i++){ctx.fillStyle=c+"66"; ctx.beginPath(); ctx.roundRect(W*0.2+i*W*0.4,H*0.39,W*0.2,H*0.05,3); ctx.fill();}
-      ctx.fillStyle="rgba(201,168,76,0.7)"; ctx.font="9px Inter"; ctx.textAlign="center"; ctx.fillText("6\" Depth",W*0.5,H*0.55);
-    } else if(feature.id==="fire_feature"){
-      drawWater(W*0.05,H*0.45,W*0.9,H*0.45,"#1a5fa8");
-      // Fire bowls on edge
-      for(let i=0;i<2;i++){
-        const fx=W*(0.2+i*0.6), fy=H*0.38;
-        ctx.fillStyle="#555"; ctx.beginPath(); ctx.roundRect(fx-10,fy,20,12,3); ctx.fill();
-        // Flame
-        const flame=ctx.createRadialGradient(fx,fy,0,fx,fy,18);
-        flame.addColorStop(0,"#fff3"); flame.addColorStop(0.4,"#f59e0bcc"); flame.addColorStop(1,"transparent");
-        ctx.fillStyle=flame; ctx.beginPath(); ctx.ellipse(fx,fy-5,10,18,0,0,Math.PI*2); ctx.fill();
-      }
-    } else if(feature.id==="water_feature"){
-      drawWater(W*0.1,H*0.4,W*0.8,H*0.48,"#1ca7c0");
-      // Deck jets
-      for(let i=0;i<3;i++){
-        ctx.strokeStyle=c+"aa"; ctx.lineWidth=3;
-        ctx.beginPath(); ctx.moveTo(W*0.2+i*W*0.25,H*0.38); ctx.quadraticCurveTo(W*0.28+i*W*0.25,H*0.44,W*0.3+i*W*0.25,H*0.5); ctx.stroke();
-        // Splash
-        ctx.fillStyle="rgba(255,255,255,0.4)"; ctx.beginPath(); ctx.arc(W*0.3+i*W*0.25,H*0.5,4,0,Math.PI*2); ctx.fill();
-      }
-    } else if(feature.id==="slide"){
-      drawWater(W*0.1,H*0.5,W*0.8,H*0.38,"#1ca7c0");
-      // Slide structure
-      ctx.strokeStyle=c; ctx.lineWidth=8; ctx.lineCap="round";
-      ctx.beginPath(); ctx.moveTo(W*0.7,H*0.15); ctx.quadraticCurveTo(W*0.8,H*0.35,W*0.65,H*0.5); ctx.stroke();
-      ctx.strokeStyle=c+"55"; ctx.lineWidth=12;
-      ctx.beginPath(); ctx.moveTo(W*0.7,H*0.15); ctx.quadraticCurveTo(W*0.8,H*0.35,W*0.65,H*0.5); ctx.stroke();
-      // Support poles
-      ctx.strokeStyle="#888"; ctx.lineWidth=3;
-      ctx.beginPath(); ctx.moveTo(W*0.72,H*0.15); ctx.lineTo(W*0.72,H*0.5); ctx.stroke();
-    } else {
-      // Generic fallback
-      const gf=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,W*0.4);
-      gf.addColorStop(0,c+"33"); gf.addColorStop(1,"transparent");
-      ctx.fillStyle=gf; ctx.fillRect(0,0,W,H);
-      drawWater(W*0.1,H*0.4,W*0.8,H*0.45,"#1ca7c0");
-    }
-
-    // Overlay: feature name at bottom
-    const labelGrad=ctx.createLinearGradient(0,H*0.7,0,H);
-    labelGrad.addColorStop(0,"transparent"); labelGrad.addColorStop(1,"rgba(0,0,0,0.75)");
-    ctx.fillStyle=labelGrad; ctx.fillRect(0,H*0.7,W,H*0.3);
-    ctx.fillStyle=c; ctx.font="bold 13px Inter,sans-serif"; ctx.textAlign="center"; ctx.textBaseline="alphabetic";
-    ctx.fillText(feature.icon+" "+feature.label, W/2, H*0.92);
-    ctx.fillStyle="rgba(255,255,255,0.45)"; ctx.font="10px Inter,sans-serif";
-    ctx.fillText(feature.desc, W/2, H*0.97);
+    const g = ctx.createLinearGradient(0,0,W,H);
+    g.addColorStop(0, feature.color+"44"); g.addColorStop(1, feature.color+"11");
+    ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+    ctx.font = "48px serif"; ctx.textAlign="center"; ctx.textBaseline="middle";
+    ctx.fillText(feature.icon, W/2, H*0.42);
+    ctx.fillStyle=feature.color; ctx.font="bold 13px Inter,sans-serif"; ctx.textBaseline="alphabetic";
+    ctx.fillText(feature.label, W/2, H*0.76);
+    ctx.fillStyle="#64748b"; ctx.font="11px Inter,sans-serif";
+    ctx.fillText(feature.desc, W/2, H*0.88);
   }, [feature]);
 
   return (
@@ -1852,6 +1718,140 @@ function HardscapeDesigner({ hardscapes, toggleHardscape, setHSQty, dailyRenders
       if(!resp.ok){
         const txt = await resp.text().catch(()=>""); let parsed={}; try{parsed=JSON.parse(txt);}catch{}
         const msg = parsed?.error?.message||txt.slice(0,120);
+        if(resp.status===401) throw new Error("Invalid API key - check your xAI key on the Design tab.");
+        if(resp.status===429) throw new Error("Rate limit - wait 60 seconds and try again.");
+        throw new Error(`Grok error ${resp.status}: ${msg}`);
+      }
+
+      const data = await resp.json();
+      const b64r = data?.data?.[0]?.b64_json; const urlr = data?.data?.[0]?.url;
+      if(!b64r&&!urlr) throw new Error("No image returned. Please try again.");
+
+      setProgress(100); setProgressMsg("Done!");
+      const finalImg = b64r ? `data:image/jpeg;base64,${b64r}` : urlr;
+      setRendered(finalImg); setRenderCount(c=>c+1); bumpDailyRender();
+
+      try {
+        const dr = await fetch("https://api.anthropic.com/v1/messages",{ method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ model:"claude-sonnet-4-6", max_tokens:220, messages:[{role:"user",content:`You are a luxury landscape designer. In 2 enthusiastic sentences, describe this outdoor design to an excited homeowner. The design includes: ${hsList}.`}] }) });
+        const dd = await dr.json(); setAiDesc(dd?.content?.[0]?.text||null);
+      } catch{}
+    } catch(err){ clearInterval(interval); setError(err.message||"Something went wrong. Please try again."); }
+    finally { setRendering(false); }
+  };
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:14}}>
+      <div style={{background:"#111827",border:`2px solid ${photo?"rgba(52,211,153,0.45)":"#1e293b"}`,borderRadius:16,overflow:"hidden"}}>
+        <div style={{background:"linear-gradient(135deg,#134e4a,#0f3d38)",padding:"14px 16px"}}>
+          <div style={{fontSize:14,fontWeight:800,color:"#34d399",marginBottom:3}}>🏡 Outdoor Space Designer</div>
+          <div style={{fontSize:12,color:"#6ee7b7",lineHeight:1.5}}>Upload your backyard photo - Select elements below - Grok Aurora renders everything into your real space</div>
+        </div>
+        <div style={{padding:14}}>
+          <div style={{display:"flex",gap:8,marginBottom:photo?10:0}}>
+            <label style={{flex:1,padding:"13px 0",borderRadius:11,background:photo?"rgba(52,211,153,0.1)":"rgba(52,211,153,0.06)",border:`1.5px solid ${photo?"rgba(52,211,153,0.45)":"rgba(52,211,153,0.2)"}`,color:photo?"#34d399":"#6ee7b7",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+              {photo?"✅ Photo loaded - tap to change":"📁 Upload Backyard Photo"}
+              <input type="file" accept="image/*" onChange={handlePhotoUpload} style={{display:"none"}} />
+            </label>
+            {photo&&<button onClick={()=>{setPhoto(null);setRendered(null);setError(null);}} style={{padding:"13px 14px",borderRadius:11,background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",fontWeight:700,cursor:"pointer"}}>✕</button>}
+          </div>
+          {photo&&<div style={{borderRadius:10,overflow:"hidden",border:"1px solid rgba(52,211,153,0.3)"}}><img src={photo} alt="outdoor space" style={{width:"100%",display:"block",maxHeight:200,objectFit:"cover"}} /></div>}
+        </div>
+      </div>
+
+      <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:16,overflow:"hidden"}}>
+        <div style={{display:"flex",overflowX:"auto",borderBottom:"1px solid #1e293b",background:"#0f172a"}}>
+          {HARDSCAPE_CATEGORIES.map(cat=>{
+            const catSelected = cat.items.filter(item=>hardscapes[item.id]!=null).length;
+            const isActive = activeCat===cat.id;
+            return(
+              <button key={cat.id} onClick={()=>setActiveCat(cat.id)} style={{flexShrink:0,padding:"11px 14px",border:"none",cursor:"pointer",background:"transparent",borderBottom:`3px solid ${isActive?cat.color:"transparent"}`,color:isActive?cat.color:"#64748b",transition:"all 0.15s",position:"relative"}}>
+                <div style={{fontSize:13,fontWeight:700,whiteSpace:"nowrap"}}>{cat.icon} {cat.label}</div>
+                {catSelected>0&&(<div style={{position:"absolute",top:6,right:6,width:14,height:14,borderRadius:"50%",background:cat.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:800,color:"white"}}>{catSelected}</div>)}
+              </button>
+            );
+          })}
+        </div>
+        <div style={{padding:14,display:"flex",flexDirection:"column",gap:10}}>
+          {currentCat.items.map(item=>{
+            const active = hardscapes[item.id]!=null;
+            return(
+              <div key={item.id} style={{background:active?`${currentCat.color}11`:"#0f172a",border:`2px solid ${active?currentCat.color:"#1e293b"}`,borderRadius:12,padding:"12px 14px",transition:"all 0.15s"}}>
+                <div style={{display:"flex",alignItems:"center",gap:12}}>
+                  <div style={{width:44,height:44,borderRadius:10,background:active?`${currentCat.color}22`:"#1e293b",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>{item.icon}</div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontWeight:700,fontSize:14,color:active?currentCat.color:"#e2e8f0",display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                      {item.label}{active&&<span style={{fontSize:10,background:`${currentCat.color}33`,color:currentCat.color,borderRadius:20,padding:"2px 8px",fontWeight:700}}>ADDED ✓</span>}
+                    </div>
+                    <div style={{fontSize:12,color:"#64748b",marginTop:3}}>{item.desc}</div>
+                    {active&&item.unit!=="unit"&&(
+                      <div style={{display:"flex",alignItems:"center",gap:8,marginTop:8}}>
+                        <span style={{fontSize:11,color:"#64748b"}}>Quantity:</span>
+                        <input type="number" value={hardscapes[item.id]||0} min={0} onChange={e=>setHSQty(item.id,e.target.value)} style={{width:80,background:"#1e293b",border:`1px solid ${currentCat.color}66`,borderRadius:8,padding:"5px 10px",color:currentCat.color,fontSize:14,fontWeight:700,outline:"none"}} />
+                        <span style={{fontSize:11,color:"#64748b"}}>{item.unit}</span>
+                      </div>
+                    )}
+                  </div>
+                  <button onClick={()=>toggleHardscape(item.id)} style={{padding:"9px 16px",borderRadius:10,border:`2px solid ${active?currentCat.color:"#334155"}`,background:active?`${currentCat.color}22`:"#1e293b",color:active?currentCat.color:"#94a3b8",fontWeight:800,fontSize:13,cursor:"pointer",flexShrink:0,transition:"all 0.15s",whiteSpace:"nowrap"}}>
+                    {active?"✓ Added":"+ Add"}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {totalSelected>0&&(
+        <div style={{background:"rgba(6,182,212,0.07)",border:"1px solid rgba(6,182,212,0.2)",borderRadius:12,padding:12}}>
+          <div style={{fontSize:11,color:"#06b6d4",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:8}}>Your Outdoor Space Design ({totalSelected} elements)</div>
+          <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+            {HARDSCAPE_OPTIONS.filter(h=>hardscapes[h.id]!=null).map(h=>(
+              <span key={h.id} style={{padding:"4px 10px",borderRadius:20,background:"rgba(6,182,212,0.12)",border:"1px solid rgba(6,182,212,0.25)",color:"#06b6d4",fontSize:12,fontWeight:600}}>
+                {h.icon} {h.label}{h.unit!=="unit"?` - ${hardscapes[h.id]} ${h.unit}`:""}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:16,padding:14,display:"flex",flexDirection:"column",gap:12}}>
+        <div>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+            <div style={{fontSize:11,color:"#94a3b8",fontWeight:600}}>Daily Renders Remaining</div>
+            <div style={{fontSize:12,fontWeight:800,color:limitHit?"#ef4444":rendersLeft<=3?"#f59e0b":"#22c55e"}}>{limitHit?"Limit reached":`${rendersLeft} left today`}</div>
+          </div>
+          <div style={{height:5,background:"#1e293b",borderRadius:3,overflow:"hidden"}}><div style={{height:"100%",width:`${Math.min((dailyRenders/dailyLimit)*100,100)}%`,background:limitHit?"#ef4444":rendersLeft<=3?"linear-gradient(90deg,#f59e0b,#ef4444)":"linear-gradient(90deg,#22c55e,#34d399)",borderRadius:3,transition:"width 0.4s"}} /></div>
+          <div style={{fontSize:10,color:"#334155",marginTop:4}}>{dailyRenders} of {dailyLimit} used - Pool + Hardscape renders share this limit - Resets midnight</div>
+        </div>
+
+        <div>
+          <div style={{fontSize:11,color:"#34d399",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:8}}>🎨 Rendering Style</div>
+          <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+            {[{id:"photorealistic",label:"📷 Photorealistic"},{id:"twilight",label:"🌅 Twilight"},{id:"night",label:"🌙 Night"},{id:"magazine",label:"✨ Magazine"}].map(s=>(
+              <button key={s.id} onClick={()=>setStyle(s.id)} style={{padding:"7px 14px",borderRadius:20,border:`2px solid ${style===s.id?"#34d399":"#1e293b"}`,background:style===s.id?"rgba(52,211,153,0.1)":"transparent",color:style===s.id?"#34d399":"#64748b",fontSize:12,fontWeight:600,cursor:"pointer"}}>{s.label}</button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <div style={{fontSize:11,color:"#34d399",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:8}}>✍️ Additional Instructions</div>
+          <textarea value={tweak} onChange={e=>setTweak(e.target.value)} placeholder="e.g. 'use travertine throughout, add string lights, mature palms in corners'" rows={2}
+            style={{width:"100%",background:"#1e293b",border:"1px solid #334155",borderRadius:10,padding:"9px 12px",color:"#e2e8f0",fontSize:13,outline:"none",resize:"none",boxSizing:"border-box",lineHeight:1.5,fontFamily:"inherit"}} />
+        </div>
+
+        {limitHit ? (
+          <div style={{padding:"14px",borderRadius:12,background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.2)",textAlign:"center"}}>
+            <div style={{fontSize:14,fontWeight:700,color:"#ef4444",marginBottom:4}}>⏰ Daily Limit Reached</div>
+            <div style={{fontSize:12,color:"#94a3b8"}}>All {dailyLimit} renders used today. Resets at midnight.</div>
+          </div>
+        ) : !apiKey ? (
+          <div style={{padding:"14px",borderRadius:12,background:"rgba(52,211,153,0.06)",border:"1px solid rgba(52,211,153,0.2)",textAlign:"center"}}>
+            <div style={{fontSize:13,fontWeight:700,color:"#34d399",marginBottom:4}}>🔑 Grok API Key Required</div>
+            <div style={{fontSize:12,color:"#6ee7b7"}}>Add your xAI API key on the Design tab to activate rendering.</div>
+          </div>
+        ) : (
+          <button onClick={rendering?null:handleRender} style={{width:"100%",padding:"16px",borderRadius:12,background:rendering?"#1e293b":"linear-gradient(135deg,#059669,#047857)",border:"none",color:"white",fontWeight:800,fontSize:15,cursor:rendering?"not-allowed":"pointer",boxShadow:rendering?"none":"0 4px 20px rgba(5,150,105,0.3)",transition:"all 0.2s"}}>
+            {rendering?`⏳ ${progressMsg}`:rendered?"🔄 Generate New Variation":"🚀 Generate Hardscape Rendering"}
           </button>
         )}
 
@@ -3101,10 +3101,9 @@ function SettingsScreen({ userMode, setUserMode, onSwitchMode }) {
 
       {/* Version / About */}
       <div style={{background:"#0f172a",border:"1px solid #1e293b",borderRadius:12,padding:14,textAlign:"center"}}>
-        <div style={{fontSize:13,fontWeight:800,color:"#e2e8f0",marginBottom:4,fontFamily:"Georgia,serif",letterSpacing:"2px"}}>
-          <span style={{color:"#dde6f0"}}>POOL </span><span style={{color:"#c9a84c"}}>CRAFT </span><span style={{color:"#dde6f0"}}>PRO</span>
-        </div>
-        <div style={{fontSize:10,color:"#8a9ab5",letterSpacing:"2px",textTransform:"uppercase",marginBottom:8}}>Design Pools. Craft Outdoor Living.</div>
+        <div style={{fontSize:13,fontWeight:800,color:"#e2e8f0",marginBottom:4}}</div>
+      <div style="font-size:20px;font-family:Georgia,serif;font-weight:900;letter-spacing:3px;color:white;margin-bottom:4px">POOL <span style="color:#c9a84c">CRAFT</span> PRO</div>
+      <div style="font-size:11px;color:#94a3b8;letter-spacing:2px">DESIGN POOLS. CRAFT OUTDOOR LIVING.</div
         <div style={{fontSize:11,color:"#64748b",lineHeight:1.7}}>Version 1.0 · poolcraftpro.ai · Built with React<br/>AI rendering by xAI Grok Aurora · Maps by Google<br/>Parcel data by Regrid · Cloud sync by Supabase</div>
       </div>
     </div>
@@ -3559,6 +3558,154 @@ function QuickRender({ len, wid, shape, finishId, colorId, entries, hardscapes }
 // ─── BUILD TRACKER — Post-sale phase tracking with client portal ──────────────
 const BUILD_PHASES = [
   { id: "contract",    label: "Contract & Deposit",         icon: "📝", days: "Day 1",       detail: "Contract signed, deposit received, project activated" },
+      const b64 = photo.split(",")[1];
+      const mediaType = photo.startsWith("data:image/png") ? "image/png" : "image/jpeg";
+      const resp = await fetch("https://api.x.ai/v1/images/edits", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
+        body: JSON.stringify({ model: "grok-imagine-image-quality", prompt, image: { b64_json: b64, media_type: mediaType }, response_format: "b64_json", n: 1 }),
+      });
+      clearInterval(iv);
+      if (!resp.ok) {
+        const e = await resp.json().catch(() => ({}));
+        if (resp.status === 401) throw new Error("Invalid API key — check Settings");
+        if (resp.status === 429) throw new Error("Rate limit — wait 60 seconds");
+        throw new Error(e?.error?.message || `Error ${resp.status}`);
+      }
+      const data = await resp.json();
+      const b64r = data?.data?.[0]?.b64_json;
+      if (!b64r) throw new Error("No image returned — please try again");
+      setProgress(100); setRendered(`data:image/jpeg;base64,${b64r}`);
+      // Get AI designer note
+      fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 160,
+          messages: [{ role: "user", content: `In 2 enthusiastic sentences, describe this pool design to an excited homeowner: ${len}x${wid} ${shapeLabel} pool, ${colorLabel} water, ${finishLabel} finish${featureList ? ", " + featureList : ""}.` }] })
+      }).then(r => r.json()).then(d => setAiNote(d?.content?.[0]?.text || null)).catch(() => {});
+    } catch (e) { clearInterval(iv); setError(e.message); }
+    finally { setRendering(false); }
+  };
+
+  const STYLES = [
+    { id: "photorealistic", label: "📷 Daylight" },
+    { id: "twilight", label: "🌅 Twilight" },
+    { id: "night", label: "🌙 Night" },
+    { id: "magazine", label: "✨ Magazine" },
+  ];
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      {/* Header */}
+      <div style={{ background: "linear-gradient(135deg,rgba(201,168,76,0.15),rgba(168,135,58,0.08))", border: "1px solid rgba(201,168,76,0.35)", borderRadius: 16, padding: 16 }}>
+        <div style={{ fontSize: 15, fontWeight: 800, color: "#c9a84c", marginBottom: 6 }}>⚡ Quick Render — Close the Deal On-Site</div>
+        <div style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.7 }}>
+          Stand in the client's backyard → tap the camera → show them their pool rendered into their real yard in under 60 seconds. No laptop needed. No site visit to schedule later. Close the deal right now.
+        </div>
+        <div style={{ marginTop: 10, display: "flex", flexWrap: "wrap", gap: 8 }}>
+          {[`${len}'×${wid}' ${shapeLabel}`, colorLabel, finishLabel, ...activeFeatures.slice(0, 2).map(f => f.label)].map(tag => (
+            <span key={tag} style={{ padding: "3px 10px", borderRadius: 20, background: "rgba(201,168,76,0.12)", border: "1px solid rgba(201,168,76,0.25)", color: "#c9a84c", fontSize: 11, fontWeight: 600 }}>{tag}</span>
+          ))}
+        </div>
+      </div>
+
+      {/* Camera / Photo */}
+      {!photo ? (
+        <div style={{ background: "#111827", border: "1px solid #1e293b", borderRadius: 16, overflow: "hidden" }}>
+          {cameraActive ? (
+            <div>
+              <video ref={videoRef} autoPlay playsInline muted style={{ width: "100%", display: "block", maxHeight: 320, objectFit: "cover", background: "#000" }} />
+              <div style={{ padding: 12, display: "flex", gap: 8 }}>
+                <button onClick={capturePhoto} style={{ flex: 2, padding: 14, borderRadius: 12, border: "none", background: "linear-gradient(135deg,#c9a84c,#a8873a)", color: "#0a0f1e", fontWeight: 900, fontSize: 16, cursor: "pointer" }}>📸 Capture</button>
+                <button onClick={stopCamera} style={{ flex: 1, padding: 14, borderRadius: 12, border: "1px solid #334155", background: "#1e293b", color: "#94a3b8", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>Cancel</button>
+              </div>
+            </div>
+          ) : (
+            <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ fontSize: 13, color: "#94a3b8", textAlign: "center", lineHeight: 1.6 }}>Step 1 — Get a photo of the client's backyard</div>
+              <button onClick={startCamera} style={{ padding: 16, borderRadius: 12, border: "none", background: "linear-gradient(135deg,#c9a84c,#a8873a)", color: "#0a0f1e", fontWeight: 800, fontSize: 15, cursor: "pointer" }}>📷 Open Camera — Take Live Photo</button>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ flex: 1, height: 1, background: "#1e293b" }} />
+                <span style={{ fontSize: 11, color: "#64748b" }}>or</span>
+                <div style={{ flex: 1, height: 1, background: "#1e293b" }} />
+              </div>
+              <label style={{ padding: 14, borderRadius: 12, border: "1px solid #334155", background: "#0f172a", color: "#94a3b8", fontWeight: 700, fontSize: 13, cursor: "pointer", textAlign: "center", display: "block" }}>
+                📁 Upload Existing Photo
+                <input type="file" accept="image/*" onChange={uploadPhoto} style={{ display: "none" }} />
+              </label>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div style={{ background: "#111827", border: "1px solid #1e293b", borderRadius: 16, overflow: "hidden" }}>
+          <div style={{ position: "relative" }}>
+            <img src={photo} alt="Backyard" style={{ width: "100%", display: "block", maxHeight: 260, objectFit: "cover" }} />
+            <div style={{ position: "absolute", top: 10, left: 10, background: "rgba(201,168,76,0.9)", borderRadius: 8, padding: "4px 10px", fontSize: 11, fontWeight: 700, color: "#0a0f1e" }}>✅ Photo Ready</div>
+            <button onClick={() => { setPhoto(null); setRendered(null); setError(null); }} style={{ position: "absolute", top: 8, right: 8, background: "rgba(0,0,0,0.6)", border: "none", color: "white", borderRadius: 8, padding: "6px 10px", fontSize: 12, cursor: "pointer", fontWeight: 700 }}>✕ Retake</button>
+          </div>
+        </div>
+      )}
+
+      {/* Style selector */}
+      <div style={{ display: "flex", gap: 6 }}>
+        {STYLES.map(s => (
+          <button key={s.id} onClick={() => setStyle(s.id)} style={{ flex: 1, padding: "8px 4px", borderRadius: 10, border: `2px solid ${style === s.id ? "#c9a84c" : "#334155"}`, background: style === s.id ? "rgba(201,168,76,0.1)" : "#111827", color: style === s.id ? "#c9a84c" : "#64748b", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>{s.label}</button>
+        ))}
+      </div>
+
+      {/* Render button */}
+      {!rendering && !rendered && (
+        <button onClick={renderNow} disabled={!photo} style={{ width: "100%", padding: 18, borderRadius: 14, border: "none", background: photo ? "linear-gradient(135deg,#7c3aed,#5b21b6)" : "#1e293b", color: "white", fontWeight: 900, fontSize: 17, cursor: photo ? "pointer" : "not-allowed", boxShadow: photo ? "0 4px 30px rgba(124,58,237,0.4)" : "none", letterSpacing: "0.02em" }}>
+          🚀 Render Pool Into This Backyard
+        </button>
+      )}
+
+      {/* Progress */}
+      {rendering && (
+        <div style={{ background: "#111827", border: "1px solid #1e293b", borderRadius: 14, padding: 20, textAlign: "center" }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>🚀</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "#a78bfa", marginBottom: 10 }}>Grok Aurora is rendering your pool...</div>
+          <div style={{ height: 6, background: "#1e293b", borderRadius: 3, overflow: "hidden", marginBottom: 8 }}>
+            <div style={{ height: "100%", width: `${progress}%`, background: "linear-gradient(90deg,#7c3aed,#a78bfa,#c9a84c)", borderRadius: 3, transition: "width 3s ease" }} />
+          </div>
+          <div style={{ fontSize: 12, color: "#64748b" }}>About 30-45 seconds — worth every one</div>
+        </div>
+      )}
+
+      {/* Error */}
+      {error && !rendering && (
+        <div style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 12, padding: 14 }}>
+          <div style={{ fontSize: 13, color: "#ef4444", fontWeight: 600, marginBottom: 8 }}>⚠️ {error}</div>
+          <button onClick={renderNow} style={{ padding: "8px 16px", borderRadius: 8, background: "rgba(124,58,237,0.15)", border: "1px solid rgba(124,58,237,0.3)", color: "#a78bfa", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>Try Again</button>
+        </div>
+      )}
+
+      {/* Result */}
+      {rendered && !rendering && (
+        <div style={{ background: "#111827", border: "2px solid rgba(201,168,76,0.4)", borderRadius: 16, overflow: "hidden", boxShadow: "0 8px 40px rgba(201,168,76,0.15)" }}>
+          <div style={{ position: "relative" }}>
+            <img src={rendered} alt="Pool rendering" style={{ width: "100%", display: "block" }} />
+            <div style={{ position: "absolute", top: 10, left: 10, background: "rgba(201,168,76,0.95)", borderRadius: 8, padding: "5px 12px", fontSize: 11, fontWeight: 800, color: "#0a0f1e" }}>⚡ QUICK RENDER — Pool Craft Pro</div>
+          </div>
+          {aiNote && (
+            <div style={{ padding: "14px 16px", background: "rgba(201,168,76,0.06)", borderTop: "1px solid rgba(201,168,76,0.15)" }}>
+              <div style={{ fontSize: 10, color: "#c9a84c", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>🤖 AI Designer Note</div>
+              <div style={{ fontSize: 13, color: "#94a3b8", lineHeight: 1.65, fontStyle: "italic" }}>{aiNote}</div>
+            </div>
+          )}
+          <div style={{ padding: 14, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+            <button onClick={() => { setRendered(null); setProgress(0); setTimeout(renderNow, 80); }} style={{ padding: 11, borderRadius: 10, border: "1px solid rgba(124,58,237,0.3)", background: "rgba(124,58,237,0.1)", color: "#a78bfa", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>🔄 New</button>
+            <a href={rendered} download="poolcraft-quick-render.jpg" style={{ padding: 11, borderRadius: 10, border: "1px solid rgba(34,197,94,0.3)", background: "rgba(34,197,94,0.1)", color: "#22c55e", fontWeight: 700, fontSize: 12, textDecoration: "none", textAlign: "center", display: "block" }}>⬇️ Save</a>
+            <button onClick={() => { if (navigator.share) navigator.share({ title: "Pool Design", text: "Your pool design from Pool Craft Pro", files: [] }); }} style={{ padding: 11, borderRadius: 10, border: "1px solid rgba(201,168,76,0.3)", background: "rgba(201,168,76,0.1)", color: "#c9a84c", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>📤 Share</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── BUILD TRACKER — Post-sale phase tracking with client portal ──────────────
+const BUILD_PHASES = [
+  { id: "contract",    label: "Contract & Deposit",         icon: "📝", days: "Day 1",       detail: "Contract signed, deposit received, project activated" },
   { id: "design",      label: "Final Design Approval",      icon: "✅", days: "Days 1-7",    detail: "Client approves final pool design and selections" },
   { id: "permits",     label: "Permit Application",         icon: "🏛️", days: "Days 3-21",   detail: "Building permit submitted to local municipality" },
   { id: "permits_app", label: "Permits Approved",           icon: "✅", days: "Days 14-42",  detail: "All permits approved, ready to schedule excavation" },
@@ -3705,519 +3852,109 @@ function BuildTracker({ projectName, clientName, clientEmail }) {
 }
 
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
-export default function PoolCraftPro() {
-  const [tab, setTab] = useState(0);
-  const [shape, setShape] = useState("rectangle");
-  const [len, setLen] = useState(30);
-  const [wid, setWid] = useState(15);
-  const [depthId, setDepthId] = useState("standard");
-  const [finishId, setFinishId] = useState("pebble");
-  const [colorId, setColorId] = useState("caribbean");
-  const [entries, setEntries] = useState({});
-  const [hardscapes, setHardscapes] = useState({});
-  const [extras, setExtras] = useState({ heater:true, sanitization:"salt", waterFeature:false });
-  const [shopCat, setShopCat] = useState("tile");
-  const [wishlist, setWishlist] = useState([]);
-  const [guideMode, setGuideMode] = useState("contractor");
-  const [bgPhoto, setBgPhoto] = useState(null);
-  const [address, setAddress] = useState("");
-  const [parcelStatus, setParcelStatus] = useState(null);
-  const [parcelData, setParcelData] = useState(null);
-  const [showMap, setShowMap] = useState(false);
-  const [localRates, setLocalRates] = useState({ multiplier:1, laborMultiplier:1 });
+// ─── AUTH SYSTEM ─────────────────────────────────────────────────────────────
+// Your Supabase credentials — customers never see these
+// They are loaded from environment variables on Vercel
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "";
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
+const XAI_KEY = import.meta.env.VITE_XAI_KEY || "";
+const GMAPS_KEY = import.meta.env.VITE_GMAPS_KEY || "";
 
-  const [dailyRenders, setDailyRenders] = useState(() => {
-    try { const saved = JSON.parse(localStorage.getItem("pc_daily")||"{}"); const today = new Date().toDateString(); return saved.date === today ? (saved.count||0) : 0; } catch { return 0; }
-  });
+// Auth state hook
+function useAuth() {
+  const [user, setUser] = useState(null);
+  const [session, setSession] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
-  const DAILY_RENDER_LIMIT = 10;
-  const apiKey = (() => { try { return localStorage.getItem("xai_dev_key")||""; } catch { return ""; } })();
-
-  const bumpDailyRender = () => {
-    const newCount = dailyRenders + 1; setDailyRenders(newCount);
-    try { localStorage.setItem("pc_daily", JSON.stringify({ date: new Date().toDateString(), count: newCount })); } catch {}
-    return newCount;
-  };
-
-  const [showOnboarding, setShowOnboarding] = useState(() => { try { return !localStorage.getItem("pc_onboarded"); } catch { return true; } });
-  const [userMode, setUserMode] = useState(() => { try { return localStorage.getItem("pc_mode")||"contractor"; } catch { return "contractor"; } });
-  const [showProjects, setShowProjects] = useState(false);
-  const [projectId, setProjectId] = useState(null);
-  const [projectName, setProjectName] = useState("My Pool Project");
-  const [showSaveDialog, setShowSaveDialog] = useState(false);
-  const [saveNameInput, setSaveNameInput] = useState("");
-  const [saveClientInput, setSaveClientInput] = useState("");
-  const [saveClientEmailInput, setSaveClientEmailInput] = useState("");
-  const [saveClientPhoneInput, setSaveClientPhoneInput] = useState("");
-  const [saveShowContactFields, setSaveShowContactFields] = useState(false);
-  const [clientName, setClientName] = useState(null);
-  const [clientEmail, setClientEmail] = useState(null);
-  const [clientPhone, setClientPhone] = useState(null);
-  const [savedToast, setSavedToast] = useState(false);
-  const [savedToastMsg, setSavedToastMsg] = useState("✅ Project saved!");
-  const [savingInProgress, setSavingInProgress] = useState(false);
-  const [demoMode, setDemoMode] = useState(false);
-
-  const [showSplash, setShowSplash] = useState(() => { try { return !localStorage.getItem("pc_launched"); } catch { return true; } });
-  const [showShare, setShowShare] = useState(false);
-  const [unsavedConfirm, setUnsavedConfirm] = useState(null);
-
-  // Demo mode — loads a sample pool so contractors can show the app during sales visits
-  const activateDemo = () => {
-    setShape("freeform"); setLen(40); setWid(20); setDepthId("standard");
-    setFinishId("pebble"); setColorId("caribbean");
-    setEntries({ beach_entry: true, baja_shelf: true, spa_attached: true });
-    setHardscapes({ fire_pit: 1, outdoor_kitchen: 1, pergola: 1 });
-    setExtras({ heater: true, sanitization: "salt", waterFeature: true });
-    setProjectName("Demo — Lagoon Pool"); setClientName("Sample Client");
-    setClientEmail("client@example.com");
-    setDemoMode(true); setTab(0);
-    try { localStorage.setItem("pc_mode","contractor"); } catch {}
-  };
-  const exitDemo = () => {
-    setShape("rectangle"); setLen(30); setWid(15); setDepthId("standard");
-    setFinishId("pebble"); setColorId("caribbean");
-    setEntries({}); setHardscapes({}); setExtras({ heater:true, sanitization:"salt", waterFeature:false });
-    setProjectName("My Pool Project"); setClientName(null); setClientEmail(null);
-    setDemoMode(false);
-  };
-
-  // ── Unsaved changes tracking ──
-  // Snapshot the design-relevant fields right after a save or load; compare
-  // against current state to know whether navigating away would lose work.
-  const lastSavedSnapshot = useRef(null);
-  const designSnapshot = useMemo(() => JSON.stringify({
-    shape, len, wid, depthId, finishId, colorId, entries, hardscapes, extras, address, localRates,
-    clientName, clientEmail, clientPhone, projectName,
-  }), [shape, len, wid, depthId, finishId, colorId, entries, hardscapes, extras, address, localRates, clientName, clientEmail, clientPhone, projectName]);
-  const isDirty = lastSavedSnapshot.current !== null && lastSavedSnapshot.current !== designSnapshot;
-  const markSnapshotClean = () => { lastSavedSnapshot.current = designSnapshot; };
-  useEffect(() => { if (lastSavedSnapshot.current === null) markSnapshotClean(); }, []); // eslint-disable-line
-
-  // Warn on browser/tab close if there's unsaved work
   useEffect(() => {
-    const handler = (e) => { if (isDirty) { e.preventDefault(); e.returnValue = ""; return ""; } };
-    window.addEventListener("beforeunload", handler);
-    return () => window.removeEventListener("beforeunload", handler);
-  }, [isDirty]);
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) { setAuthLoading(false); return; }
+    loadSupabase().then(sb => {
+      if (!sb) { setAuthLoading(false); return; }
+      sb.auth.getSession().then(({ data: { session: s } }) => {
+        setSession(s); setUser(s?.user || null); setAuthLoading(false);
+      });
+      const { data: { subscription } } = sb.auth.onAuthStateChange((_e, s) => {
+        setSession(s); setUser(s?.user || null);
+      });
+      return () => subscription?.unsubscribe();
+    });
+  }, []);
 
-  // Run `action` immediately if there's nothing to lose, otherwise ask first
-  const withUnsavedCheck = (action) => { if (isDirty) setUnsavedConfirm(() => action); else action(); };
-
-  const completeSplash = () => { try { localStorage.setItem("pc_launched","1"); } catch {} setShowSplash(false); };
-  const completeOnboarding = () => { try { localStorage.setItem("pc_onboarded","1"); localStorage.setItem("pc_mode", userMode); } catch {} setShowOnboarding(false); };
-
-  const saveProject = async () => {
-    const name = saveNameInput.trim() || projectName;
-    const id = projectId || Date.now();
-    setSavingInProgress(true);
-    const project = {
-      id, name, savedAt: Date.now(),
-      clientName: saveClientInput.trim() || clientName || null,
-      clientEmail: saveClientEmailInput.trim() || clientEmail || null,
-      clientPhone: saveClientPhoneInput.trim() || clientPhone || null,
-      shape, len, wid, depthId, finishId, colorId, entries, hardscapes, extras, address, localRates,
-      gallons: materials.gallons,
-      entryCount: Object.keys(entries).length,
-      hardscapeCount: Object.keys(hardscapes).filter(k=>hardscapes[k]!=null).length,
-      finish: POOL_FINISHES.find(f=>f.id===finishId)?.label || finishId,
-    };
-    const savedToCloud = await saveProjectRecord(project);
-    setSavingInProgress(false);
-    setProjectId(id);
-    setProjectName(name);
-    setClientName(project.clientName);
-    setClientEmail(project.clientEmail);
-    setClientPhone(project.clientPhone);
-    setShowSaveDialog(false); setSaveNameInput(""); setSaveClientInput(""); setSaveClientEmailInput(""); setSaveClientPhoneInput("");
-    const cloudConfigured = !!(getSupabaseConfig().url && getSupabaseConfig().key);
-    setSavedToastMsg(cloudConfigured && !savedToCloud ? "✅ Saved to this device (cloud sync had an issue)" : cloudConfigured ? "✅ Saved & synced to the cloud" : "✅ Project saved!");
-    setSavedToast(true); setTimeout(()=>setSavedToast(false), 2800);
-    markSnapshotClean();
+  const signOut = async () => {
+    const sb = await loadSupabase();
+    if (sb) await sb.auth.signOut();
+    setUser(null); setSession(null);
   };
 
-  const loadProject = (p) => {
-    setProjectId(p.id);
-    setClientEmail(p.clientEmail||null);
-    setClientPhone(p.clientPhone||null);
-    setClientName(p.clientName||null);
-    setShape(p.shape||"rectangle"); setLen(p.len||30); setWid(p.wid||15);
-    setDepthId(p.depthId||"standard"); setFinishId(p.finishId||"pebble"); setColorId(p.colorId||"caribbean");
-    setEntries(p.entries||{}); setHardscapes(p.hardscapes||{});
-    setExtras(p.extras||{heater:true,sanitization:"salt",waterFeature:false});
-    setLocalRates(p.localRates||{multiplier:1,laborMultiplier:1});
-    setAddress(p.address||""); setProjectName(p.name||"My Pool Project");
-    setShowProjects(false); setTab(0);
-    setTimeout(markSnapshotClean, 0);
+  return { user, session, authLoading, signOut };
+}
+
+// Login / Signup Screen
+function AuthScreen({ onAuth }) {
+  const [mode, setMode] = useState("login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
+
+  // If Supabase not configured, skip auth and go straight to app
+  useEffect(() => {
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) { onAuth({ id: "guest", email: "guest", guest: true }); }
+  }, []);
+
+  const handleSubmit = async () => {
+    setError(null); setSuccess(null);
+    if (!email.trim()) { setError("Email is required"); return; }
+    if (password.length < 8) { setError("Password must be at least 8 characters"); return; }
+    setLoading(true);
+    try {
+      const sb = await loadSupabase();
+      if (!sb) throw new Error("Service unavailable — please try again");
+      if (mode === "signup") {
+        const { data, error: e } = await sb.auth.signUp({ email: email.trim(), password, options: { data: { full_name: name.trim() } } });
+        if (e) throw e;
+        if (data.user && !data.session) setSuccess("Check your email to confirm your account, then sign in.");
+        else if (data.session) onAuth(data.user);
+      } else if (mode === "login") {
+        const { data, error: e } = await sb.auth.signInWithPassword({ email: email.trim(), password });
+        if (e) throw e;
+        onAuth(data.user);
+      } else {
+        const { error: e } = await sb.auth.resetPasswordForEmail(email.trim());
+        if (e) throw e;
+        setSuccess("Password reset link sent — check your email.");
+      }
+    } catch (e) {
+      const msg = e.message || "Something went wrong";
+      if (msg.includes("Invalid login")) setError("Incorrect email or password");
+      else if (msg.includes("already registered")) setError("Account exists — try signing in");
+      else setError(msg);
+    } finally { setLoading(false); }
   };
-
-  const startNewProject = () => {
-    setProjectId(null); setProjectName("New Pool Project"); setClientName(null); setClientEmail(null); setClientPhone(null);
-    setShape("rectangle"); setLen(30); setWid(15); setDepthId("standard");
-    setFinishId("pebble"); setColorId("caribbean"); setEntries({}); setHardscapes({});
-    setExtras({heater:true,sanitization:"salt",waterFeature:false});
-    setLocalRates({multiplier:1,laborMultiplier:1});
-    setAddress(""); setParcelData(null); setParcelStatus(null); setShowMap(false);
-    setBgPhoto(null); setTab(0);
-    setTimeout(markSnapshotClean, 0);
-  };
-
-  const exportPDF = () => generatePDF({ projectName, shape, len, wid, depthId, finishId, colorId, materials, equipment, entries, hardscapes, parcelData });
-
-  const toggleEntry = (id) => setEntries(p => p[id] ? (({[id]:_,...r})=>r)(p) : {...p,[id]:true});
-  const toggleHardscape = (id) => setHardscapes(p => p[id]!=null ? (({[id]:_,...r})=>r)(p) : {...p,[id]:100});
-  const setHSQty = (id, v) => setHardscapes(p => { const n = Number(v); const safe = Number.isFinite(n) ? Math.max(0, Math.round(n)) : 0; return {...p,[id]:safe}; });
-  const toggleWishlist = (name) => setWishlist(p => p.includes(name)?p.filter(x=>x!==name):[...p,name]);
-
-  const poolColor = POOL_COLORS.find(c=>c.id===colorId)||POOL_COLORS[1];
-  const materials = useMemo(()=>calcMaterials(shape,len,wid,depthId,finishId),[shape,len,wid,depthId,finishId]);
-  const equipment = useMemo(()=>getPentairEquipment(materials.gallons,extras),[materials.gallons,extras]);
-  const activeCat = SHOP_CATEGORIES.find(c=>c.id===shopCat);
-  const activeEntries = ENTRY_FEATURES.filter(e=>entries[e.id]);
-
-  const lookupAddress = async () => {
-    if (!address.trim()) return;
-    setParcelStatus("loading"); setParcelData(null); setShowMap(false);
-    try { const data = await lookupParcel(address); setParcelData(data); setParcelStatus("found"); setShowMap(true); }
-    catch(err) { setParcelStatus("error"); }
-  };
-
-  const card = {background:"#111827",border:"1px solid #1e293b",borderRadius:16,padding:18};
-  const sectionTitle = {fontSize:11,color:"#06b6d4",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:12};
-  const chip = (active,color="#06b6d4")=>({padding:"8px 14px",borderRadius:20,border:`2px solid ${active?color:"#334155"}`,background:active?`${color}22`:"#1e293b",color:active?color:"#94a3b8",cursor:"pointer",fontSize:12,fontWeight:600,transition:"all 0.15s"});
 
   return (
-    <div style={{fontFamily:"'Inter',system-ui,sans-serif",background:"#0b1120",minHeight:"100vh",color:"#e2e8f0"}}>
-      {showSplash && <SplashScreen onDone={completeSplash} />}
-      {showShare && <ShareDesign projectName={projectName} clientName={clientName} clientEmail={clientEmail} clientPhone={clientPhone} shape={shape} len={len} wid={wid} depthId={depthId} finishId={finishId} colorId={colorId} entries={entries} hardscapes={hardscapes} materials={materials} onClose={()=>setShowShare(false)} />}
-      {showOnboarding && <OnboardingModal onComplete={completeOnboarding} userMode={userMode} setUserMode={setUserMode} setLen={setLen} setWid={setWid} setShape={setShape} setDepthId={setDepthId} setFinishId={setFinishId} />}
-      {showProjects && <ProjectManager currentProjectId={projectId} onLoad={(p)=>withUnsavedCheck(()=>loadProject(p))} onClose={()=>setShowProjects(false)} />}
-
-      {showSaveDialog && (
-        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",zIndex:998,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
-          <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:16,padding:24,width:"100%",maxWidth:380}}>
-            <div style={{fontSize:15,fontWeight:800,color:"#e2e8f0",marginBottom:16}}>💾 {projectId?"Update":"Save"} Project</div>
-            <input value={saveNameInput} onChange={e=>setSaveNameInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&saveProject()}
-              placeholder="Project name e.g. Smith Residence Pool"
-              style={{width:"100%",background:"#1e293b",border:"1px solid #334155",borderRadius:10,padding:"11px 14px",color:"#e2e8f0",fontSize:14,outline:"none",boxSizing:"border-box",marginBottom:10}} />
-            <input value={saveClientInput} onChange={e=>setSaveClientInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&saveProject()}
-              placeholder="Client name (optional) e.g. John & Mary Smith"
-              style={{width:"100%",background:"#1e293b",border:"1px solid #334155",borderRadius:10,padding:"11px 14px",color:"#e2e8f0",fontSize:14,outline:"none",boxSizing:"border-box",marginBottom:saveShowContactFields?10:12}} />
-            {saveShowContactFields ? (
-              <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:12}}>
-                <input type="email" value={saveClientEmailInput} onChange={e=>setSaveClientEmailInput(e.target.value)} placeholder="Client email (optional)"
-                  style={{width:"100%",background:"#1e293b",border:"1px solid #334155",borderRadius:10,padding:"10px 14px",color:"#e2e8f0",fontSize:13,outline:"none",boxSizing:"border-box"}} />
-                <input type="tel" value={saveClientPhoneInput} onChange={e=>setSaveClientPhoneInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&saveProject()} placeholder="Client phone (optional)"
-                  style={{width:"100%",background:"#1e293b",border:"1px solid #334155",borderRadius:10,padding:"10px 14px",color:"#e2e8f0",fontSize:13,outline:"none",boxSizing:"border-box"}} />
-              </div>
-            ) : (
-              <button onClick={()=>setSaveShowContactFields(true)} style={{background:"none",border:"none",color:"#06b6d4",fontSize:11,fontWeight:600,cursor:"pointer",padding:0,marginBottom:12}}>+ Add client email or phone (lets you share designs directly)</button>
-            )}
-            <div style={{fontSize:11,color:"#64748b",marginBottom:14}}>{len}'x{wid}' {POOL_SHAPES.find(s=>s.id===shape)?.label} - {materials.gallons.toLocaleString()} gal - {Object.keys(entries).length} features</div>
-            <div style={{display:"flex",gap:8}}>
-              <button onClick={()=>setShowSaveDialog(false)} style={{flex:1,padding:"11px",borderRadius:10,border:"1px solid #334155",background:"#1e293b",color:"#94a3b8",fontWeight:700,fontSize:13,cursor:"pointer"}}>Cancel</button>
-              <button onClick={saveProject} disabled={savingInProgress} style={{flex:2,padding:"11px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#22c55e,#16a34a)",color:"white",fontWeight:800,fontSize:13,cursor:savingInProgress?"not-allowed":"pointer",opacity:savingInProgress?0.7:1}}>{savingInProgress?"Saving...":"Save Project"}</button>
+    <div style={{ minHeight:"100vh", background:"linear-gradient(135deg,#0a0f1e,#0f1e3d)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:20, fontFamily:"Inter,system-ui,sans-serif" }}>
+      <div style={{ width:"100%", maxWidth:420 }}>
+        {/* Logo */}
+        <div style={{ textAlign:"center", marginBottom:32 }}>
+          <div style={{ display:"flex", justifyContent:"center", marginBottom:16 }}>
+            <div style={{ width:64, height:64, borderRadius:16, background:"linear-gradient(135deg,#1a2f5e,#0f1e3d)", display:"flex", alignItems:"center", justifyContent:"center", border:"1px solid rgba(201,168,76,0.4)", boxShadow:"0 4px 24px rgba(201,168,76,0.2)" }}>
+              <svg viewBox="0 0 52 42" width="40" height="32">
+                <defs>
+                  <linearGradient id="aN" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#6aaee8"/><stop offset="100%" stopColor="#1a2f5e"/></linearGradient>
+                  <linearGradient id="aG" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#e8c96a"/><stop offset="100%" stopColor="#a8873a"/></linearGradient>
+                  <linearGradient id="aD" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#6aaee8"/><stop offset="100%" stopColor="#1a5fa8"/></linearGradient>
+                </defs>
+                <text x="0" y="34" fontFamily="Georgia,serif" fontWeight="700" fontSize="34" fill="url(#aN)">F</text>
+                <path d="M 26 1 C 26 1,18 14,18 20 C 18 26 21.5 30 26 30 C 30.5 30 34 26 34 20 C 34 14 26 1 26 1 Z" fill="url(#aD)"/>
+                <ellipse cx="23" cy="15" rx="2.5" ry="4" fill="white" opacity="0.4" transform="rotate(-15 23 15)"/>
+                <text x="30" y="34" fontFamily="Georgia,serif" fontWeight="700" fontSize="34" fill="url(#aG)">P</text>
+              </svg>
             </div>
           </div>
-        </div>
-      )}
-
-      {savedToast && (<div style={{position:"fixed",bottom:24,left:"50%",transform:"translateX(-50%)",background:"rgba(34,197,94,0.95)",borderRadius:20,padding:"10px 20px",fontSize:13,fontWeight:700,color:"white",zIndex:9999,boxShadow:"0 4px 20px rgba(0,0,0,0.4)",whiteSpace:"nowrap"}}>{savedToastMsg}</div>)}
-
-      {unsavedConfirm && (
-        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.78)",zIndex:1001,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
-          <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:16,padding:24,width:"100%",maxWidth:380}}>
-            <div style={{fontSize:32,marginBottom:10}}>⚠️</div>
-            <div style={{fontSize:15,fontWeight:800,color:"#e2e8f0",marginBottom:8}}>You have unsaved changes</div>
-            <div style={{fontSize:13,color:"#94a3b8",lineHeight:1.6,marginBottom:18}}>{projectName} has edits that haven't been saved yet. If you continue, those changes will be lost.</div>
-            <div style={{display:"flex",flexDirection:"column",gap:8}}>
-              <button onClick={async ()=>{ const action=unsavedConfirm; setUnsavedConfirm(null); await saveProject(); if(action) action(); }}
-                style={{padding:"12px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#22c55e,#16a34a)",color:"white",fontWeight:800,fontSize:13,cursor:"pointer"}}>💾 Save, Then Continue</button>
-              <button onClick={()=>{ const action=unsavedConfirm; setUnsavedConfirm(null); if(action) action(); }}
-                style={{padding:"12px",borderRadius:10,border:"1px solid rgba(239,68,68,0.4)",background:"rgba(239,68,68,0.12)",color:"#ef4444",fontWeight:700,fontSize:13,cursor:"pointer"}}>Discard Changes & Continue</button>
-              <button onClick={()=>setUnsavedConfirm(null)} style={{padding:"12px",borderRadius:10,border:"1px solid #334155",background:"#1e293b",color:"#94a3b8",fontWeight:700,fontSize:13,cursor:"pointer"}}>Cancel</button>
-            </div>
+          <div style={{ fontSize:24, fontWeight:900, letterSpacing:"2px", fontFamily:"Georgia,serif" }}>
+            <span style={{ color:"#e2e8f0" }}>POOL </span><span style={{ color:"#c9a84c" }}>CRAFT </span><span style={{ color:"#e2e8f0" }}>PRO</span>
           </div>
-        </div>
-      )}
-
-      <div style={{background:"linear-gradient(135deg,#0a0f1e 0%,#0f1e3d 60%,#0a0f1e 100%)",padding:"14px 16px 0",borderBottom:"1px solid rgba(201,168,76,0.2)"}}>
-        {/* Row 1: logo mark + wordmark + mode badge */}
-        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
-          <div style={{width:38,height:38,borderRadius:10,background:"linear-gradient(135deg,#1a2f5e,#0f1e3d)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:"1px solid rgba(201,168,76,0.35)",boxShadow:"0 2px 12px rgba(201,168,76,0.15)"}}>
-            <svg viewBox="0 0 52 42" width="30" height="24">
-              <defs>
-                <linearGradient id="hN" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#4a7ab5"/><stop offset="100%" stopColor="#1a2f5e"/></linearGradient>
-                <linearGradient id="hG" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#e8c96a"/><stop offset="100%" stopColor="#a8873a"/></linearGradient>
-                <linearGradient id="hD" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#6aaee8"/><stop offset="100%" stopColor="#1a5fa8"/></linearGradient>
-              </defs>
-              <text x="0" y="34" fontFamily="Georgia,serif" fontWeight="700" fontSize="34" fill="url(#hN)">F</text>
-              <path d="M 26 1 C 26 1,18 14,18 20 C 18 26 21.5 30 26 30 C 30.5 30 34 26 34 20 C 34 14 26 1 26 1 Z" fill="url(#hD)"/>
-              <ellipse cx="23" cy="15" rx="2.5" ry="4" fill="white" opacity="0.4" transform="rotate(-15 23 15)"/>
-              <text x="30" y="34" fontFamily="Georgia,serif" fontWeight="700" fontSize="34" fill="url(#hG)">P</text>
-            </svg>
-          </div>
-          <div style={{flex:1,minWidth:0}}>
-            <div style={{fontWeight:900,fontSize:15,letterSpacing:"1.5px",fontFamily:"Georgia,serif",lineHeight:1.1}}>
-              <span style={{color:"#dde6f0"}}>POOL </span><span style={{color:"#c9a84c"}}>CRAFT </span><span style={{color:"#dde6f0"}}>PRO</span>
-            </div>
-            <div style={{fontSize:11,color:"#8a9ab5",display:"flex",alignItems:"center",gap:5,flexWrap:"wrap",marginTop:2}}>
-              <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:160}}>{clientName?`${clientName} · `:""}{projectName}</span>
-              {(!projectId || isDirty) && (
-                <span style={{display:"inline-flex",alignItems:"center",gap:3,color:"#c9a84c",fontWeight:700,flexShrink:0}}>
-                  <span style={{width:5,height:5,borderRadius:"50%",background:"#c9a84c"}}></span>
-                  {!projectId ? "unsaved" : "unsaved changes"}
-                </span>
-              )}
-            </div>
-          </div>
-          <div onClick={()=>setShowOnboarding(true)} style={{padding:"6px 10px",borderRadius:16,background:userMode==="homeowner"?"rgba(34,197,94,0.15)":userMode==="designer"?"rgba(201,168,76,0.15)":"rgba(74,122,181,0.2)",border:`1px solid ${userMode==="homeowner"?"rgba(34,197,94,0.3)":userMode==="designer"?"rgba(201,168,76,0.35)":"rgba(74,122,181,0.4)"}`,fontSize:10,color:userMode==="homeowner"?"#22c55e":userMode==="designer"?"#c9a84c":"#7ab0e8",fontWeight:700,cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}}>
-            {userMode==="homeowner"?"🏠 HO":userMode==="designer"?"🎨 Design":"👷 Pro"}
-          </div>
-        </div>
-        {/* Demo mode banner */}
-        {demoMode && (
-          <div style={{background:"rgba(245,158,11,0.15)",border:"1px solid rgba(245,158,11,0.4)",borderRadius:10,padding:"8px 12px",marginBottom:8,display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
-            <div style={{fontSize:12,color:"#f59e0b",fontWeight:700}}>🎯 Demo Mode — Showing sample lagoon pool to client</div>
-            <button onClick={exitDemo} style={{padding:"4px 12px",borderRadius:10,background:"rgba(245,158,11,0.2)",border:"1px solid rgba(245,158,11,0.4)",color:"#f59e0b",fontSize:11,fontWeight:700,cursor:"pointer",flexShrink:0}}>Exit Demo</button>
-          </div>
-        )}
-        {/* Row 2: action buttons */}
-        <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>
-          <button onClick={()=>withUnsavedCheck(startNewProject)} style={{padding:"7px 12px",minHeight:34,borderRadius:16,background:"rgba(201,168,76,0.1)",border:"1px solid rgba(201,168,76,0.3)",color:"#c9a84c",fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0}}>➕ New</button>
-          <button onClick={()=>{setSaveNameInput(projectName);setSaveClientInput(clientName||"");setSaveClientEmailInput(clientEmail||"");setSaveClientPhoneInput(clientPhone||"");setSaveShowContactFields(!!(clientEmail||clientPhone));setShowSaveDialog(true);}} style={{padding:"7px 12px",minHeight:34,borderRadius:16,background:"rgba(34,197,94,0.12)",border:"1px solid rgba(34,197,94,0.3)",color:"#22c55e",fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0}}>💾 Save</button>
-          <button onClick={()=>setShowProjects(true)} style={{padding:"7px 12px",minHeight:34,borderRadius:16,background:"rgba(74,122,181,0.12)",border:"1px solid rgba(74,122,181,0.3)",color:"#7ab0e8",fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0}}>📂 Projects</button>
-          <button onClick={exportPDF} style={{padding:"7px 12px",minHeight:34,borderRadius:16,background:"rgba(201,168,76,0.1)",border:"1px solid rgba(201,168,76,0.25)",color:"#c9a84c",fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0}}>📄 PDF</button>
-          <button onClick={()=>setShowShare(true)} style={{padding:"7px 12px",minHeight:34,borderRadius:16,background:"rgba(167,139,250,0.12)",border:"1px solid rgba(167,139,250,0.25)",color:"#a78bfa",fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0}}>📤 Share</button>
-          {!demoMode && <button onClick={activateDemo} style={{padding:"7px 12px",minHeight:34,borderRadius:16,background:"rgba(245,158,11,0.1)",border:"1px solid rgba(245,158,11,0.25)",color:"#f59e0b",fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0}}>🎯 Demo</button>}
-          {wishlist.length>0&&<div style={{padding:"7px 10px",minHeight:34,display:"flex",alignItems:"center",borderRadius:16,background:"rgba(201,168,76,0.1)",border:"1px solid rgba(201,168,76,0.3)",fontSize:12,color:"#c9a84c",flexShrink:0}}>❤️ {wishlist.length}</div>}
-        </div>
-        {/* Row 3: tab navigation */}
-        <div style={{display:"flex",overflowX:"auto",gap:2}}>
-          {NAV_TABS.map(t=>(<button key={t.id} onClick={()=>setTab(t.id)} style={{whiteSpace:"nowrap",padding:"12px 12px",minHeight:44,fontSize:11,fontWeight:700,border:"none",cursor:"pointer",borderRadius:"8px 8px 0 0",background:tab===t.id?"#060a14":"transparent",color:tab===t.id?"#c9a84c":"#5a6a80",borderBottom:tab===t.id?"2px solid #c9a84c":"2px solid transparent"}}>{t.icon} {t.label}</button>))}
-        </div>
-      </div>
-
-      <div style={{padding:"16px 14px",maxWidth:820,margin:"0 auto",display:"flex",flexDirection:"column",gap:14}}>
-
-        {tab===0&&<>
-          <div style={card}>
-            <div style={sectionTitle}>Pool Shape</div>
-            <div style={{display:"flex",flexWrap:"wrap",gap:8}}>{POOL_SHAPES.map(s=><button key={s.id} onClick={()=>setShape(s.id)} style={chip(shape===s.id)}>{s.icon} {s.label}</button>)}</div>
-            <div style={{marginTop:10,fontSize:12,color:"#64748b"}}>💡 {POOL_SHAPES.find(s=>s.id===shape)?.desc}</div>
-          </div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-            {[{label:"Length (ft)",val:len,set:setLen,min:10,max:120},{label:"Width (ft)",val:wid,set:setWid,min:8,max:60}].map(f=>{
-              const clamp = (raw) => {
-                if (raw === "" || raw === "-") return null; // let them keep typing
-                const n = Number(raw);
-                if (!Number.isFinite(n)) return f.val;
-                return Math.round(n);
-              };
-              const handleChange = (e) => {
-                const result = clamp(e.target.value);
-                if (result !== null) f.set(result);
-              };
-              const handleBlur = (e) => {
-                const n = Number(e.target.value);
-                if (e.target.value === "" || !Number.isFinite(n)) { f.set(f.min); return; }
-                f.set(Math.max(f.min, Math.min(f.max, Math.round(n))));
-              };
-              const outOfRange = f.val < f.min || f.val > f.max;
-              return (
-                <div key={f.label} style={card}>
-                  <div style={{...sectionTitle,marginBottom:8}}>{f.label}</div>
-                  <input type="number" inputMode="numeric" value={f.val} min={f.min} max={f.max} onChange={handleChange} onBlur={handleBlur}
-                    style={{width:"100%",background:"#1e293b",border:`1px solid ${outOfRange?"#ef4444":"#334155"}`,borderRadius:10,padding:"10px 12px",color:outOfRange?"#ef4444":"#06b6d4",fontSize:20,fontWeight:800,outline:"none",boxSizing:"border-box"}}/>
-                  <input type="range" min={f.min} max={f.max} value={Math.max(f.min,Math.min(f.max,f.val))} onChange={handleChange} style={{width:"100%",marginTop:8,accentColor:"#c9a84c"}}/>
-                  {outOfRange && <div style={{fontSize:11,color:"#ef4444",marginTop:6}}>Valid range is {f.min}-{f.max} ft - will snap back when you tap away</div>}
-                </div>
-              );
-            })}
-          </div>
-          <div style={card}>
-            <div style={sectionTitle}>Depth Profile</div>
-            {DEPTHS.map(d=>(<button key={d.id} onClick={()=>setDepthId(d.id)} style={{display:"block",width:"100%",textAlign:"left",padding:"11px 14px",marginBottom:6,borderRadius:10,border:`2px solid ${depthId===d.id?"#06b6d4":"#334155"}`,background:depthId===d.id?"rgba(6,182,212,0.08)":"#1e293b",color:depthId===d.id?"#e2e8f0":"#94a3b8",cursor:"pointer"}}><div style={{fontWeight:700,fontSize:13}}>{depthId===d.id?"✓ ":""}{d.label}</div><div style={{fontSize:11,color:"#64748b",marginTop:3}}>{d.desc}</div></button>))}
-          </div>
-          <div style={card}>
-            <div style={sectionTitle}>Interior Finish</div>
-            <div style={{display:"flex",flexWrap:"wrap",gap:8}}>{POOL_FINISHES.map(f=><button key={f.id} onClick={()=>setFinishId(f.id)} style={chip(finishId===f.id)}>{f.label}</button>)}</div>
-            <div style={{marginTop:10,fontSize:12,color:"#64748b"}}>💡 {POOL_FINISHES.find(f=>f.id===finishId)?.desc}</div>
-          </div>
-          <div style={card}>
-            <div style={sectionTitle}>Water Color</div>
-            <div style={{display:"flex",flexWrap:"wrap",gap:10}}>{POOL_COLORS.map(c=>(<button key={c.id} onClick={()=>setColorId(c.id)} style={{padding:"6px 12px",borderRadius:20,border:`2px solid ${colorId===c.id?"#fff":"#334155"}`,background:c.hex,color:["#e8f4f8","#d4a76a"].includes(c.hex)?"#1e293b":"#fff",cursor:"pointer",fontSize:12,fontWeight:700,opacity:colorId===c.id?1:0.65,transition:"all 0.15s"}}>{c.label}</button>))}</div>
-          </div>
-
-          <div style={card}>
-            <div style={sectionTitle}>🧊 3D Preview</div>
-            <div style={{fontSize:12,color:"#64748b",marginBottom:10}}>An instant 3D model from your dimensions, shape, depth, and finish — no photo needed. Rotate it to check proportions before generating an AI rendering below.</div>
-            <Pool3D poolLen={len} poolWid={wid} poolShape={shape} poolColor={poolColor.hex} depthId={depthId} entries={entries} finishId={finishId} />
-          </div>
-
-          <div style={card}>
-            <div style={sectionTitle}>✨ AI Pool Rendering</div>
-            <AIRenderingPanel bgPhoto={bgPhoto} setBgPhoto={setBgPhoto} shape={shape} poolColor={poolColor.hex} len={len} wid={wid} finish={finishId} colorId={colorId} entries={entries} hardscapes={hardscapes} dailyRenders={dailyRenders} dailyLimit={DAILY_RENDER_LIMIT} onRenderComplete={bumpDailyRender} />
-          </div>
-
-          <div style={card}>
-            <div style={sectionTitle}>📍 Property Lookup & Pool Placement</div>
-            <div style={{fontSize:12,color:"#64748b",marginBottom:10}}>Enter an address to pull parcel data, then drag the pool to its correct position for permit planning.</div>
-            <div style={{display:"flex",gap:8}}>
-              <input type="text" placeholder="123 Main St, City, State" value={address} onChange={e=>setAddress(e.target.value)} onKeyDown={e=>e.key==="Enter"&&lookupAddress()} style={{flex:1,background:"#1e293b",border:"1px solid #334155",borderRadius:10,padding:"10px 14px",color:"#e2e8f0",fontSize:14,outline:"none"}}/>
-              <button onClick={lookupAddress} disabled={parcelStatus==="loading"} style={{padding:"10px 16px",borderRadius:10,background:"linear-gradient(135deg,#06b6d4,#0284c7)",border:"none",color:"white",fontWeight:700,fontSize:13,cursor:"pointer",flexShrink:0,opacity:parcelStatus==="loading"?0.6:1}}>{parcelStatus==="loading"?"⏳":"Search"}</button>
-            </div>
-            {parcelStatus==="found"&&parcelData&&<>
-              <div style={{marginTop:12,background:"rgba(6,182,212,0.08)",border:"1px solid rgba(6,182,212,0.2)",borderRadius:12,padding:14}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                  <div style={{fontSize:12,color:"#06b6d4",fontWeight:700}}>✅ Parcel Found - {parcelData.address}</div>
-                  <div style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:parcelData.source==="regrid"?"rgba(34,197,94,0.15)":"rgba(245,158,11,0.15)",border:`1px solid ${parcelData.source==="regrid"?"rgba(34,197,94,0.3)":"rgba(245,158,11,0.3)"}`,color:parcelData.source==="regrid"?"#22c55e":"#f59e0b",fontWeight:700}}>{parcelData.source==="regrid"?"🟢 Live Regrid Data":"🟡 Estimated"}</div>
-                </div>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-                  {[{label:"Parcel / APN",val:parcelData.parcel},{label:"Lot Size",val:parcelData.lot_size},{label:"Lot Sq Ft",val:parcelData.lot_sqft},{label:"Zoning",val:parcelData.zoning},{label:"Front Setback",val:parcelData.setback_front},{label:"Rear Setback",val:parcelData.setback_rear},{label:"Side Setback",val:parcelData.setback_side},{label:"Pool Setback",val:parcelData.pool_setback}].map(r=>(
-                    <div key={r.label} style={{background:"#1e293b",borderRadius:8,padding:"8px 10px"}}><div style={{fontSize:10,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em"}}>{r.label}</div><div style={{fontSize:13,fontWeight:700,color:"#e2e8f0",marginTop:2}}>{r.val}</div></div>
-                  ))}
-                </div>
-              </div>
-              {showMap&&<div style={{marginTop:14}}>
-                <div style={{fontSize:11,color:"#06b6d4",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:10}}>🗺️ Interactive Property Map - Drag Pool to Place</div>
-                <PropertyMap poolLen={len} poolWid={wid} poolShape={shape} poolColor={poolColor.hex} parcelData={parcelData}/>
-                <div style={{marginTop:10,padding:"8px 12px",background:"rgba(245,158,11,0.1)",border:"1px solid rgba(245,158,11,0.25)",borderRadius:8,fontSize:12,color:"#f59e0b"}}>⚠️ Setback data shown is for planning reference. Always verify with your local building department before permit submission.</div>
-              </div>}
-            </>}
-          </div>
-
-          <div style={card}>
-            <div style={sectionTitle}>☁️ Cloud Sync</div>
-            <CloudSyncPanel />
-          </div>
-        </>}
-
-        {tab===1&&<>
-          <div style={{fontSize:13,color:"#94a3b8",padding:"4px 0 8px"}}>Tap any feature to learn more and add it to your pool design.</div>
-          {ENTRY_FEATURES.map(ef=>(<FeatureCard key={ef.id} feature={ef} active={!!entries[ef.id]} onToggle={()=>toggleEntry(ef.id)} />))}
-          {Object.keys(entries).length > 0 && (
-            <div style={{background:"linear-gradient(135deg,rgba(6,182,212,0.1),rgba(2,132,199,0.06))",border:"1px solid rgba(6,182,212,0.25)",borderRadius:12,padding:14,marginTop:4}}>
-              <div style={{fontSize:12,color:"#06b6d4",fontWeight:700,marginBottom:8}}>✅ Selected Features ({Object.keys(entries).length})</div>
-              <div style={{display:"flex",flexWrap:"wrap",gap:8}}>{ENTRY_FEATURES.filter(e=>entries[e.id]).map(e=>(<span key={e.id} style={{padding:"5px 12px",borderRadius:20,background:`${e.color}22`,border:`1px solid ${e.color}55`,color:e.color,fontSize:12,fontWeight:600}}>{e.icon} {e.label}</span>))}</div>
-            </div>
-          )}
-        </>}
-
-        {tab===2&&<HardscapeDesigner hardscapes={hardscapes} toggleHardscape={toggleHardscape} setHSQty={setHSQty} dailyRenders={dailyRenders} dailyLimit={DAILY_RENDER_LIMIT} bumpDailyRender={bumpDailyRender} apiKey={apiKey} />}
-
-        {tab===3&&<YardPlanner poolLen={len} poolWid={wid} poolShape={shape} poolColor={poolColor.hex} entries={entries} hardscapes={hardscapes} parcelData={parcelData} />}
-
-        {tab===4&&<>
-          <div style={{background:"linear-gradient(135deg,rgba(6,182,212,0.15),rgba(2,132,199,0.1))",border:"1px solid rgba(6,182,212,0.3)",borderRadius:14,padding:16}}>
-            <div style={{fontSize:12,color:"#06b6d4",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em"}}>Pool Summary</div>
-            <div style={{fontSize:15,fontWeight:700,color:"#e2e8f0",marginTop:4}}>{POOL_SHAPES.find(s=>s.id===shape)?.label} - {len}' x {wid}'</div>
-            <div style={{fontSize:12,color:"#94a3b8",marginTop:3}}>{materials.gallons.toLocaleString()} gallons - {POOL_FINISHES.find(f=>f.id===finishId)?.label}</div>
-          </div>
-          {[{label:"Excavation",val:materials.excavation,note:"Includes 20% over-dig"},{label:"Gunite / Shotcrete",val:materials.gunite,note:"4 inch shell thickness"},{label:"Rebar",val:materials.rebar,note:"#3 rebar - 20 ft sticks - 12 inch on center grid - includes 15% lap splice"},{label:"Gravel Base",val:materials.gravel,note:"3/4 inch crushed stone 4 inch bed"},{label:"PVC Plumbing",val:materials.plumbing,note:"2 inch & 3 inch schedule 40"},{label:"Coping",val:materials.coping,note:"Bond beam perimeter"},{label:"Waterline Tile",val:materials.tile,note:"6 inch tile band"},{label:"Interior Finish",val:materials.finish,note:POOL_FINISHES.find(f=>f.id===finishId)?.label}].map(row=>(
-            <div key={row.label} style={{background:"#111827",border:"1px solid #1e293b",borderRadius:12,padding:"13px 16px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-              <div><div style={{fontWeight:600,fontSize:14}}>{row.label}</div><div style={{fontSize:12,color:"#64748b",marginTop:2}}>{row.note}</div></div>
-              <div style={{fontWeight:800,fontSize:16,color:"#06b6d4"}}>{row.val}</div>
-            </div>
-          ))}
-        </>}
-
-        {tab===5&&<CostEstimator shape={shape} len={len} wid={wid} depthId={depthId} finishId={finishId} colorId={colorId} entries={entries} hardscapes={hardscapes} extras={extras} localRates={localRates} setLocalRates={setLocalRates} projectName={projectName} clientName={clientName} materials={materials} />}
-
-        {tab===6&&<>
-          <div style={card}>
-            <div style={sectionTitle}>Equipment Options</div>
-            {[{label:"🔥 Include Heater",key:"heater"},{label:"💧 Water Features",key:"waterFeature"}].map(o=>(
-              <div key={o.key} style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
-                <span style={{fontSize:14}}>{o.label}</span>
-                <button onClick={()=>setExtras(p=>({...p,[o.key]:!p[o.key]}))} style={{width:44,height:24,borderRadius:12,border:"none",cursor:"pointer",background:extras[o.key]?"#06b6d4":"#334155",position:"relative",transition:"background 0.2s",flexShrink:0}}><span style={{position:"absolute",top:3,left:extras[o.key]?22:3,width:18,height:18,borderRadius:"50%",background:"white",transition:"left 0.2s"}}/></button>
-              </div>
-            ))}
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-              <span style={{fontSize:14}}>🧂 Sanitization</span>
-              <div style={{display:"flex",gap:6}}>{["salt","chlorine"].map(sv=>(<button key={sv} onClick={()=>setExtras(p=>({...p,sanitization:sv}))} style={{padding:"5px 12px",borderRadius:8,border:`2px solid ${extras.sanitization===sv?"#06b6d4":"#334155"}`,background:extras.sanitization===sv?"rgba(6,182,212,0.1)":"#1e293b",color:extras.sanitization===sv?"#06b6d4":"#94a3b8",cursor:"pointer",fontSize:12,fontWeight:700,textTransform:"capitalize"}}>{sv}</button>))}</div>
-            </div>
-          </div>
-          <div style={{background:"rgba(6,182,212,0.1)",border:"1px solid rgba(6,182,212,0.25)",borderRadius:12,padding:"10px 14px",fontSize:13,color:"#06b6d4",fontWeight:600}}>Equipment sized for {materials.gallons.toLocaleString()} gallon pool</div>
-          {equipment.map(eq=>(
-            <div key={eq.label} style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,overflow:"hidden"}}>
-              <div style={{padding:"14px 16px 10px"}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
-                  <div style={{flex:1,minWidth:0}}><div style={{fontSize:10,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:3}}>{eq.label}</div><div style={{fontWeight:700,fontSize:14,color:"#e2e8f0",lineHeight:1.3}}>{eq.model}</div></div>
-                  <div style={{background:"#1e293b",borderRadius:8,padding:"3px 10px",fontSize:10,color:"#94a3b8",fontFamily:"monospace",flexShrink:0,marginLeft:10}}>SKU: {eq.sku}</div>
-                </div>
-                <div style={{fontSize:12,color:"#64748b",lineHeight:1.5}}>{eq.note}{eq.qtyNote && <span style={{color:"#f59e0b",fontWeight:700}}> - {eq.qtyNote}</span>}</div>
-              </div>
-              {eq.asin && (<a href={pentairLink(eq.asin)} target="_blank" rel="noopener noreferrer" style={{display:"flex", alignItems:"center", justifyContent:"space-between", padding:"10px 16px", background:"linear-gradient(135deg,rgba(255,153,0,0.15),rgba(255,120,0,0.08))", borderTop:"1px solid rgba(255,153,0,0.2)", textDecoration:"none", gap:10}}>
-                <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:16}}>📦</span><div><div style={{fontSize:12,fontWeight:700,color:"#ff9900"}}>Buy on Amazon</div><div style={{fontSize:10,color:"#64748b"}}>You earn {eq.earn} affiliate commission</div></div></div>
-                <span style={{color:"#ff9900",fontSize:16}}>→</span>
-              </a>)}
-            </div>
-          ))}
-          <div style={{background:"rgba(255,153,0,0.06)",border:"1px solid rgba(255,153,0,0.2)",borderRadius:12,padding:12,textAlign:"center"}}>
-            <div style={{fontSize:12,color:"#ff9900",fontWeight:700,marginBottom:3}}>💰 Earn 3-8% on every Pentair purchase</div>
-            <div style={{fontSize:11,color:"#64748b"}}>All equipment links are pre-tagged with your Amazon affiliate ID.</div>
-          </div>
-        </>}
-
-        {tab===7&&<>
-          <div style={card}>
-            <div style={sectionTitle}>Guide Mode</div>
-            <div style={{display:"flex",gap:8}}>{[{id:"contractor",label:"👷 Contractor"},{id:"diy",label:"🏠 Homeowner DIY"}].map(m=>(<button key={m.id} onClick={()=>setGuideMode(m.id)} style={{flex:1,padding:"10px 0",borderRadius:10,border:`2px solid ${guideMode===m.id?"#06b6d4":"#334155"}`,background:guideMode===m.id?"rgba(6,182,212,0.1)":"#1e293b",color:guideMode===m.id?"#06b6d4":"#94a3b8",cursor:"pointer",fontSize:13,fontWeight:700}}>{m.label}</button>))}</div>
-            {guideMode==="diy"&&<div style={{marginTop:12,padding:"10px 12px",background:"rgba(245,158,11,0.1)",border:"1px solid rgba(245,158,11,0.3)",borderRadius:10,fontSize:12,color:"#f59e0b"}}>⚠️ DIY pool building requires permits in all US states. Structural concrete & electrical must pass inspection.</div>}
-          </div>
-          {STEP_GUIDE.map((phase,i)=>(
-            <div key={i} style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,overflow:"hidden"}}>
-              <div style={{background:"linear-gradient(135deg,rgba(6,182,212,0.15),rgba(2,132,199,0.08))",padding:"12px 16px",display:"flex",alignItems:"center",gap:12}}>
-                <div style={{width:36,height:36,borderRadius:10,background:"rgba(6,182,212,0.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>{phase.icon}</div>
-                <div style={{flex:1}}><div style={{fontSize:10,color:"#06b6d4",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em"}}>{phase.phase}</div><div style={{fontWeight:700,fontSize:15,color:"#e2e8f0"}}>{phase.title}</div></div>
-                <div style={{fontSize:11,color:"#64748b",background:"#1e293b",padding:"3px 10px",borderRadius:20}}>⏱ {phase.days}</div>
-              </div>
-              <div style={{padding:"12px 16px"}}>{phase.steps.map((step,j)=>(<div key={j} style={{display:"flex",gap:10,marginBottom:9}}><span style={{minWidth:20,height:20,borderRadius:"50%",background:"rgba(6,182,212,0.15)",color:"#06b6d4",fontSize:10,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{j+1}</span><span style={{fontSize:13,color:"#94a3b8",lineHeight:1.5}}>{step}</span></div>))}</div>
-            </div>
-          ))}
-        </>}
-
-        {tab===8&&<>
-          <div style={{background:"linear-gradient(135deg,rgba(245,158,11,0.18),rgba(217,119,6,0.1))",border:"1px solid rgba(245,158,11,0.35)",borderRadius:16,padding:16}}>
-            <div style={{fontSize:14,fontWeight:800,color:"#f59e0b"}}>💰 Affiliate Shopping - You Earn on Every Purchase</div>
-            <div style={{fontSize:12,color:"#94a3b8",marginTop:4}}>All links are pre-tagged with your affiliate ID. Replace placeholders with your real IDs before launch.</div>
-          </div>
-          <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:4}}>{SHOP_CATEGORIES.map(cat=>(<button key={cat.id} onClick={()=>setShopCat(cat.id)} style={{whiteSpace:"nowrap",padding:"10px 16px",minHeight:40,borderRadius:20,border:`2px solid ${shopCat===cat.id?"#06b6d4":"#334155"}`,background:shopCat===cat.id?"rgba(6,182,212,0.1)":"#111827",color:shopCat===cat.id?"#06b6d4":"#94a3b8",cursor:"pointer",fontSize:12,fontWeight:600}}>{cat.icon} {cat.label}</button>))}</div>
-          {activeCat?.products.map(product=>{
-            const rc=RETAILER_COLORS[product.retailer]||{bg:"rgba(100,116,139,0.1)",border:"rgba(100,116,139,0.3)",text:"#94a3b8"};
-            const saved=wishlist.includes(product.name);
-            return(
-              <div key={product.name} style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:16}}>
-                <div style={{display:"flex",gap:12,alignItems:"flex-start"}}>
-                  <div style={{width:50,height:50,borderRadius:10,background:"#1e293b",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>{product.img}</div>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}><div style={{fontSize:14,fontWeight:600,color:"#e2e8f0",lineHeight:1.3}}>{product.name}</div><button onClick={()=>toggleWishlist(product.name)} style={{background:"none",border:"none",cursor:"pointer",fontSize:20,flexShrink:0,padding:10,margin:-10,minWidth:44,minHeight:44,display:"flex",alignItems:"center",justifyContent:"center"}}>{saved?"❤️":"🤍"}</button></div>
-                    <div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:8}}><span style={{padding:"2px 9px",borderRadius:20,background:rc.bg,border:`1px solid ${rc.border}`,color:rc.text,fontSize:11,fontWeight:700}}>{product.retailer}</span><span style={{padding:"2px 9px",borderRadius:20,background:"rgba(6,182,212,0.1)",border:"1px solid rgba(6,182,212,0.2)",color:"#06b6d4",fontSize:11,fontWeight:600}}>{product.badge}</span><span style={{fontSize:11,color:"#64748b"}}>Earn: {product.earn}</span></div>
-                  </div>
-                </div>
-                <a href={product.link} target="_blank" rel="noopener noreferrer" style={{display:"block",marginTop:12,padding:"10px",borderRadius:10,background:"linear-gradient(135deg,rgba(6,182,212,0.18),rgba(2,132,199,0.12))",border:"1px solid rgba(6,182,212,0.3)",color:"#06b6d4",textDecoration:"none",fontSize:13,fontWeight:700,textAlign:"center"}}>Shop on {product.retailer} →</a>
-              </div>
-            );
-          })}
-          {wishlist.length>0&&(
-            <div style={{background:"#111827",border:"1px solid rgba(245,158,11,0.3)",borderRadius:14,padding:16}}>
-              <div style={{fontSize:13,fontWeight:700,color:"#f59e0b",marginBottom:10}}>❤️ Saved Items ({wishlist.length})</div>
-              {wishlist.map(item=>(<div key={item} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 0",borderBottom:"1px solid #1e293b"}}><span style={{fontSize:13,color:"#94a3b8"}}>{item}</span><button onClick={()=>toggleWishlist(item)} style={{background:"none",border:"none",cursor:"pointer",color:"#64748b",fontSize:12,padding:"8px 4px",minHeight:36}}>Remove</button></div>))}
-            </div>
-          )}
-        </>}
-
-        {tab===9&&<QuickRender len={len} wid={wid} shape={shape} finishId={finishId} colorId={colorId} entries={entries} hardscapes={hardscapes} />}
-        {tab===10&&<BuildTracker projectName={projectName} clientName={clientName} clientEmail={clientEmail} />}
-        {tab===11&&<SettingsScreen userMode={userMode} setUserMode={setUserMode} />}
-      </div>
-
-      {/* Quote Builder + Timeline slide up from Cost Estimator tab */}
-      {tab===5&&<div style={{padding:"0 14px 14px",maxWidth:820,margin:"0 auto",display:"flex",flexDirection:"column",gap:14}}>
-        <QuoteBuilder shape={shape} len={len} wid={wid} depthId={depthId} finishId={finishId} entries={entries} hardscapes={hardscapes} extras={extras} localRates={localRates} projectName={projectName} clientName={clientName} />
-        <BuildTimeline shape={shape} len={len} wid={wid} depthId={depthId} entries={entries} hardscapes={hardscapes} />
-      </div>}
-    </div>
-  );
-}
+          <div style={{ fontSize:11, color:"#8a9ab5", letterSpacing:"2px", textTransform:"uppercase", marginTop:6 }}>Design Pools. Craft Outdoor Living.</div>
