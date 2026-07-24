@@ -1282,6 +1282,7 @@ function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, fin
 
   const handleRender = async () => {
     if (!bgPhoto) { setError("Please upload a backyard photo first. Grok edits your real photo - it needs to see the actual space."); return; }
+    if (dailyLimit <= 0) { setError("AI rendering needs an active Basic or Pro plan - subscribe in Settings to unlock it."); return; }
     if (dailyRenders >= dailyLimit) { setError(`You've used all ${dailyLimit} renders for today - pool and hardscape renders share this limit.`); return; }
 
     setRendering(true); setQueued(false); setError(null);
@@ -1423,12 +1424,18 @@ function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, fin
         </div>
       </div>
 
-      {dailyRenders >= dailyLimit && (
+      {dailyLimit <= 0 ? (
+        <div style={{background:"rgba(124,58,237,0.08)",border:"1px solid rgba(124,58,237,0.25)",borderRadius:14,padding:16,textAlign:"center"}}>
+          <div style={{fontSize:16,marginBottom:6}}>🔒</div>
+          <div style={{fontSize:14,fontWeight:700,color:"#a78bfa",marginBottom:4}}>Subscribe to Start Rendering</div>
+          <div style={{fontSize:12,color:"#94a3b8"}}>AI rendering needs an active Basic or Pro plan - subscribe in Settings to unlock it.</div>
+        </div>
+      ) : dailyRenders >= dailyLimit && (
         <div style={{background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.25)",borderRadius:14,padding:16,textAlign:"center"}}>
           <div style={{fontSize:16,marginBottom:6}}>⏰</div>
           <div style={{fontSize:14,fontWeight:700,color:"#ef4444",marginBottom:4}}>Daily Render Limit Reached</div>
           <div style={{fontSize:12,color:"#94a3b8",marginBottom:4}}>You've used all {dailyLimit} renders for today - pool and hardscape renders share this limit.</div>
-          <div style={{fontSize:11,color:"#64748b"}}>Resets at midnight. Contact us to upgrade for more daily renders.</div>
+          <div style={{fontSize:11,color:"#64748b"}}>Resets at midnight. Upgrade to Pro in Settings for more daily renders.</div>
         </div>
       )}
 
@@ -1867,7 +1874,12 @@ function HardscapeDesigner({ hardscapes, toggleHardscape, setHSQty, dailyRenders
             style={{width:"100%",background:"#1e293b",border:"1px solid #334155",borderRadius:10,padding:"9px 12px",color:"#e2e8f0",fontSize:13,outline:"none",resize:"none",boxSizing:"border-box",lineHeight:1.5,fontFamily:"inherit"}} />
         </div>
 
-        {limitHit ? (
+        {dailyLimit <= 0 ? (
+          <div style={{padding:"14px",borderRadius:12,background:"rgba(124,58,237,0.08)",border:"1px solid rgba(124,58,237,0.2)",textAlign:"center"}}>
+            <div style={{fontSize:14,fontWeight:700,color:"#a78bfa",marginBottom:4}}>🔒 Subscribe to Start Rendering</div>
+            <div style={{fontSize:12,color:"#94a3b8"}}>AI rendering needs an active Basic or Pro plan - subscribe in Settings to unlock it.</div>
+          </div>
+        ) : limitHit ? (
           <div style={{padding:"14px",borderRadius:12,background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.2)",textAlign:"center"}}>
             <div style={{fontSize:14,fontWeight:700,color:"#ef4444",marginBottom:4}}>⏰ Daily Limit Reached</div>
             <div style={{fontSize:12,color:"#94a3b8"}}>All {dailyLimit} renders used today. Resets at midnight.</div>
@@ -3031,9 +3043,43 @@ function generateProposal({ projectName, clientName, shape, len, wid, depthId, f
 // ─── SETTINGS SCREEN ─────────────────────────────────────────────────────────
 // One place for all API keys, affiliate tags, and app preferences.
 // Replaces the scattered key panels across tabs.
-function SettingsScreen({ userMode, setUserMode, onSwitchMode, plan, setPlan }) {
-  const [planSaving, setPlanSaving] = useState(false);
-  const choosePlan = async (p) => { if (p === plan || planSaving) return; setPlanSaving(true); try { await setPlan(p); } finally { setPlanSaving(false); } };
+function SettingsScreen({ userMode, setUserMode, onSwitchMode, plan, user }) {
+  const [billingInterval, setBillingInterval] = useState("month");
+  const [billingLoading, setBillingLoading] = useState(false);
+  const [billingError, setBillingError] = useState(null);
+
+  const startCheckout = async (planId) => {
+    if (!user) return;
+    setBillingLoading(true); setBillingError(null);
+    try {
+      const resp = await fetch("/api/create-checkout-session", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: planId, interval: billingInterval, userId: user.id, email: user.email, customerId: user.user_metadata?.stripe_customer_id }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data?.error || `Error ${resp.status}`);
+      if (data.url) window.location.href = data.url;
+    } catch (e) {
+      setBillingError(e.message || "Could not start checkout");
+    } finally { setBillingLoading(false); }
+  };
+
+  const openBillingPortal = async () => {
+    if (!user?.user_metadata?.stripe_customer_id) { setBillingError("No billing account found yet - try subscribing first."); return; }
+    setBillingLoading(true); setBillingError(null);
+    try {
+      const resp = await fetch("/api/create-portal-session", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customerId: user.user_metadata.stripe_customer_id }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data?.error || `Error ${resp.status}`);
+      if (data.url) window.location.href = data.url;
+    } catch (e) {
+      setBillingError(e.message || "Could not open billing portal");
+    } finally { setBillingLoading(false); }
+  };
+
   const [regridKey, setRegridKey] = useState(()=>{ try{return localStorage.getItem("pc_regrid_key")||"";}catch{return "";} });
   const supabaseCfg = getSupabaseConfig();
   const [sbUrl, setSbUrl] = useState(supabaseCfg.url);
@@ -3090,22 +3136,56 @@ function SettingsScreen({ userMode, setUserMode, onSwitchMode, plan, setPlan }) 
         </div>
       </div>
 
-      {/* AI Rendering */}
+      {/* AI Rendering / Billing */}
       <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
         <div style={{fontSize:12,fontWeight:700,color:"#a78bfa",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4}}>🚀 Grok Aurora — AI Pool Rendering</div>
-        <div style={{fontSize:11,color:"#64748b",marginBottom:12}}>Powered by a shared Grok Aurora key configured on the server — nothing to set up here.</div>
-        <div style={{fontSize:11,color:"#94a3b8",marginBottom:10,lineHeight:1.6}}>
-          ⚠️ No payment processing is wired up yet — this switch just changes your daily render cap for testing. Once Stripe billing is live, plan changes will happen automatically at checkout instead.
-        </div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-          {[{id:"basic",label:"Basic",renders:10},{id:"pro",label:"Pro",renders:25}].map(p=>(
-            <button key={p.id} onClick={()=>choosePlan(p.id)} disabled={planSaving}
-              style={{padding:"12px",borderRadius:10,border:`2px solid ${plan===p.id?"#a78bfa":"#1e293b"}`,background:plan===p.id?"rgba(124,58,237,0.1)":"#0f172a",cursor:planSaving?"not-allowed":"pointer",textAlign:"center"}}>
-              <div style={{fontSize:13,fontWeight:800,color:plan===p.id?"#a78bfa":"#e2e8f0"}}>{p.label}{plan===p.id?" ✓":""}</div>
-              <div style={{fontSize:11,color:"#64748b",marginTop:2}}>{p.renders} renders / day</div>
-            </button>
-          ))}
-        </div>
+        <div style={{fontSize:11,color:"#64748b",marginBottom:12}}>Every plan runs on a shared Grok Aurora key configured on the server — just choose a plan below.</div>
+
+        {!user ? (
+          <div style={{padding:"14px",borderRadius:10,background:"rgba(6,182,212,0.06)",border:"1px solid rgba(6,182,212,0.2)",fontSize:12,color:"#94a3b8"}}>
+            Sign in to subscribe — plans are tied to your account so they follow you across devices.
+          </div>
+        ) : (
+          <>
+            {plan !== "none" && (
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,padding:"12px 14px",borderRadius:10,background:"rgba(34,197,94,0.08)",border:"1px solid rgba(34,197,94,0.25)",marginBottom:14}}>
+                <div>
+                  <div style={{fontSize:13,fontWeight:800,color:"#22c55e"}}>✅ {plan==="pro"?"Pro":"Basic"} plan active</div>
+                  <div style={{fontSize:11,color:"#64748b",marginTop:2}}>{plan==="pro"?25:10} renders / day</div>
+                </div>
+                <button onClick={openBillingPortal} disabled={billingLoading} style={{padding:"9px 14px",borderRadius:8,background:"rgba(6,182,212,0.12)",border:"1px solid rgba(6,182,212,0.3)",color:"#06b6d4",fontWeight:700,fontSize:12,cursor:billingLoading?"not-allowed":"pointer",flexShrink:0}}>
+                  {billingLoading?"...":"Manage Billing"}
+                </button>
+              </div>
+            )}
+
+            <div style={{display:"flex",gap:6,marginBottom:12}}>
+              {[{id:"month",label:"Monthly"},{id:"year",label:"Annual — save ~2 months"}].map(iv=>(
+                <button key={iv.id} onClick={()=>setBillingInterval(iv.id)} style={{flex:1,padding:"8px 10px",borderRadius:8,border:`2px solid ${billingInterval===iv.id?"#a78bfa":"#1e293b"}`,background:billingInterval===iv.id?"rgba(124,58,237,0.1)":"#0f172a",color:billingInterval===iv.id?"#a78bfa":"#64748b",fontSize:11,fontWeight:700,cursor:"pointer"}}>{iv.label}</button>
+              ))}
+            </div>
+
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+              {[{id:"basic",label:"Basic",renders:10,month:29.99,year:299},{id:"pro",label:"Pro",renders:25,month:49.99,year:499}].map(p=>{
+                const isCurrent = plan === p.id;
+                const price = billingInterval === "year" ? p.year : p.month;
+                return (
+                  <div key={p.id} style={{padding:"14px",borderRadius:10,border:`2px solid ${isCurrent?"#22c55e":"#1e293b"}`,background:isCurrent?"rgba(34,197,94,0.06)":"#0f172a"}}>
+                    <div style={{fontSize:13,fontWeight:800,color:isCurrent?"#22c55e":"#e2e8f0"}}>{p.label}{isCurrent?" ✓":""}</div>
+                    <div style={{fontSize:20,fontWeight:800,color:"#e2e8f0",marginTop:4}}>${price}<span style={{fontSize:11,color:"#64748b",fontWeight:400}}>/{billingInterval==="year"?"yr":"mo"}</span></div>
+                    <div style={{fontSize:11,color:"#64748b",marginTop:2,marginBottom:10}}>{p.renders} renders / day</div>
+                    <button onClick={()=>startCheckout(p.id)} disabled={isCurrent||billingLoading}
+                      style={{width:"100%",padding:"9px",borderRadius:8,background:isCurrent?"#1e293b":"linear-gradient(135deg,#7c3aed,#5b21b6)",border:"none",color:isCurrent?"#64748b":"white",fontWeight:700,fontSize:12,cursor:isCurrent||billingLoading?"not-allowed":"pointer"}}>
+                      {isCurrent?"Current Plan":billingLoading?"...":"Subscribe"}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+            {billingError && <div style={{marginTop:10,padding:"10px 12px",borderRadius:8,background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",fontSize:12}}>⚠️ {billingError}</div>}
+          </>
+        )}
       </div>
 
       {/* Maps & Parcel */}
@@ -3424,6 +3504,7 @@ function QuickRender({ len, wid, shape, finishId, colorId, entries, hardscapes, 
 
   const renderNow = async () => {
     if (!photo) { setError("Take or upload a photo of the backyard first."); return; }
+    if (dailyLimit <= 0) { setError("AI rendering needs an active Basic or Pro plan - subscribe in Settings to unlock it."); return; }
     if (dailyRenders >= dailyLimit) { setError(`You've used all ${dailyLimit} renders for today - pool and hardscape renders share this limit.`); return; }
     setRendering(true); setError(null); setProgress(5); setRendered(null); setAiNote(null);
     const steps = [[10,"Sending to Grok Aurora..."],[25,"Analyzing the space..."],[42,"Placing your pool..."],[58,"Rendering water & light..."],[74,"Matching shadows..."],[88,"Final polish..."]];
@@ -3540,9 +3621,11 @@ function QuickRender({ len, wid, shape, finishId, colorId, entries, hardscapes, 
       {!rendering && !rendered && (
         <>
           <button onClick={renderNow} disabled={!photo || dailyRenders>=dailyLimit} style={{ width: "100%", padding: 18, borderRadius: 14, border: "none", background: (photo && dailyRenders<dailyLimit) ? "linear-gradient(135deg,#7c3aed,#5b21b6)" : "#1e293b", color: "white", fontWeight: 900, fontSize: 17, cursor: (photo && dailyRenders<dailyLimit) ? "pointer" : "not-allowed", boxShadow: (photo && dailyRenders<dailyLimit) ? "0 4px 30px rgba(124,58,237,0.4)" : "none", letterSpacing: "0.02em" }}>
-            {dailyRenders>=dailyLimit ? `⚠️ All ${dailyLimit} renders used today` : "🚀 Render Pool Into This Backyard"}
+            {dailyLimit<=0 ? "🔒 Subscribe to Start Rendering" : dailyRenders>=dailyLimit ? `⚠️ All ${dailyLimit} renders used today` : "🚀 Render Pool Into This Backyard"}
           </button>
-          <div style={{ fontSize: 10, color: "#64748b", textAlign: "center" }}>{dailyRenders} of {dailyLimit} renders used today - pool and hardscape renders share this limit</div>
+          <div style={{ fontSize: 10, color: "#64748b", textAlign: "center" }}>
+            {dailyLimit<=0 ? "AI rendering needs an active Basic or Pro plan - subscribe in Settings" : `${dailyRenders} of ${dailyLimit} renders used today - pool and hardscape renders share this limit`}
+          </div>
         </>
       )}
 
@@ -3771,18 +3854,21 @@ function useAuth() {
     setUser(null); setSession(null);
   };
 
-  // Stores the render plan ("basic"/"pro") on the Supabase user's own account
-  // metadata. No payment gate yet - this is a placeholder until Stripe billing
-  // lands, at which point plan changes should move server-side (a webhook
-  // updating this same field) instead of being self-service like this.
-  const updatePlan = async (plan) => {
+  // Plan changes happen server-side via the Stripe webhook (it writes
+  // user_metadata.plan using the Supabase service role, bypassing this
+  // client entirely) - the client never sets its own plan. After returning
+  // from Stripe Checkout, call this to pull the freshly-updated metadata
+  // into the current session instead of waiting for the next natural
+  // auth-state event.
+  const refreshUser = async () => {
     const sb = await loadSupabase();
-    if (!sb) return false;
-    const { error } = await sb.auth.updateUser({ data: { plan } });
-    return !error;
+    if (!sb) return null;
+    const { data, error } = await sb.auth.getUser();
+    if (!error && data?.user) setUser(data.user);
+    return data?.user || null;
   };
 
-  return { user, session, authLoading, signOut, updatePlan };
+  return { user, session, authLoading, signOut, refreshUser };
 }
 
 // Login / Signup Screen
@@ -3907,7 +3993,7 @@ function AuthScreen({ onAuth }) {
 }
 
 export default function PoolCraftPro() {
-  const { user, session, authLoading, signOut, updatePlan } = useAuth();
+  const { user, session, authLoading, signOut, refreshUser } = useAuth();
   const [authedUser, setAuthedUser] = useState(null);
   const [tab, setTab] = useState(0);
   const [shape, setShape] = useState("rectangle");
@@ -3933,17 +4019,15 @@ export default function PoolCraftPro() {
     try { const saved = JSON.parse(localStorage.getItem("pc_daily")||"{}"); const today = new Date().toDateString(); return saved.date === today ? (saved.count||0) : 0; } catch { return 0; }
   });
 
-  // Render plan: Basic (10/day) vs Pro (25/day). No payment gate yet - see
-  // useAuth's updatePlan comment. Logged-in Supabase users store plan on their
-  // account; guest/no-auth mode falls back to a local override.
-  const [planOverride, setPlanOverride] = useState(() => { try { return localStorage.getItem("pc_plan_override") || ""; } catch { return ""; } });
-  const plan = (user ? user.user_metadata?.plan : planOverride) === "pro" ? "pro" : "basic";
-  const PLAN_LIMITS = { basic: 10, pro: 25 };
+  // Render plan: Basic ($29.99/mo or $299/yr, 10/day) or Pro ($49.99/mo or
+  // $499/yr, 25/day). Both require an active Stripe subscription now - there's
+  // no free tier. Plan lives on the Supabase user's own account metadata and
+  // is set only by the Stripe webhook (server-side, via the service role key),
+  // never by the client. No Supabase account = no subscription = "none".
+  const rawPlan = user?.user_metadata?.plan;
+  const plan = rawPlan === "pro" ? "pro" : rawPlan === "basic" ? "basic" : "none";
+  const PLAN_LIMITS = { none: 0, basic: 10, pro: 25 };
   const DAILY_RENDER_LIMIT = PLAN_LIMITS[plan];
-  const setPlan = async (newPlan) => {
-    if (user) { await updatePlan(newPlan); }
-    else { try { localStorage.setItem("pc_plan_override", newPlan); } catch {} setPlanOverride(newPlan); }
-  };
 
   const bumpDailyRender = () => {
     const newCount = dailyRenders + 1; setDailyRenders(newCount);
@@ -4012,6 +4096,29 @@ export default function PoolCraftPro() {
   }, [isDirty]);
   const materials = useMemo(()=>calcMaterials(shape,len,wid,depthId,finishId),[shape,len,wid,depthId,finishId]);
   const equipment = useMemo(()=>getPentairEquipment(materials.gallons,extras),[materials.gallons,extras]);
+
+  // Returning from Stripe Checkout - the webhook flips user_metadata.plan
+  // server-side, but this tab's cached session doesn't know that yet, so poll
+  // a few times for the fresh value instead of assuming one refresh is enough.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const checkout = params.get("checkout");
+    if (!checkout) return;
+    window.history.replaceState(null, "", window.location.pathname);
+    if (checkout === "success") {
+      setSavedToastMsg("✅ Payment successful - activating your plan...");
+      setSavedToast(true); setTimeout(()=>setSavedToast(false), 4000);
+      let tries = 0;
+      const poll = setInterval(async () => {
+        tries++;
+        const u = await refreshUser();
+        if (u?.user_metadata?.plan || tries >= 6) clearInterval(poll);
+      }, 1500);
+    } else if (checkout === "cancelled") {
+      setSavedToastMsg("Checkout cancelled - no charge was made.");
+      setSavedToast(true); setTimeout(()=>setSavedToast(false), 3000);
+    }
+  }, []); // eslint-disable-line
 
   // Show login screen until authenticated
   if (authLoading) return (
@@ -4437,7 +4544,7 @@ export default function PoolCraftPro() {
 
         {tab===9&&<QuickRender len={len} wid={wid} shape={shape} finishId={finishId} colorId={colorId} entries={entries} hardscapes={hardscapes} dailyRenders={dailyRenders} dailyLimit={DAILY_RENDER_LIMIT} bumpDailyRender={bumpDailyRender} />}
         {tab===10&&<BuildTracker projectName={projectName} clientName={clientName} clientEmail={clientEmail} />}
-        {tab===11&&<SettingsScreen userMode={userMode} setUserMode={setUserMode} plan={plan} setPlan={setPlan} />}
+        {tab===11&&<SettingsScreen userMode={userMode} setUserMode={setUserMode} plan={plan} user={user} />}
       </div>
 
       {/* Quote Builder + Timeline slide up from Cost Estimator tab */}
