@@ -792,22 +792,15 @@ function PropertyMap({ poolLen, poolWid, poolShape, poolColor, parcelData }) {
   const [showMeasure, setShowMeasure] = useState(true);
   const [mapImgUrl, setMapImgUrl] = useState(null);
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [mapError, setMapError] = useState(false);
   const [coords, setCoords] = useState(null);
   const [zoom, setZoom] = useState(20);
-  const [googleKey, setGoogleKey] = useState(()=>{
-    // Use env var first (Vercel production), fall back to localStorage (manual entry)
-    if(import.meta.env.VITE_GMAPS_KEY) return import.meta.env.VITE_GMAPS_KEY;
-    try{return localStorage.getItem("pc_gmaps_key")||"";}catch{return "";}
-  });
-  const [keyInput, setKeyInput] = useState("");
   const mapImgRef = useRef(null);
 
   const CW = 560, CH = 440;
   const POOL_W = Math.min(Math.max(poolLen*5.2,55),CW*0.5);
   const POOL_H = Math.min(Math.max(poolWid*5.2,34),CH*0.34);
   const SB_SIDE=26, SB_REAR=50, SB_FRONT=100;
-
-  const saveKey = (k) => { setGoogleKey(k); try{localStorage.setItem("pc_gmaps_key",k);}catch{} setKeyInput(""); };
 
   const geocode = async (address) => {
     try {
@@ -818,22 +811,21 @@ function PropertyMap({ poolLen, poolWid, poolShape, poolColor, parcelData }) {
     return null;
   };
 
-  const buildMapUrl = (lat, lng, z) => {
-    if(!googleKey) return null;
-    return `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=${z}&size=560x440&maptype=satellite&key=${googleKey}`;
-  };
+  // Routes through the /api/maps serverless proxy (server-side GOOGLE_MAPS_KEY) instead
+  // of calling Google directly with a client-exposed key.
+  const buildMapUrl = (lat, lng, z) => `/api/maps?lat=${lat}&lng=${lng}&zoom=${z}&width=${CW}&height=${CH}`;
 
   useEffect(()=>{
     if(!parcelData?.address) return;
     (async()=>{
       const c = await geocode(parcelData.address);
-      if(c){ setCoords(c); setMapLoaded(false); setPoolPos({x:0.5,y:0.65}); if(googleKey){ setMapImgUrl(buildMapUrl(c.lat,c.lng,zoom)); } }
+      if(c){ setCoords(c); setMapLoaded(false); setMapError(false); setPoolPos({x:0.5,y:0.65}); setMapImgUrl(buildMapUrl(c.lat,c.lng,zoom)); }
     })();
-  },[parcelData?.address, googleKey]);
+  },[parcelData?.address]);
 
   useEffect(()=>{
-    if(coords&&googleKey){ setMapImgUrl(buildMapUrl(coords.lat,coords.lng,zoom)); setMapLoaded(false); }
-  },[zoom, googleKey, coords]);
+    if(coords){ setMapImgUrl(buildMapUrl(coords.lat,coords.lng,zoom)); setMapLoaded(false); setMapError(false); }
+  },[zoom, coords]);
 
   const drawOverlay = useCallback(()=>{
     const canvas = canvasRef.current; if(!canvas) return;
@@ -842,7 +834,7 @@ function PropertyMap({ poolLen, poolWid, poolShape, poolColor, parcelData }) {
 
     if(mapImgRef.current && mapLoaded){
       ctx.drawImage(mapImgRef.current,0,0,CW,CH);
-    } else if(!googleKey || !parcelData){
+    } else {
       const skyGrad=ctx.createLinearGradient(0,0,0,CH*0.45);
       skyGrad.addColorStop(0,"#87ceeb"); skyGrad.addColorStop(1,"#b8e4f7");
       ctx.fillStyle=skyGrad; ctx.fillRect(0,0,CW,CH*0.45);
@@ -863,20 +855,24 @@ function PropertyMap({ poolLen, poolWid, poolShape, poolColor, parcelData }) {
       ctx.fillRect(CW*0.16,0,CW*0.2,CH*0.12);
       ctx.fillStyle="#d4c5a9";
       ctx.beginPath(); ctx.roundRect(CW*0.08,CH*0.38,CW*0.84,CH*0.52,10); ctx.fill();
-      if(!googleKey){
-        ctx.fillStyle="rgba(11,17,32,0.72)";
-        ctx.beginPath(); ctx.roundRect(CW*0.1,CH*0.54,CW*0.8,54,10); ctx.fill();
-        ctx.font="bold 13px Inter,sans-serif"; ctx.fillStyle="#06b6d4";
-        ctx.textAlign="center"; ctx.textBaseline="middle";
-        ctx.fillText("Add Google Maps API key to see real satellite view",CW/2,CH*0.57);
-        ctx.font="11px Inter,sans-serif"; ctx.fillStyle="#64748b";
-        ctx.fillText("Free key - 28,000 map loads/month - Takes 5 minutes",CW/2,CH*0.62);
-      } else if(!parcelData){
+      if(!parcelData){
         ctx.fillStyle="rgba(11,17,32,0.72)";
         ctx.beginPath(); ctx.roundRect(CW*0.15,CH*0.54,CW*0.7,40,10); ctx.fill();
         ctx.font="bold 12px Inter,sans-serif"; ctx.fillStyle="#94a3b8";
         ctx.textAlign="center"; ctx.textBaseline="middle";
         ctx.fillText("Search an address above to load satellite view",CW/2,CH*0.585);
+      } else if(mapError){
+        ctx.fillStyle="rgba(11,17,32,0.72)";
+        ctx.beginPath(); ctx.roundRect(CW*0.1,CH*0.54,CW*0.8,40,10); ctx.fill();
+        ctx.font="bold 12px Inter,sans-serif"; ctx.fillStyle="#ef4444";
+        ctx.textAlign="center"; ctx.textBaseline="middle";
+        ctx.fillText("Satellite imagery unavailable - check server Maps key",CW/2,CH*0.585);
+      } else {
+        ctx.fillStyle="rgba(11,17,32,0.72)";
+        ctx.beginPath(); ctx.roundRect(CW*0.15,CH*0.54,CW*0.7,40,10); ctx.fill();
+        ctx.font="bold 12px Inter,sans-serif"; ctx.fillStyle="#94a3b8";
+        ctx.textAlign="center"; ctx.textBaseline="middle";
+        ctx.fillText("Loading satellite view...",CW/2,CH*0.585);
       }
     }
 
@@ -961,7 +957,7 @@ function PropertyMap({ poolLen, poolWid, poolShape, poolColor, parcelData }) {
     ctx.fillStyle="#ef4444"; ctx.fillText("N",CW-22,15);
     ctx.fillStyle="#fff"; ctx.fillText("S",CW-22,29); ctx.fillText("W",CW-30,22); ctx.fillText("E",CW-14,22);
     ctx.restore();
-  },[poolPos,poolLen,poolWid,poolShape,poolColor,showSetbacks,showMeasure,mapLoaded,googleKey,parcelData]);
+  },[poolPos,poolLen,poolWid,poolShape,poolColor,showSetbacks,showMeasure,mapLoaded,mapError,parcelData]);
 
   const rafPending = useRef(false);
   useEffect(()=>{
@@ -973,8 +969,8 @@ function PropertyMap({ poolLen, poolWid, poolShape, poolColor, parcelData }) {
   useEffect(()=>{
     if(!mapImgUrl) return;
     const img = new Image();
-    img.onload = ()=>{ mapImgRef.current=img; setMapLoaded(true); };
-    img.onerror = ()=>{ mapImgRef.current=null; setMapLoaded(false); };
+    img.onload = ()=>{ mapImgRef.current=img; setMapLoaded(true); setMapError(false); };
+    img.onerror = ()=>{ mapImgRef.current=null; setMapLoaded(false); setMapError(true); };
     img.src = mapImgUrl;
   },[mapImgUrl]);
 
@@ -1155,43 +1151,20 @@ function PropertyMap({ poolLen, poolWid, poolShape, poolColor, parcelData }) {
 
   return (
     <div style={{display:"flex",flexDirection:"column",gap:12}}>
-      {!googleKey ? (
-        <div style={{background:"linear-gradient(135deg,rgba(6,182,212,0.12),rgba(2,132,199,0.06))",border:"1px solid rgba(6,182,212,0.3)",borderRadius:14,padding:14}}>
-          <div style={{fontSize:13,fontWeight:800,color:"#06b6d4",marginBottom:6}}>🛰️ Activate Real Satellite Imagery</div>
-          <div style={{fontSize:12,color:"#94a3b8",lineHeight:1.6,marginBottom:10}}>
-            Add a free Google Maps API key to see the real satellite view of any property. Takes 5 minutes - free for up to 28,000 map loads/month.
-          </div>
-          <div style={{background:"#0f172a",borderRadius:10,padding:12,marginBottom:10}}>
-            {["Go to console.cloud.google.com","Create a project then Enable Maps Static API","Credentials then Create API Key then copy it","Paste below - your customers never see it"].map((s,i)=>(
-              <div key={i} style={{display:"flex",gap:8,marginBottom:6,alignItems:"flex-start"}}>
-                <span style={{minWidth:18,height:18,borderRadius:"50%",background:"rgba(6,182,212,0.2)",color:"#06b6d4",fontSize:9,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{i+1}</span>
-                <span style={{fontSize:12,color:"#64748b"}}>{s}</span>
-              </div>
-            ))}
-          </div>
-          <div style={{display:"flex",gap:8}}>
-            <input type="password" value={keyInput} onChange={e=>setKeyInput(e.target.value)}
-              onKeyDown={e=>e.key==="Enter"&&saveKey(keyInput.trim())}
-              placeholder="Paste Google Maps API key..."
-              style={{flex:1,background:"#1e293b",border:"1px solid #334155",borderRadius:10,padding:"10px 12px",color:"#e2e8f0",fontSize:13,outline:"none"}}/>
-            <button onClick={()=>saveKey(keyInput.trim())} disabled={!keyInput.trim()}
-              style={{padding:"10px 18px",borderRadius:10,background:keyInput.trim()?"linear-gradient(135deg,#06b6d4,#0284c7)":"#1e293b",border:"none",color:"white",fontWeight:700,fontSize:13,cursor:keyInput.trim()?"pointer":"not-allowed",flexShrink:0}}>
-              Activate
-            </button>
-          </div>
-        </div>
-      ) : (
+      {coords && mapLoaded ? (
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 14px",background:"rgba(34,197,94,0.08)",border:"1px solid rgba(34,197,94,0.25)",borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:700,color:"#22c55e"}}>✅ Google Maps Satellite - Active</div>
-          <button onClick={()=>{setGoogleKey(""); try{localStorage.removeItem("pc_gmaps_key");}catch{} setMapLoaded(false); setMapImgUrl(null);}}
-            style={{fontSize:11,color:"#64748b",background:"none",border:"none",cursor:"pointer"}}>Change Key</button>
         </div>
-      )}
+      ) : coords && mapError ? (
+        <div style={{padding:"10px 14px",background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.25)",borderRadius:10,fontSize:12,fontWeight:700,color:"#ef4444"}}>
+          ⚠️ Couldn't load satellite imagery - check the server's GOOGLE_MAPS_KEY
+        </div>
+      ) : null}
 
       <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
         <button onClick={()=>setShowSetbacks(p=>!p)} style={{padding:"10px 14px",minHeight:40,borderRadius:8,border:`2px solid ${showSetbacks?"#f59e0b88":"#334155"}`,background:showSetbacks?"rgba(245,158,11,0.1)":"#111827",color:showSetbacks?"#f59e0b":"#64748b",fontSize:12,fontWeight:700,cursor:"pointer"}}>📐 Setbacks {showSetbacks?"On":"Off"}</button>
         <button onClick={()=>setShowMeasure(p=>!p)} style={{padding:"10px 14px",minHeight:40,borderRadius:8,border:`2px solid ${showMeasure?"#22c55e88":"#334155"}`,background:showMeasure?"rgba(34,197,94,0.1)":"#111827",color:showMeasure?"#22c55e":"#64748b",fontSize:12,fontWeight:700,cursor:"pointer"}}>📏 Measurements {showMeasure?"On":"Off"}</button>
-        {googleKey&&coords&&<>
+        {coords&&<>
           <button onClick={()=>setZoom(z=>Math.min(21,z+1))} style={{width:40,height:40,borderRadius:8,border:"1px solid #334155",background:"#1e293b",color:"#e2e8f0",fontSize:18,fontWeight:700,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
           <button onClick={()=>setZoom(z=>Math.max(16,z-1))} style={{width:40,height:40,borderRadius:8,border:"1px solid #334155",background:"#1e293b",color:"#e2e8f0",fontSize:18,fontWeight:700,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
         </>}
@@ -1222,7 +1195,7 @@ function PropertyMap({ poolLen, poolWid, poolShape, poolColor, parcelData }) {
       )}
       <RegridKeyPanel />
       <div style={{fontSize:11,color:"#334155",textAlign:"center"}}>
-        {googleKey?"🛰️ Satellite (c) Google Maps - Geocoding (c) OpenStreetMap":"🗺️ Add Google Maps API key above for real satellite imagery - free for 28,000 loads/month"}
+        {mapLoaded?"🛰️ Satellite (c) Google Maps - Geocoding (c) OpenStreetMap":"🗺️ Search an address above to load real satellite imagery"}
       </div>
     </div>
   );
