@@ -3031,7 +3031,9 @@ function generateProposal({ projectName, clientName, shape, len, wid, depthId, f
 // ─── SETTINGS SCREEN ─────────────────────────────────────────────────────────
 // One place for all API keys, affiliate tags, and app preferences.
 // Replaces the scattered key panels across tabs.
-function SettingsScreen({ userMode, setUserMode, onSwitchMode }) {
+function SettingsScreen({ userMode, setUserMode, onSwitchMode, plan, setPlan }) {
+  const [planSaving, setPlanSaving] = useState(false);
+  const choosePlan = async (p) => { if (p === plan || planSaving) return; setPlanSaving(true); try { await setPlan(p); } finally { setPlanSaving(false); } };
   const [regridKey, setRegridKey] = useState(()=>{ try{return localStorage.getItem("pc_regrid_key")||"";}catch{return "";} });
   const supabaseCfg = getSupabaseConfig();
   const [sbUrl, setSbUrl] = useState(supabaseCfg.url);
@@ -3091,7 +3093,19 @@ function SettingsScreen({ userMode, setUserMode, onSwitchMode }) {
       {/* AI Rendering */}
       <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
         <div style={{fontSize:12,fontWeight:700,color:"#a78bfa",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4}}>🚀 Grok Aurora — AI Pool Rendering</div>
-        <div style={{fontSize:11,color:"#64748b"}}>Powered by a shared Grok Aurora key configured on the server — nothing to set up here.</div>
+        <div style={{fontSize:11,color:"#64748b",marginBottom:12}}>Powered by a shared Grok Aurora key configured on the server — nothing to set up here.</div>
+        <div style={{fontSize:11,color:"#94a3b8",marginBottom:10,lineHeight:1.6}}>
+          ⚠️ No payment processing is wired up yet — this switch just changes your daily render cap for testing. Once Stripe billing is live, plan changes will happen automatically at checkout instead.
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+          {[{id:"basic",label:"Basic",renders:10},{id:"pro",label:"Pro",renders:25}].map(p=>(
+            <button key={p.id} onClick={()=>choosePlan(p.id)} disabled={planSaving}
+              style={{padding:"12px",borderRadius:10,border:`2px solid ${plan===p.id?"#a78bfa":"#1e293b"}`,background:plan===p.id?"rgba(124,58,237,0.1)":"#0f172a",cursor:planSaving?"not-allowed":"pointer",textAlign:"center"}}>
+              <div style={{fontSize:13,fontWeight:800,color:plan===p.id?"#a78bfa":"#e2e8f0"}}>{p.label}{plan===p.id?" ✓":""}</div>
+              <div style={{fontSize:11,color:"#64748b",marginTop:2}}>{p.renders} renders / day</div>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Maps & Parcel */}
@@ -3757,7 +3771,18 @@ function useAuth() {
     setUser(null); setSession(null);
   };
 
-  return { user, session, authLoading, signOut };
+  // Stores the render plan ("basic"/"pro") on the Supabase user's own account
+  // metadata. No payment gate yet - this is a placeholder until Stripe billing
+  // lands, at which point plan changes should move server-side (a webhook
+  // updating this same field) instead of being self-service like this.
+  const updatePlan = async (plan) => {
+    const sb = await loadSupabase();
+    if (!sb) return false;
+    const { error } = await sb.auth.updateUser({ data: { plan } });
+    return !error;
+  };
+
+  return { user, session, authLoading, signOut, updatePlan };
 }
 
 // Login / Signup Screen
@@ -3882,7 +3907,7 @@ function AuthScreen({ onAuth }) {
 }
 
 export default function PoolCraftPro() {
-  const { user, session, authLoading, signOut } = useAuth();
+  const { user, session, authLoading, signOut, updatePlan } = useAuth();
   const [authedUser, setAuthedUser] = useState(null);
   const [tab, setTab] = useState(0);
   const [shape, setShape] = useState("rectangle");
@@ -3908,7 +3933,17 @@ export default function PoolCraftPro() {
     try { const saved = JSON.parse(localStorage.getItem("pc_daily")||"{}"); const today = new Date().toDateString(); return saved.date === today ? (saved.count||0) : 0; } catch { return 0; }
   });
 
-  const DAILY_RENDER_LIMIT = 10;
+  // Render plan: Basic (10/day) vs Pro (25/day). No payment gate yet - see
+  // useAuth's updatePlan comment. Logged-in Supabase users store plan on their
+  // account; guest/no-auth mode falls back to a local override.
+  const [planOverride, setPlanOverride] = useState(() => { try { return localStorage.getItem("pc_plan_override") || ""; } catch { return ""; } });
+  const plan = (user ? user.user_metadata?.plan : planOverride) === "pro" ? "pro" : "basic";
+  const PLAN_LIMITS = { basic: 10, pro: 25 };
+  const DAILY_RENDER_LIMIT = PLAN_LIMITS[plan];
+  const setPlan = async (newPlan) => {
+    if (user) { await updatePlan(newPlan); }
+    else { try { localStorage.setItem("pc_plan_override", newPlan); } catch {} setPlanOverride(newPlan); }
+  };
 
   const bumpDailyRender = () => {
     const newCount = dailyRenders + 1; setDailyRenders(newCount);
@@ -4402,7 +4437,7 @@ export default function PoolCraftPro() {
 
         {tab===9&&<QuickRender len={len} wid={wid} shape={shape} finishId={finishId} colorId={colorId} entries={entries} hardscapes={hardscapes} dailyRenders={dailyRenders} dailyLimit={DAILY_RENDER_LIMIT} bumpDailyRender={bumpDailyRender} />}
         {tab===10&&<BuildTracker projectName={projectName} clientName={clientName} clientEmail={clientEmail} />}
-        {tab===11&&<SettingsScreen userMode={userMode} setUserMode={setUserMode} />}
+        {tab===11&&<SettingsScreen userMode={userMode} setUserMode={setUserMode} plan={plan} setPlan={setPlan} />}
       </div>
 
       {/* Quote Builder + Timeline slide up from Cost Estimator tab */}
