@@ -1226,15 +1226,11 @@ function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, fin
   const [error, setError] = useState(null);
   const [selectedStyle, setSelectedStyle] = useState("photorealistic");
   const [aiDescription, setAiDescription] = useState(null);
-  const [apiKey, setApiKey] = useState(() => { if(import.meta.env.VITE_XAI_KEY) return import.meta.env.VITE_XAI_KEY; try { return localStorage.getItem("xai_dev_key") || ""; } catch { return ""; } });
-  const [keyInput, setKeyInput] = useState("");
-  const [showSetup, setShowSetup] = useState(false);
   const [queued, setQueued] = useState(false);
 
   const MONTHLY_LIMIT = 30;
   const activeEntries = ENTRY_FEATURES.filter(e => entries[e.id]);
   const activeHardscapes = HARDSCAPE_OPTIONS.filter(h => hardscapes[h.id]);
-  const hasKey = !!apiKey.trim();
 
   const STYLES = [
     { id:"photorealistic", label:"📷 Photorealistic",  hint:"Natural daylight - most realistic" },
@@ -1264,15 +1260,6 @@ function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, fin
     return p;
   };
 
-  const saveKey = () => {
-    const k = keyInput.trim();
-    if (!k) return;
-    setApiKey(k);
-    try { localStorage.setItem("xai_dev_key", k); } catch {}
-    setShowSetup(false); setKeyInput(""); setError(null);
-  };
-  const removeKey = () => { setApiKey(""); setKeyInput(""); try { localStorage.removeItem("xai_dev_key"); } catch {} };
-
   const handlePhotoUpload = (e) => {
     const file = e.target.files[0]; if (!file) return;
     if (!file.type.startsWith("image/")) { setError("Please choose an image file (JPG, PNG, etc)."); return; }
@@ -1284,19 +1271,16 @@ function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, fin
 
   const getAIDescription = async (prompt) => {
     try {
-      const resp = await fetch("https://api.anthropic.com/v1/messages", {
+      const resp = await fetch("/api/describe", {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({ model:"claude-sonnet-4-6", max_tokens:240,
-          messages:[{role:"user",content:`You are a luxury pool designer. In 2-3 enthusiastic sentences, describe this pool design to an excited homeowner: ${prompt.slice(0,300)}`}]
-        })
+        body:JSON.stringify({ prompt: `You are a luxury pool designer. In 2-3 enthusiastic sentences, describe this pool design to an excited homeowner: ${prompt.slice(0,300)}` })
       });
       const d = await resp.json();
-      return d?.content?.[0]?.text || null;
+      return d?.text || null;
     } catch { return null; }
   };
 
   const handleRender = async () => {
-    if (!hasKey) { setShowSetup(true); return; }
     if (!bgPhoto) { setError("Please upload a backyard photo first. Grok edits your real photo - it needs to see the actual space."); return; }
     if (dailyRenders >= dailyLimit) { setError(`You've used all ${dailyLimit} renders for today - pool and hardscape renders share this limit.`); return; }
 
@@ -1316,9 +1300,9 @@ function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, fin
       const mediaType = bgPhoto.startsWith("data:image/png") ? "image/png" : "image/jpeg";
       const prompt = buildPrompt();
 
-      const resp = await fetch("https://api.x.ai/v1/images/edits", {
-        method:"POST", headers:{ "Content-Type":"application/json", "Authorization":`Bearer ${apiKey.trim()}` },
-        body: JSON.stringify({ model: "grok-imagine-image-quality", prompt, image: { b64_json: b64, media_type: mediaType }, response_format: "b64_json", n: 1 }),
+      const resp = await fetch("/api/render", {
+        method:"POST", headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ prompt, image: { b64_json: b64, media_type: mediaType } }),
       });
 
       clearInterval(interval);
@@ -1326,16 +1310,15 @@ function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, fin
       if (!resp.ok) {
         const txt = await resp.text().catch(()=>"");
         let parsed = {}; try { parsed = JSON.parse(txt); } catch {}
-        const msg = parsed?.error?.message || txt.slice(0,140);
-        if (resp.status === 401) throw new Error("API key invalid or expired. Go to console.x.ai then API Keys and create a new key.");
+        const msg = parsed?.error || txt.slice(0,140);
         if (resp.status === 429) { setQueued(true); throw new Error("Rate limit reached - wait 60 seconds and try again."); }
         if (resp.status === 400) throw new Error(`Bad request: ${msg}. Try a smaller photo (under 4MB) or a different image format.`);
         throw new Error(`Grok API error ${resp.status}: ${msg}`);
       }
 
       const data = await resp.json();
-      const b64Result = data?.data?.[0]?.b64_json;
-      const urlResult = data?.data?.[0]?.url;
+      const b64Result = data?.b64_json;
+      const urlResult = data?.url;
       if (!b64Result && !urlResult) throw new Error("Grok returned no image. Please try again.");
 
       setProgress(100); setProgressMsg("Done!");
@@ -1371,53 +1354,19 @@ function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, fin
 
   return (
     <div style={{display:"flex",flexDirection:"column",gap:14}}>
-      {!hasKey ? (
-        <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:16,overflow:"hidden"}}>
-          <div style={{background:"linear-gradient(135deg,#4c1d95,#2d1b69)",padding:"16px 18px"}}>
-            <div style={{fontSize:15,fontWeight:800,color:"#e9d5ff",marginBottom:4}}>🚀 Grok Aurora AI Rendering</div>
-            <div style={{fontSize:12,color:"#c4b5fd",lineHeight:1.6}}>The same Aurora AI you use in Super Grok - photorealistically renders your pool into a real backyard photo. Setup takes 2 minutes and only needs to be done once.</div>
-          </div>
-          <div style={{padding:16}}>
-            <div style={{marginBottom:14}}>
-              {[
-                {n:1, title:"Create a free xAI Developer Account", detail:"Go to console.x.ai - this is SEPARATE from your Super Grok. No daily caps here - you pay $0.02-$0.07 per image generated."},
-                {n:2, title:"Get $25 free credits on signup", detail:"New developer accounts get $25 in free API credits instantly - that's 350-1,200 free renders before you pay anything."},
-                {n:3, title:"Create an API Key", detail:"In the console: API Keys then Create Key. Copy the key starting with \"xai-...\""},
-                {n:4, title:"Paste it below", detail:"Saved to your device only. Your customers never see it."},
-              ].map(s=>(
-                <div key={s.n} style={{display:"flex",gap:12,marginBottom:12,alignItems:"flex-start"}}>
-                  <div style={{minWidth:28,height:28,borderRadius:"50%",background:"linear-gradient(135deg,#7c3aed,#5b21b6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,color:"white",flexShrink:0}}>{s.n}</div>
-                  <div><div style={{fontSize:13,fontWeight:700,color:"#e2e8f0",marginBottom:2}}>{s.title}</div><div style={{fontSize:12,color:"#64748b",lineHeight:1.5}}>{s.detail}</div></div>
-                </div>
-              ))}
-            </div>
-            <div style={{display:"flex",gap:8}}>
-              <input type="password" value={keyInput} onChange={e=>setKeyInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&saveKey()}
-                placeholder="Paste xAI API key (xai-...)" style={{flex:1,background:"#1e293b",border:"1px solid #334155",borderRadius:10,padding:"12px 14px",color:"#e2e8f0",fontSize:14,outline:"none"}} />
-              <button onClick={saveKey} disabled={!keyInput.trim()}
-                style={{padding:"12px 20px",borderRadius:10,background:keyInput.trim()?"linear-gradient(135deg,#7c3aed,#5b21b6)":"#1e293b",border:"none",color:"white",fontWeight:800,fontSize:14,cursor:keyInput.trim()?"pointer":"not-allowed",flexShrink:0}}>Activate</button>
-            </div>
-            <div style={{marginTop:10,padding:"10px 12px",background:"rgba(124,58,237,0.08)",border:"1px solid rgba(124,58,237,0.2)",borderRadius:8,fontSize:11,color:"#94a3b8",lineHeight:1.6}}>
-              💼 <strong style={{color:"#e2e8f0"}}>For your launched app:</strong> embed the key server-side so customers just tap Generate. Contact xAI sales as you scale for higher rate limits and volume pricing.
-            </div>
-          </div>
+      <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,marginBottom:10}}>
+          <div><div style={{fontSize:13,fontWeight:800,color:"#22c55e"}}>✅ Grok Aurora AI Rendering</div><div style={{fontSize:12,color:"#64748b",marginTop:2}}>The same Aurora AI you use in Super Grok - photorealistically renders your pool into a real backyard photo.</div></div>
         </div>
-      ) : (
-        <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,marginBottom:10}}>
-            <div><div style={{fontSize:13,fontWeight:800,color:"#22c55e"}}>✅ Grok Aurora API - Active</div><div style={{fontSize:12,color:"#64748b",marginTop:2}}>xAI Developer API - Pay-per-render - No daily cap</div></div>
-            <button onClick={removeKey} style={{padding:"6px 12px",borderRadius:8,background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",fontSize:11,fontWeight:700,cursor:"pointer",flexShrink:0}}>Change Key</button>
-          </div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
-            {[{label:"Renders This Month", val:monthlyRenders, of:MONTHLY_LIMIT, color:"#06b6d4"},{label:"Total Renders", val:renderCount, of:null, color:"#a78bfa"},{label:"Est. API Cost", val:`$${(monthlyRenders*0.07).toFixed(2)}`, of:null, color:"#22c55e"}].map(s=>(
-              <div key={s.label} style={{background:"#1e293b",borderRadius:8,padding:"9px 10px",textAlign:"center"}}>
-                <div style={{fontSize:10,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:4}}>{s.label}</div>
-                <div style={{fontSize:17,fontWeight:800,color:s.color}}>{s.val}{s.of?<span style={{fontSize:11,color:"#64748b",fontWeight:400}}> / {s.of}</span>:""}</div>
-              </div>
-            ))}
-          </div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
+          {[{label:"Renders This Month", val:monthlyRenders, of:MONTHLY_LIMIT, color:"#06b6d4"},{label:"Total Renders", val:renderCount, of:null, color:"#a78bfa"},{label:"Est. API Cost", val:`$${(monthlyRenders*0.07).toFixed(2)}`, of:null, color:"#22c55e"}].map(s=>(
+            <div key={s.label} style={{background:"#1e293b",borderRadius:8,padding:"9px 10px",textAlign:"center"}}>
+              <div style={{fontSize:10,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:4}}>{s.label}</div>
+              <div style={{fontSize:17,fontWeight:800,color:s.color}}>{s.val}{s.of?<span style={{fontSize:11,color:"#64748b",fontWeight:400}}> / {s.of}</span>:""}</div>
+            </div>
+          ))}
         </div>
-      )}
+      </div>
 
       <div style={{background:"rgba(245,158,11,0.08)",border:"1px solid rgba(245,158,11,0.25)",borderRadius:12,padding:12}}>
         <div style={{fontSize:11,color:"#f59e0b",fontWeight:700,marginBottom:4}}>⚠️ Important: Developer API vs Super Grok</div>
@@ -1484,9 +1433,9 @@ function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, fin
       )}
 
       <button onClick={rendering||dailyRenders>=dailyLimit?null:handleRender}
-        style={{width:"100%",padding:"17px",borderRadius:12,background:rendering?"#1e293b":hasKey?"linear-gradient(135deg,#7c3aed,#5b21b6)":"linear-gradient(135deg,#334155,#1e293b)",
-          border:"none",color:"white",fontWeight:800,fontSize:16,cursor:rendering?"not-allowed":"pointer",boxShadow:hasKey&&!rendering?"0 4px 24px rgba(124,58,237,0.35)":"none",letterSpacing:"0.02em",transition:"all 0.2s"}}>
-        {rendering ? `⏳ ${progressMsg}` : hasKey ? (renderedImage ? "🔄 Generate New Variation" : "🚀 Generate with Grok Aurora") : "🔑 Activate Grok API to Generate"}
+        style={{width:"100%",padding:"17px",borderRadius:12,background:rendering?"#1e293b":"linear-gradient(135deg,#7c3aed,#5b21b6)",
+          border:"none",color:"white",fontWeight:800,fontSize:16,cursor:rendering?"not-allowed":"pointer",boxShadow:!rendering?"0 4px 24px rgba(124,58,237,0.35)":"none",letterSpacing:"0.02em",transition:"all 0.2s"}}>
+        {rendering ? `⏳ ${progressMsg}` : (renderedImage ? "🔄 Generate New Variation" : "🚀 Generate with Grok Aurora")}
       </button>
 
       {rendering&&(
@@ -1501,9 +1450,8 @@ function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, fin
         <div style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:12,padding:14}}>
           <div style={{fontSize:13,color:"#ef4444",fontWeight:700,marginBottom:8}}>⚠️ {error}</div>
           <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-            {hasKey&&bgPhoto&&!queued&&<button onClick={handleRefresh} style={{padding:"8px 14px",borderRadius:8,background:"rgba(124,58,237,0.12)",border:"1px solid rgba(124,58,237,0.25)",color:"#a78bfa",fontWeight:700,fontSize:12,cursor:"pointer"}}>🔄 Try Again</button>}
+            {bgPhoto&&!queued&&<button onClick={handleRefresh} style={{padding:"8px 14px",borderRadius:8,background:"rgba(124,58,237,0.12)",border:"1px solid rgba(124,58,237,0.25)",color:"#a78bfa",fontWeight:700,fontSize:12,cursor:"pointer"}}>🔄 Try Again</button>}
             {queued&&<div style={{fontSize:12,color:"#f59e0b",padding:"8px 0"}}>⏰ Wait 60 seconds then try again.</div>}
-            <button onClick={()=>{removeKey();setShowSetup(true);}} style={{padding:"8px 14px",borderRadius:8,background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",fontWeight:700,fontSize:12,cursor:"pointer"}}>🔑 Re-enter API Key</button>
           </div>
         </div>
       )}
@@ -1741,7 +1689,7 @@ const HARDSCAPE_CATEGORIES = [
   ]},
 ];
 
-function HardscapeDesigner({ hardscapes, toggleHardscape, setHSQty, dailyRenders, dailyLimit, bumpDailyRender, apiKey }) {
+function HardscapeDesigner({ hardscapes, toggleHardscape, setHSQty, dailyRenders, dailyLimit, bumpDailyRender }) {
   const [activeCat, setActiveCat] = useState("decking");
   const [photo, setPhoto] = useState(null);
   const [rendered, setRendered] = useState(null);
@@ -1772,7 +1720,6 @@ function HardscapeDesigner({ hardscapes, toggleHardscape, setHSQty, dailyRenders
     if(!photo){ setError("Upload a photo of your outdoor space first."); return; }
     if(totalSelected===0){ setError("Select at least one hardscape element below."); return; }
     if(limitHit){ return; }
-    if(!apiKey){ setError("Add your xAI API key on the Design tab to activate."); return; }
 
     setRendering(true); setError(null);
     setProgress(0); setProgressMsg("Preparing your design..."); setRendered(null); setAiDesc(null);
@@ -1791,22 +1738,21 @@ function HardscapeDesigner({ hardscapes, toggleHardscape, setHSQty, dailyRenders
       const b64 = photo.split(",")[1];
       const mediaType = photo.startsWith("data:image/png") ? "image/png" : "image/jpeg";
 
-      const resp = await fetch("https://api.x.ai/v1/images/edits", {
-        method:"POST", headers:{ "Content-Type":"application/json", "Authorization":`Bearer ${apiKey}` },
-        body: JSON.stringify({ model:"grok-imagine-image-quality", prompt, n:1, image:{ b64_json:b64, media_type:mediaType }, response_format:"b64_json" }),
+      const resp = await fetch("/api/render", {
+        method:"POST", headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ prompt, image:{ b64_json:b64, media_type:mediaType } }),
       });
 
       clearInterval(interval);
       if(!resp.ok){
         const txt = await resp.text().catch(()=>""); let parsed={}; try{parsed=JSON.parse(txt);}catch{}
-        const msg = parsed?.error?.message||txt.slice(0,120);
-        if(resp.status===401) throw new Error("Invalid API key - check your xAI key on the Design tab.");
+        const msg = parsed?.error||txt.slice(0,120);
         if(resp.status===429) throw new Error("Rate limit - wait 60 seconds and try again.");
         throw new Error(`Grok error ${resp.status}: ${msg}`);
       }
 
       const data = await resp.json();
-      const b64r = data?.data?.[0]?.b64_json; const urlr = data?.data?.[0]?.url;
+      const b64r = data?.b64_json; const urlr = data?.url;
       if(!b64r&&!urlr) throw new Error("No image returned. Please try again.");
 
       setProgress(100); setProgressMsg("Done!");
@@ -1814,8 +1760,8 @@ function HardscapeDesigner({ hardscapes, toggleHardscape, setHSQty, dailyRenders
       setRendered(finalImg); setRenderCount(c=>c+1); bumpDailyRender();
 
       try {
-        const dr = await fetch("https://api.anthropic.com/v1/messages",{ method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ model:"claude-sonnet-4-6", max_tokens:220, messages:[{role:"user",content:`You are a luxury landscape designer. In 2 enthusiastic sentences, describe this outdoor design to an excited homeowner. The design includes: ${hsList}.`}] }) });
-        const dd = await dr.json(); setAiDesc(dd?.content?.[0]?.text||null);
+        const dr = await fetch("/api/describe",{ method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ prompt:`You are a luxury landscape designer. In 2 enthusiastic sentences, describe this outdoor design to an excited homeowner. The design includes: ${hsList}.` }) });
+        const dd = await dr.json(); setAiDesc(dd?.text||null);
       } catch{}
     } catch(err){ clearInterval(interval); setError(err.message||"Something went wrong. Please try again."); }
     finally { setRendering(false); }
@@ -1925,11 +1871,6 @@ function HardscapeDesigner({ hardscapes, toggleHardscape, setHSQty, dailyRenders
           <div style={{padding:"14px",borderRadius:12,background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.2)",textAlign:"center"}}>
             <div style={{fontSize:14,fontWeight:700,color:"#ef4444",marginBottom:4}}>⏰ Daily Limit Reached</div>
             <div style={{fontSize:12,color:"#94a3b8"}}>All {dailyLimit} renders used today. Resets at midnight.</div>
-          </div>
-        ) : !apiKey ? (
-          <div style={{padding:"14px",borderRadius:12,background:"rgba(52,211,153,0.06)",border:"1px solid rgba(52,211,153,0.2)",textAlign:"center"}}>
-            <div style={{fontSize:13,fontWeight:700,color:"#34d399",marginBottom:4}}>🔑 Grok API Key Required</div>
-            <div style={{fontSize:12,color:"#6ee7b7"}}>Add your xAI API key on the Design tab to activate rendering.</div>
           </div>
         ) : (
           <button onClick={rendering?null:handleRender} style={{width:"100%",padding:"16px",borderRadius:12,background:rendering?"#1e293b":"linear-gradient(135deg,#059669,#047857)",border:"none",color:"white",fontWeight:800,fontSize:15,cursor:rendering?"not-allowed":"pointer",boxShadow:rendering?"none":"0 4px 20px rgba(5,150,105,0.3)",transition:"all 0.2s"}}>
@@ -3091,14 +3032,6 @@ function generateProposal({ projectName, clientName, shape, len, wid, depthId, f
 // One place for all API keys, affiliate tags, and app preferences.
 // Replaces the scattered key panels across tabs.
 function SettingsScreen({ userMode, setUserMode, onSwitchMode }) {
-  const [xaiKey, setXaiKey] = useState(()=>{
-    if(import.meta.env.VITE_XAI_KEY) return import.meta.env.VITE_XAI_KEY;
-    try{return localStorage.getItem("xai_dev_key")||"";}catch{return "";}
-  });
-  const [gmapsKey, setGmapsKey] = useState(()=>{
-    if(import.meta.env.VITE_GMAPS_KEY) return import.meta.env.VITE_GMAPS_KEY;
-    try{return localStorage.getItem("pc_gmaps_key")||"";}catch{return "";}
-  });
   const [regridKey, setRegridKey] = useState(()=>{ try{return localStorage.getItem("pc_regrid_key")||"";}catch{return "";} });
   const supabaseCfg = getSupabaseConfig();
   const [sbUrl, setSbUrl] = useState(supabaseCfg.url);
@@ -3158,15 +3091,13 @@ function SettingsScreen({ userMode, setUserMode, onSwitchMode }) {
       {/* AI Rendering */}
       <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
         <div style={{fontSize:12,fontWeight:700,color:"#a78bfa",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4}}>🚀 Grok Aurora — AI Pool Rendering</div>
-        <div style={{fontSize:11,color:"#64748b",marginBottom:10}}>Powers the AI rendering feature. Get a free key + $25 credits at console.x.ai (separate from your Super Grok subscription).</div>
-        <KeyRow label="xAI API Key" value={xaiKey} setValue={setXaiKey} storageKey="xai_dev_key" placeholder="xai-..." isSet={!!xaiKey} hint={null}/>
+        <div style={{fontSize:11,color:"#64748b"}}>Powered by a shared Grok Aurora key configured on the server — nothing to set up here.</div>
       </div>
 
       {/* Maps & Parcel */}
       <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
         <div style={{fontSize:12,fontWeight:700,color:"#06b6d4",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4}}>🛰️ Property Lookup & Maps</div>
-        <KeyRow label="Google Maps API Key" value={gmapsKey} setValue={setGmapsKey} storageKey="pc_gmaps_key" placeholder="AIza..." isSet={!!gmapsKey}
-          hint="Free 28,000 map loads/month. Enable at console.cloud.google.com → Maps Static API → Credentials."/>
+        <div style={{fontSize:11,color:"#64748b",marginBottom:10}}>Satellite imagery is powered by a shared Google Maps key configured on the server — nothing to set up here.</div>
         <KeyRow label="Regrid API Key (Parcel Data)" value={regridKey} setValue={setRegridKey} storageKey="pc_regrid_key" placeholder="Paste Regrid key..." isSet={!!regridKey}
           hint="Optional — enables real lot size, zoning & setback data. Sign up at regrid.com. App works with estimated data until this is set."/>
       </div>
@@ -3432,7 +3363,6 @@ function QuickRender({ len, wid, shape, finishId, colorId, entries, hardscapes, 
   const [cameraActive, setCameraActive] = useState(false);
   const streamRef = useRef(null);
 
-  const apiKey = import.meta.env.VITE_XAI_KEY ? import.meta.env.VITE_XAI_KEY : (() => { try { return localStorage.getItem("xai_dev_key") || ""; } catch { return ""; } })();
   const finishLabel = POOL_FINISHES.find(f => f.id === finishId)?.label || finishId;
   const colorLabel = POOL_COLORS.find(c => c.id === colorId)?.label || colorId;
   const shapeLabel = POOL_SHAPES.find(s => s.id === shape)?.label || shape;
@@ -3480,7 +3410,6 @@ function QuickRender({ len, wid, shape, finishId, colorId, entries, hardscapes, 
 
   const renderNow = async () => {
     if (!photo) { setError("Take or upload a photo of the backyard first."); return; }
-    if (!apiKey) { setError("Add your xAI API key in Settings to activate AI rendering."); return; }
     if (dailyRenders >= dailyLimit) { setError(`You've used all ${dailyLimit} renders for today - pool and hardscape renders share this limit.`); return; }
     setRendering(true); setError(null); setProgress(5); setRendered(null); setAiNote(null);
     const steps = [[10,"Sending to Grok Aurora..."],[25,"Analyzing the space..."],[42,"Placing your pool..."],[58,"Rendering water & light..."],[74,"Matching shadows..."],[88,"Final polish..."]];
@@ -3502,29 +3431,27 @@ function QuickRender({ len, wid, shape, finishId, colorId, entries, hardscapes, 
 
       const b64 = photo.split(",")[1];
       const mediaType = photo.startsWith("data:image/png") ? "image/png" : "image/jpeg";
-      const resp = await fetch("https://api.x.ai/v1/images/edits", {
+      const resp = await fetch("/api/render", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
-        body: JSON.stringify({ model: "grok-imagine-image-quality", prompt, image: { b64_json: b64, media_type: mediaType }, response_format: "b64_json", n: 1 }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt, image: { b64_json: b64, media_type: mediaType } }),
       });
       clearInterval(iv);
       if (!resp.ok) {
         const e = await resp.json().catch(() => ({}));
-        if (resp.status === 401) throw new Error("Invalid API key — check Settings");
         if (resp.status === 429) throw new Error("Rate limit — wait 60 seconds");
-        throw new Error(e?.error?.message || `Error ${resp.status}`);
+        throw new Error(e?.error || `Error ${resp.status}`);
       }
       const data = await resp.json();
-      const b64r = data?.data?.[0]?.b64_json;
+      const b64r = data?.b64_json;
       if (!b64r) throw new Error("No image returned — please try again");
       setProgress(100); setRendered(`data:image/jpeg;base64,${b64r}`);
       bumpDailyRender();
       // Get AI designer note
-      fetch("https://api.anthropic.com/v1/messages", {
+      fetch("/api/describe", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 160,
-          messages: [{ role: "user", content: `In 2 enthusiastic sentences, describe this pool design to an excited homeowner: ${len}x${wid} ${shapeLabel} pool, ${colorLabel} water, ${finishLabel} finish${featureList ? ", " + featureList : ""}.` }] })
-      }).then(r => r.json()).then(d => setAiNote(d?.content?.[0]?.text || null)).catch(() => {});
+        body: JSON.stringify({ prompt: `In 2 enthusiastic sentences, describe this pool design to an excited homeowner: ${len}x${wid} ${shapeLabel} pool, ${colorLabel} water, ${finishLabel} finish${featureList ? ", " + featureList : ""}.` })
+      }).then(r => r.json()).then(d => setAiNote(d?.text || null)).catch(() => {});
     } catch (e) { clearInterval(iv); setError(e.message); }
     finally { setRendering(false); }
   };
@@ -3803,8 +3730,6 @@ function BuildTracker({ projectName, clientName, clientEmail }) {
 // They are loaded from environment variables on Vercel
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "";
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
-const XAI_KEY = import.meta.env.VITE_XAI_KEY || "";
-const GMAPS_KEY = import.meta.env.VITE_GMAPS_KEY || "";
 
 // Auth state hook
 function useAuth() {
@@ -3984,7 +3909,6 @@ export default function PoolCraftPro() {
   });
 
   const DAILY_RENDER_LIMIT = 10;
-  const apiKey = XAI_KEY || (() => { try { return localStorage.getItem("xai_dev_key")||""; } catch { return ""; } })();
 
   const bumpDailyRender = () => {
     const newCount = dailyRenders + 1; setDailyRenders(newCount);
@@ -4372,7 +4296,7 @@ export default function PoolCraftPro() {
           )}
         </>}
 
-        {tab===2&&<HardscapeDesigner hardscapes={hardscapes} toggleHardscape={toggleHardscape} setHSQty={setHSQty} dailyRenders={dailyRenders} dailyLimit={DAILY_RENDER_LIMIT} bumpDailyRender={bumpDailyRender} apiKey={apiKey} />}
+        {tab===2&&<HardscapeDesigner hardscapes={hardscapes} toggleHardscape={toggleHardscape} setHSQty={setHSQty} dailyRenders={dailyRenders} dailyLimit={DAILY_RENDER_LIMIT} bumpDailyRender={bumpDailyRender} />}
 
         {tab===3&&<YardPlanner poolLen={len} poolWid={wid} poolShape={shape} poolColor={poolColor.hex} entries={entries} hardscapes={hardscapes} parcelData={parcelData} />}
 
