@@ -10,6 +10,11 @@ const hdLink = (q) => `https://www.homedepot.com/s/${encodeURIComponent(q)}?cm_m
 const lowesLink = (q) => `https://www.lowes.com/search?searchTerm=${encodeURIComponent(q)}&affid=${AFFILIATE_TAGS.lowes}`;
 const wayfairLink = (q) => `https://www.wayfair.com/keyword.php?keyword=${encodeURIComponent(q)}&refid=${AFFILIATE_TAGS.wayfair}`;
 const amazonLink = (asin) => `https://www.amazon.com/dp/${asin}?tag=${AFFILIATE_TAGS.amazon}`;
+// Fallback for equipment items with no verified ASIN - a search results page
+// still carries the affiliate tag correctly and can't go stale/dead the way a
+// guessed product-detail link could.
+const amazonSearchLink = (q) => `https://www.amazon.com/s?k=${encodeURIComponent(q)}&tag=${AFFILIATE_TAGS.amazon}`;
+const equipBuyLink = (asin, query) => asin ? amazonLink(asin) : amazonSearchLink(query);
 
 const FINISH_LINKS = {
   plaster:    { name:"White Plaster Pool Finish 50lb Bag", retailer:"Amazon", link:amazonLink("B07PLASTER1"), earn:"3–8%" },
@@ -133,8 +138,6 @@ const PENTAIR_AMAZON = {
   ic40_cell:"B001DSLLH4", ic40_bundle:"B006H3X33A", chlorinator:"B00004RA7E",
   booster:"B0C3JNRWMN",
 };
-function pentairLink(asin){ return `https://www.amazon.com/dp/${asin}?tag=${AFFILIATE_TAGS.amazon}`; }
-
 function getPentairEquipment(gallons, extras) {
   // Pump sizing: industry standard = turn over pool volume in 8 hours
   // Flow rate needed (GPM) = gallons / 480 minutes
@@ -203,6 +206,151 @@ function getPentairEquipment(gallons, extras) {
     ...(boost  ? [{ label:"💧 Feature Pump", ...boost }] : []),
   ];
 }
+
+// Verified Amazon ASINs (checked against live listings) - direct product links.
+const HAYWARD_AMAZON = {
+  pump_2_7hp:"B07SQ2MVDN",
+  filter_c3030:"B07SS4JCY3", filter_c4030:"B07SPM17GD", filter_de6020:"B07SQ2MDQ2",
+  heater_150:"B07SQ2MDQG", heater_400:"B07SQ2MDQQ",
+  omnilogic:"B00ZSA1NZI", colorlogic:"B07SPM16VM",
+  aquarite_25k:"B07ST63P4W", booster:"B07SPM255G",
+};
+
+function getHaywardEquipment(gallons, extras) {
+  const gpm = Math.ceil(gallons / 480);
+  const pump = gallons <= 15000
+    ? { model:"Hayward TriStar VS900 1.85HP", sku:"W3SP3202VSP", query:"Hayward TriStar VS 1.85 HP Variable Speed Pool Pump W3SP3202VSP", earn:"3-8%",
+        note:`Sized for your ${gallons.toLocaleString()} gal pool. Needs ~${gpm} GPM turnover — permanent-magnet variable-speed motor, up to 90% energy savings vs single-speed.` }
+    : gallons <= 30000
+    ? { model:"Hayward TriStar VS950 2.7HP", sku:"W3SP3206VSP", asin:HAYWARD_AMAZON.pump_2_7hp, earn:"3-8%",
+        note:`Your ${gallons.toLocaleString()} gal pool needs ~${gpm} GPM — the 2.7HP delivers up to 160 GPM at 40ft head, comfortable for pools up to 30,000 gal.` }
+    : { model:"Hayward TriStar VS950 2.7HP (×2)", sku:"W3SP3206VSP×2", asin:HAYWARD_AMAZON.pump_2_7hp, earn:"3-8%",
+        note:`At ${gallons.toLocaleString()} gal your pool needs ~${gpm} GPM. Two 2.7HP VS pumps in parallel deliver the required flow with efficiency and redundancy.` };
+
+  const filter = gallons <= 15000
+    ? { model:"Hayward SwimClear C3030", sku:"W3C3030", asin:HAYWARD_AMAZON.filter_c3030, earn:"3-8%",
+        note:`325 sq ft multi-element cartridge filter. No backwash needed, long filter cycles between cleanings.` }
+    : gallons <= 25000
+    ? { model:"Hayward SwimClear C4030", sku:"W3C4030", asin:HAYWARD_AMAZON.filter_c4030, earn:"3-8%",
+        note:`425 sq ft cartridge filter rated for your flow range (~${gpm} GPM). Top-manifold design for even flow across the full cartridge surface.` }
+    : { model:"Hayward ProGrid DE6020", sku:"W3DE6020", asin:HAYWARD_AMAZON.filter_de6020, earn:"3-8%",
+        note:`60 sq ft DE filter, filters to 3-5 microns — the clearest water available for your ${gallons.toLocaleString()} gal pool. Backwash every 4-6 weeks.` };
+
+  const surfaceArea = Math.round(gallons / (4.25 * 7.48));
+  const btuNeeded = surfaceArea * 20 * 12;
+  const heater = extras.heater
+    ? gallons <= 15000
+      ? { model:"Hayward Universal H150FDN 150K BTU Gas", sku:"W3H150FDN", asin:HAYWARD_AMAZON.heater_150, earn:"3-8%",
+          note:`Your ~${surfaceArea} sq ft pool needs ~${Math.round(btuNeeded/1000)}K BTU. The H150 covers pools up to roughly 400 sq ft of surface area efficiently.` }
+      : { model:"Hayward Universal H400FDN 400K BTU Gas", sku:"W3H400FDN", asin:HAYWARD_AMAZON.heater_400, earn:"3-8%",
+          note:`At ${gallons.toLocaleString()} gal you need high BTU output. The H400 covers pools up to roughly 1,400 sq ft, cupro-nickel heat exchanger rated for salt systems.` }
+    : null;
+
+  const automation = {
+    model:"Hayward OmniLogic Automation System", sku:"HLBASE", asin:HAYWARD_AMAZON.omnilogic, earn:"3-8%",
+    note:`Controls pump, heater, and lighting from the OmniLogic app, with 4 relays expandable to 20. Pairs with AquaRite salt systems and ColorLogic lights for full backyard control.`
+  };
+
+  const lightQty = gallons <= 20000 ? 1 : gallons <= 40000 ? 2 : 3;
+  const lighting = {
+    model:`Hayward ColorLogic 4.0 LED (×${lightQty})`, sku:"W3SP0527LED100", asin:HAYWARD_AMAZON.colorlogic, earn:"3-8%",
+    qty: lightQty,
+    note:`${lightQty} light${lightQty>1?"s":""} recommended for your ${gallons.toLocaleString()} gal pool${lightQty>1?" — one at each end for even coverage":""}. Networked color LED, 100ft cord.`
+  };
+
+  const salt = extras.sanitization === "salt"
+    ? { model:"Hayward AquaRite Salt Chlorine Generator", sku:"W3AQR9", asin:HAYWARD_AMAZON.aquarite_25k, earn:"3-8%",
+        note:`Complete system rated up to 25,000 gal, includes TurboCell salt cell. Self-cleaning cell, eliminates chlorine purchasing.` }
+    : { model:"Hayward Off-Line Chlorinator", sku:"CL220", query:"Hayward CL220 Off-Line Chlorinator", earn:"3-8%",
+        note:`Traditional inline tablet chlorinator. Reliable, simple, low cost to operate - a straightforward alternative if you'd rather not run a salt system.` };
+
+  const boost = extras.waterFeature
+    ? { model:"Hayward 0.75HP Booster Pump", sku:"W36060", asin:HAYWARD_AMAZON.booster, earn:"3-8%",
+        note:`Dedicated pump for water features, deck jets, scuppers, or bubblers. Keeps your main pump optimized for filtration while the booster handles feature flow separately.` }
+    : null;
+
+  return [
+    { label:"🔄 Pump", ...pump },
+    { label:"🧹 Filter", ...filter },
+    { label:"🎛️ Automation", ...automation },
+    { label:"💡 Lighting", ...lighting },
+    { label:"🧂 Sanitization", ...salt },
+    ...(heater ? [{ label:"🔥 Heater", ...heater }] : []),
+    ...(boost  ? [{ label:"💧 Feature Pump", ...boost }] : []),
+  ];
+}
+
+// Jandy (Zodiac) has thin direct-Amazon-listing coverage for complete systems -
+// every item here links out to an Amazon search instead of a guessed ASIN.
+function getJandyEquipment(gallons, extras) {
+  const gpm = Math.ceil(gallons / 480);
+  const pump = gallons <= 15000
+    ? { model:"Jandy VS FloPro 1.65HP", sku:"VSFHP165", query:"Jandy VS FloPro 1.65 HP Variable Speed Pool Pump", earn:"3-8%",
+        note:`Sized for your ${gallons.toLocaleString()} gal pool. Needs ~${gpm} GPM turnover — permanent-magnet DC motor engineered to run cooler and last longer at low speeds.` }
+    : gallons <= 30000
+    ? { model:"Jandy VS FloPro 2.7HP", sku:"VSFHP270", query:"Jandy VS FloPro 2.7 HP Variable Speed Pool Pump", earn:"3-8%",
+        note:`Your ${gallons.toLocaleString()} gal pool needs ~${gpm} GPM — the 2.7HP is built for large pools and spas with waterfalls, jets, or in-floor cleaning.` }
+    : { model:"Jandy VS FloPro 3.8HP", sku:"VSFHP380", query:"Jandy VS FloPro 3.8 HP Variable Speed Pool Pump", earn:"3-8%",
+        note:`At ${gallons.toLocaleString()} gal your pool needs ~${gpm} GPM. The 3.8HP is Jandy's largest single VS pump, built for the highest head pressure and flow demands.` };
+
+  const filter = gallons <= 15000
+    ? { model:"Jandy CS150 Cartridge Filter", sku:"CS150", query:"Jandy Pro Series CS150 Cartridge Pool Filter", earn:"3-8%",
+        note:`150 sq ft single-element cartridge filter - compact, no backwash needed, easy to clean.` }
+    : gallons <= 25000
+    ? { model:"Jandy CS250 Cartridge Filter", sku:"CS250", query:"Jandy Pro Series CS250 Cartridge Pool Filter", earn:"3-8%",
+        note:`250 sq ft cartridge filter rated for your flow range (~${gpm} GPM). Dependable year-round operation in a compact body.` }
+    : { model:"Jandy CV460 Cartridge Filter", sku:"CV460", query:"Jandy CV460 Cartridge Pool Filter 460 sq ft", earn:"3-8%",
+        note:`460 sq ft cartridge filter with Versa Plumb fittings for high flow. Right-sized for your ${gallons.toLocaleString()} gal pool.` };
+
+  const surfaceArea = Math.round(gallons / (4.25 * 7.48));
+  const btuNeeded = surfaceArea * 20 * 12;
+  const heater = extras.heater
+    ? gallons <= 15000
+      ? { model:"Jandy JXi260 260K BTU Gas Heater", sku:"JXI260N", query:"Jandy JXi260 Natural Gas Pool Heater 260000 BTU", earn:"3-8%",
+          note:`Your ~${surfaceArea} sq ft pool needs ~${Math.round(btuNeeded/1000)}K BTU. The JXi260 is ultra-compact with an 84% thermal efficiency rating.` }
+      : { model:"Jandy JXiQ400 400K BTU Gas Heater", sku:"JXIQ400N", query:"Jandy JXiQ400 Natural Gas Pool Heater 400000 BTU", earn:"3-8%",
+          note:`At ${gallons.toLocaleString()} gal you need high BTU output. The JXiQ400 is the current 400K flagship, replacing the earlier JXi400.` }
+    : null;
+
+  const automation = {
+    model:"Jandy iAquaLink Automation System", sku:"IQ900-2A", query:"Jandy AquaLink iAquaLink Pool Automation System", earn:"3-8%",
+    note:`Controls pump, heater, and lighting from anywhere with the free iAquaLink app. Required for full variable-speed pump efficiency scheduling.`
+  };
+
+  const lightQty = gallons <= 20000 ? 1 : gallons <= 40000 ? 2 : 3;
+  const lighting = {
+    model:`Jandy WaterColors LED Pool Light (×${lightQty})`, sku:"JLU4C24W100", query:"Jandy WaterColors LED Pool Light", earn:"3-8%",
+    qty: lightQty,
+    note:`${lightQty} light${lightQty>1?"s":""} recommended for your ${gallons.toLocaleString()} gal pool${lightQty>1?" — one at each end for even coverage":""}. Color-changing LED, works with the iAquaLink app.`
+  };
+
+  const salt = extras.sanitization === "salt"
+    ? { model:"Jandy AquaPure Salt Chlorine Generator", sku:"APURE1400", query:"Jandy AquaPure Salt Chlorine Generator", earn:"3-8%",
+        note:`Complete salt system rated up to 40,000 gal. Self-cleaning cell, eliminates chlorine purchasing. Pairs with iAquaLink for remote monitoring.` }
+    : { model:"Jandy Pro Series Chlorinator", sku:"CL340", query:"Jandy Pro Series Off-Line Chlorinator", earn:"3-8%",
+        note:`Traditional inline tablet chlorinator. Reliable, simple, low cost to operate - a straightforward alternative if you'd rather not run a salt system.` };
+
+  const boost = extras.waterFeature
+    ? { model:"Jandy Booster Pump", sku:"JBP075", query:"Jandy Booster Pump water features", earn:"3-8%",
+        note:`Dedicated pump for water features, deck jets, scuppers, or bubblers. Keeps your main pump optimized for filtration while the booster handles feature flow separately.` }
+    : null;
+
+  return [
+    { label:"🔄 Pump", ...pump },
+    { label:"🧹 Filter", ...filter },
+    { label:"🎛️ Automation", ...automation },
+    { label:"💡 Lighting", ...lighting },
+    { label:"🧂 Sanitization", ...salt },
+    ...(heater ? [{ label:"🔥 Heater", ...heater }] : []),
+    ...(boost  ? [{ label:"💧 Feature Pump", ...boost }] : []),
+  ];
+}
+
+const EQUIPMENT_BRANDS = [
+  { id:"pentair", label:"Pentair", getEquipment:getPentairEquipment },
+  { id:"hayward", label:"Hayward", getEquipment:getHaywardEquipment },
+  { id:"jandy", label:"Jandy", getEquipment:getJandyEquipment },
+];
 
 function calcMaterials(shape,len,wid,depthId,finishId) {
   len = Number.isFinite(len) && len > 0 ? len : 1;
@@ -4006,6 +4154,7 @@ export default function PoolCraftPro() {
   const [hardscapes, setHardscapes] = useState({});
   const [extras, setExtras] = useState({ heater:true, sanitization:"salt", waterFeature:false });
   const [shopCat, setShopCat] = useState("tile");
+  const [equipmentBrand, setEquipmentBrand] = useState(() => { try { return localStorage.getItem("pc_equip_brand") || "pentair"; } catch { return "pentair"; } });
   const [wishlist, setWishlist] = useState([]);
   const [guideMode, setGuideMode] = useState("contractor");
   const [bgPhoto, setBgPhoto] = useState(null);
@@ -4095,7 +4244,10 @@ export default function PoolCraftPro() {
     return () => window.removeEventListener("beforeunload", handler);
   }, [isDirty]);
   const materials = useMemo(()=>calcMaterials(shape,len,wid,depthId,finishId),[shape,len,wid,depthId,finishId]);
-  const equipment = useMemo(()=>getPentairEquipment(materials.gallons,extras),[materials.gallons,extras]);
+  const equipment = useMemo(() => {
+    const brand = EQUIPMENT_BRANDS.find(b => b.id === equipmentBrand) || EQUIPMENT_BRANDS[0];
+    return brand.getEquipment(materials.gallons, extras);
+  }, [materials.gallons, extras, equipmentBrand]);
 
   // Returning from Stripe Checkout - the webhook flips user_metadata.plan
   // server-side, but this tab's cached session doesn't know that yet, so poll
@@ -4460,6 +4612,15 @@ export default function PoolCraftPro() {
 
         {tab===6&&<>
           <div style={card}>
+            <div style={sectionTitle}>Equipment Brand</div>
+            <div style={{display:"flex",gap:8,marginBottom:16}}>
+              {EQUIPMENT_BRANDS.map(b=>(
+                <button key={b.id} onClick={()=>{ setEquipmentBrand(b.id); try{localStorage.setItem("pc_equip_brand",b.id);}catch{} }}
+                  style={{flex:1,padding:"10px 0",borderRadius:10,border:`2px solid ${equipmentBrand===b.id?"#06b6d4":"#334155"}`,background:equipmentBrand===b.id?"rgba(6,182,212,0.1)":"#1e293b",color:equipmentBrand===b.id?"#06b6d4":"#94a3b8",cursor:"pointer",fontSize:13,fontWeight:700}}>
+                  {b.label}
+                </button>
+              ))}
+            </div>
             <div style={sectionTitle}>Equipment Options</div>
             {[{label:"🔥 Include Heater",key:"heater"},{label:"💧 Water Features",key:"waterFeature"}].map(o=>(
               <div key={o.key} style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
@@ -4482,14 +4643,14 @@ export default function PoolCraftPro() {
                 </div>
                 <div style={{fontSize:12,color:"#64748b",lineHeight:1.5}}>{eq.note}{eq.qtyNote && <span style={{color:"#f59e0b",fontWeight:700}}> - {eq.qtyNote}</span>}</div>
               </div>
-              {eq.asin && (<a href={pentairLink(eq.asin)} target="_blank" rel="noopener noreferrer" style={{display:"flex", alignItems:"center", justifyContent:"space-between", padding:"10px 16px", background:"linear-gradient(135deg,rgba(255,153,0,0.15),rgba(255,120,0,0.08))", borderTop:"1px solid rgba(255,153,0,0.2)", textDecoration:"none", gap:10}}>
+              {(eq.asin || eq.query) && (<a href={equipBuyLink(eq.asin, eq.query)} target="_blank" rel="noopener noreferrer" style={{display:"flex", alignItems:"center", justifyContent:"space-between", padding:"10px 16px", background:"linear-gradient(135deg,rgba(255,153,0,0.15),rgba(255,120,0,0.08))", borderTop:"1px solid rgba(255,153,0,0.2)", textDecoration:"none", gap:10}}>
                 <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:16}}>📦</span><div><div style={{fontSize:12,fontWeight:700,color:"#ff9900"}}>Buy on Amazon</div><div style={{fontSize:10,color:"#64748b"}}>You earn {eq.earn} affiliate commission</div></div></div>
                 <span style={{color:"#ff9900",fontSize:16}}>→</span>
               </a>)}
             </div>
           ))}
           <div style={{background:"rgba(255,153,0,0.06)",border:"1px solid rgba(255,153,0,0.2)",borderRadius:12,padding:12,textAlign:"center"}}>
-            <div style={{fontSize:12,color:"#ff9900",fontWeight:700,marginBottom:3}}>💰 Earn 3-8% on every Pentair purchase</div>
+            <div style={{fontSize:12,color:"#ff9900",fontWeight:700,marginBottom:3}}>💰 Earn 3-8% on every {EQUIPMENT_BRANDS.find(b=>b.id===equipmentBrand)?.label} purchase</div>
             <div style={{fontSize:11,color:"#64748b"}}>All equipment links are pre-tagged with your Amazon affiliate ID.</div>
           </div>
         </>}
