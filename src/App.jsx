@@ -798,8 +798,14 @@ function PropertyMap({ poolLen, poolWid, poolShape, poolColor, parcelData }) {
   const mapImgRef = useRef(null);
 
   const CW = 560, CH = 440;
-  const POOL_W = Math.min(Math.max(poolLen*5.2,55),CW*0.5);
-  const POOL_H = Math.min(Math.max(poolWid*5.2,34),CH*0.34);
+  // Google Static Maps uses Web Mercator: ground resolution (meters/pixel) depends on
+  // latitude and zoom. Without this, a fixed px-per-foot constant makes the pool overlay
+  // wrong at every zoom level except the one it was tuned for.
+  const metersPerPixel = coords ? (156543.03392 * Math.cos(coords.lat*Math.PI/180)) / Math.pow(2, zoom) : null;
+  const pxPerFt = metersPerPixel ? (0.3048/metersPerPixel) : 5.2; // fallback for the pre-satellite illustration
+  const ftPerPx = metersPerPixel ? (metersPerPixel/0.3048) : (1/5.2);
+  const POOL_W = mapLoaded ? Math.max(poolLen*pxPerFt, 12) : Math.min(Math.max(poolLen*pxPerFt,55),CW*0.5);
+  const POOL_H = mapLoaded ? Math.max(poolWid*pxPerFt, 12) : Math.min(Math.max(poolWid*pxPerFt,34),CH*0.34);
   const SB_SIDE=26, SB_REAR=50, SB_FRONT=100;
 
   const geocode = async (address) => {
@@ -936,7 +942,7 @@ function PropertyMap({ poolLen, poolWid, poolShape, poolColor, parcelData }) {
         const tw=ctx.measureText(label).width+6; ctx.fillStyle="rgba(0,0,0,0.72)"; ctx.beginPath(); ctx.roundRect(mx-tw/2,my-7,tw,14,4); ctx.fill();
         ctx.fillStyle=color; ctx.fillText(label,mx,my); ctx.restore();
       };
-      const s=100/(CW-SB_SIDE*2);
+      const s=mapLoaded?ftPerPx:100/(CW-SB_SIDE*2);
       drawM(SB_SIDE,py,px-POOL_W/2,py,`${Math.round(Math.max(0,px-POOL_W/2-SB_SIDE)*s)}ft`,"#22c55e");
       drawM(px+POOL_W/2,py,CW-SB_SIDE,py,`${Math.round(Math.max(0,CW-SB_SIDE-px-POOL_W/2)*s)}ft`,"#22c55e");
       drawM(px,py+POOL_H/2,px,CH-SB_REAR,`${Math.round(Math.max(0,CH-SB_REAR-py-POOL_H/2)*s)}ft`,"#22c55e");
@@ -957,7 +963,7 @@ function PropertyMap({ poolLen, poolWid, poolShape, poolColor, parcelData }) {
     ctx.fillStyle="#ef4444"; ctx.fillText("N",CW-22,15);
     ctx.fillStyle="#fff"; ctx.fillText("S",CW-22,29); ctx.fillText("W",CW-30,22); ctx.fillText("E",CW-14,22);
     ctx.restore();
-  },[poolPos,poolLen,poolWid,poolShape,poolColor,showSetbacks,showMeasure,mapLoaded,mapError,parcelData]);
+  },[poolPos,poolLen,poolWid,poolShape,poolColor,showSetbacks,showMeasure,mapLoaded,mapError,parcelData,zoom,coords]);
 
   const rafPending = useRef(false);
   useEffect(()=>{
