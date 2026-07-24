@@ -4081,9 +4081,18 @@ export default function PoolCraftPro() {
   const materials = useMemo(()=>calcMaterials(shape,len,wid,depthId,finishId),[shape,len,wid,depthId,finishId]);
   const equipment = useMemo(()=>getPentairEquipment(materials.gallons,extras),[materials.gallons,extras]);
 
-  // Auth checks - disabled temporarily to fix hooks error
-  // if (authLoading) return (...);
-  // if (!user && !authedUser && SUPABASE_URL) return <AuthScreen .../>;
+  // Show login screen until authenticated
+  if (authLoading) return (
+    <div style={{ minHeight:"100vh", background:"#0a0f1e", display:"flex", alignItems:"center", justifyContent:"center" }}>
+      <div style={{ textAlign:"center" }}>
+        <div style={{ fontFamily:"Georgia,serif", fontSize:20, fontWeight:900, letterSpacing:"2px", color:"#c9a84c", marginBottom:16 }}>POOL CRAFT PRO</div>
+        <div style={{ color:"#64748b", fontSize:13 }}>Loading...</div>
+      </div>
+    </div>
+  );
+
+  if (!user && !authedUser && SUPABASE_URL) return <AuthScreen onAuth={u => setAuthedUser(u)} />;
+
   const currentUser = user || authedUser || { id: "local", email: "user@local", guest: true };
 
   // Run `action` immediately if there's nothing to lose, otherwise ask first
