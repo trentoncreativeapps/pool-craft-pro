@@ -1013,7 +1013,7 @@ function PropertyMap({ poolLen, poolWid, poolShape, poolColor, parcelData }) {
   const printMap=()=>{
     const canvas=canvasRef.current; if(!canvas) return;
     const dataUrl=canvas.toDataURL("image/png");
-    const win=window.open("","_blank"); if(!win) return;
+    const win=window.open("","_blank"); if(!win) { alert("Please allow pop-ups for this site to export or print."); return; }
     win.document.write(`<!DOCTYPE html><html><head><title>Pool Craft Pro - Site Plan</title>
     <style>body{margin:0;padding:20px;font-family:Inter,sans-serif}h2{font-size:16px;margin:0 0 4px}
     p{color:#64748b;font-size:12px;margin:0 0 14px}img.map{max-width:100%;border:2px solid #e2e8f0;border-radius:8px}
@@ -1130,7 +1130,7 @@ function PropertyMap({ poolLen, poolWid, poolShape, poolColor, parcelData }) {
     ctx.font="bold 12px Inter,sans-serif"; ctx.textAlign="center"; ctx.fillText("N", naX, naY-18);
 
     const dataUrl = drawCanvas.toDataURL("image/png");
-    const win = window.open("","_blank"); if (!win) return;
+    const win = window.open("","_blank"); if (!win) { alert("Please allow pop-ups for this site to export or print."); return; }
     win.document.write(`<!DOCTYPE html><html><head><title>Pool Craft Pro - Scaled Site Plan</title>
     <style>
       *{margin:0;padding:0;box-sizing:border-box} body{font-family:Inter,system-ui,sans-serif;background:#fff;color:#1e293b;padding:30px}
@@ -1275,6 +1275,7 @@ function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, fin
 
   const handlePhotoUpload = (e) => {
     const file = e.target.files[0]; if (!file) return;
+    if (!file.type.startsWith("image/")) { setError("Please choose an image file (JPG, PNG, etc)."); return; }
     if (file.size > 8 * 1024 * 1024) { setError("Photo is too large (over 8MB). Please use a smaller photo or compress it first."); return; }
     const reader = new FileReader();
     reader.onload = ev => { setBgPhoto(ev.target.result); setRenderedImage(null); setAiDescription(null); setError(null); };
@@ -1643,16 +1644,6 @@ function FeatureCard({ feature, active, onToggle }) {
       ctx.strokeStyle="rgba(255,255,255,0.4)"; ctx.lineWidth=3;
       ctx.beginPath(); ctx.moveTo(W*0.42,H*0.32); ctx.quadraticCurveTo(W*0.44,H*0.42,W*0.42,H*0.52); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(W*0.5,H*0.3); ctx.quadraticCurveTo(W*0.5,H*0.41,W*0.5,H*0.52); ctx.stroke();
-    } else if(feature.id==="waterfall"){
-      drawWater(W*0.1,H*0.5,W*0.8,H*0.38,"#1ca7c0");
-      // Rock formation
-      ctx.fillStyle="#5a4738"; ctx.beginPath(); ctx.roundRect(W*0.3,H*0.25,W*0.4,H*0.28,4); ctx.fill();
-      ctx.fillStyle="#6a5748"; ctx.beginPath(); ctx.roundRect(W*0.35,H*0.2,W*0.3,H*0.1,4); ctx.fill();
-      // Water streams
-      ctx.strokeStyle="rgba(28,167,192,0.7)"; ctx.lineWidth=4;
-      ctx.beginPath(); ctx.moveTo(W*0.4,H*0.35); ctx.quadraticCurveTo(W*0.38,H*0.44,W*0.4,H*0.5); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(W*0.5,H*0.33); ctx.quadraticCurveTo(W*0.5,H*0.43,W*0.5,H*0.5); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(W*0.6,H*0.35); ctx.quadraticCurveTo(W*0.62,H*0.44,W*0.6,H*0.5); ctx.stroke();
     } else if(feature.id==="diving_rock"){
       drawWater(W*0.05,H*0.45,W*0.9,H*0.45,"#1a5fa8");
       // Natural rock
@@ -1671,44 +1662,6 @@ function FeatureCard({ feature, active, onToggle }) {
       // Glasses
       ctx.fillStyle="rgba(255,255,255,0.7)"; ctx.beginPath(); ctx.roundRect(W*0.3,H*0.34,8,10,2); ctx.fill();
       ctx.beginPath(); ctx.roundRect(W*0.5,H*0.34,8,10,2); ctx.fill();
-    } else if(feature.id==="tanning_ledge"){
-      drawWater(W*0.05,H*0.35,W*0.9,H*0.52,"#1ca7c0");
-      // Ledge
-      ctx.fillStyle="#c9a84c44"; ctx.beginPath(); ctx.roundRect(W*0.08,H*0.38,W*0.84,H*0.08,4); ctx.fill();
-      ctx.strokeStyle="rgba(201,168,76,0.5)"; ctx.lineWidth=1.5; ctx.strokeRect(W*0.08,H*0.38,W*0.84,H*0.08);
-      // Loungers
-      for(let i=0;i<2;i++){ctx.fillStyle=c+"66"; ctx.beginPath(); ctx.roundRect(W*0.2+i*W*0.4,H*0.39,W*0.2,H*0.05,3); ctx.fill();}
-      ctx.fillStyle="rgba(201,168,76,0.7)"; ctx.font="9px Inter"; ctx.textAlign="center"; ctx.fillText("6\" Depth",W*0.5,H*0.55);
-    } else if(feature.id==="fire_feature"){
-      drawWater(W*0.05,H*0.45,W*0.9,H*0.45,"#1a5fa8");
-      // Fire bowls on edge
-      for(let i=0;i<2;i++){
-        const fx=W*(0.2+i*0.6), fy=H*0.38;
-        ctx.fillStyle="#555"; ctx.beginPath(); ctx.roundRect(fx-10,fy,20,12,3); ctx.fill();
-        // Flame
-        const flame=ctx.createRadialGradient(fx,fy,0,fx,fy,18);
-        flame.addColorStop(0,"#fff3"); flame.addColorStop(0.4,"#f59e0bcc"); flame.addColorStop(1,"transparent");
-        ctx.fillStyle=flame; ctx.beginPath(); ctx.ellipse(fx,fy-5,10,18,0,0,Math.PI*2); ctx.fill();
-      }
-    } else if(feature.id==="water_feature"){
-      drawWater(W*0.1,H*0.4,W*0.8,H*0.48,"#1ca7c0");
-      // Deck jets
-      for(let i=0;i<3;i++){
-        ctx.strokeStyle=c+"aa"; ctx.lineWidth=3;
-        ctx.beginPath(); ctx.moveTo(W*0.2+i*W*0.25,H*0.38); ctx.quadraticCurveTo(W*0.28+i*W*0.25,H*0.44,W*0.3+i*W*0.25,H*0.5); ctx.stroke();
-        // Splash
-        ctx.fillStyle="rgba(255,255,255,0.4)"; ctx.beginPath(); ctx.arc(W*0.3+i*W*0.25,H*0.5,4,0,Math.PI*2); ctx.fill();
-      }
-    } else if(feature.id==="slide"){
-      drawWater(W*0.1,H*0.5,W*0.8,H*0.38,"#1ca7c0");
-      // Slide structure
-      ctx.strokeStyle=c; ctx.lineWidth=8; ctx.lineCap="round";
-      ctx.beginPath(); ctx.moveTo(W*0.7,H*0.15); ctx.quadraticCurveTo(W*0.8,H*0.35,W*0.65,H*0.5); ctx.stroke();
-      ctx.strokeStyle=c+"55"; ctx.lineWidth=12;
-      ctx.beginPath(); ctx.moveTo(W*0.7,H*0.15); ctx.quadraticCurveTo(W*0.8,H*0.35,W*0.65,H*0.5); ctx.stroke();
-      // Support poles
-      ctx.strokeStyle="#888"; ctx.lineWidth=3;
-      ctx.beginPath(); ctx.moveTo(W*0.72,H*0.15); ctx.lineTo(W*0.72,H*0.5); ctx.stroke();
     } else {
       // Generic fallback
       const gf=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,W*0.4);
@@ -1808,6 +1761,7 @@ function HardscapeDesigner({ hardscapes, toggleHardscape, setHSQty, dailyRenders
 
   const handlePhotoUpload = (e) => {
     const file = e.target.files[0]; if(!file) return;
+    if(!file.type.startsWith("image/")){ setError("Please choose an image file (JPG, PNG, etc)."); return; }
     if(file.size > 8*1024*1024){ setError("Photo too large - keep under 8MB"); return; }
     const reader = new FileReader();
     reader.onload = ev => { setPhoto(ev.target.result); setRendered(null); setError(null); };
@@ -2144,7 +2098,7 @@ function YardPlanner({ poolLen, poolWid, poolShape, poolColor, parcelData }) {
   const clearAll = () => { setPlaced([]); setSelected(null); };
 
   const printMap = () => {
-    const win = window.open("", "_blank"); if (!win) return;
+    const win = window.open("", "_blank"); if (!win) { alert("Please allow pop-ups for this site to export or print."); return; }
     const elList = placed.map(e => `${e.icon} ${e.label}`).join(", ");
     win.document.write(`<!DOCTYPE html><html><head><title>Pool Craft Pro - Yard Plan</title>
     <style>body{margin:0;padding:20px;font-family:Inter,sans-serif;background:#fff}h2{font-size:16px;margin:0 0 4px}p{color:#64748b;font-size:12px;margin:0 0 14px}
@@ -2866,7 +2820,7 @@ function generatePDF({ projectName, shape, len, wid, depthId, finishId, colorId,
   const activeEntries = ENTRY_FEATURES.filter(e=>entries[e.id]);
   const activeHardscapes = HARDSCAPE_OPTIONS.filter(h=>hardscapes[h.id]!=null);
   const date = new Date().toLocaleDateString("en-US",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
-  const win = window.open("","_blank"); if (!win) return;
+  const win = window.open("","_blank"); if (!win) { alert("Please allow pop-ups for this site to export or print."); return; }
   win.document.write(`<!DOCTYPE html><html><head><title>Pool Craft Pro — ${escapeHtml(projectName)}</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:system-ui,sans-serif;background:#fff;color:#1e293b;padding:40px}.header{background:linear-gradient(135deg,#0f2027,#203a43);color:white;padding:32px;border-radius:12px;margin-bottom:28px}.logo{font-size:24px;font-weight:800;margin-bottom:4px}.project-name{font-size:20px;font-weight:800;margin:12px 0 4px}.section{margin-bottom:24px}.section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#06b6d4;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #e2e8f0}.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px}.card-label{font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:#94a3b8;margin-bottom:3px}.card-value{font-size:15px;font-weight:800;color:#0f172a}.material-row{display:flex;justify-content:space-between;padding:9px 12px;border-bottom:1px solid #f1f5f9}.eq-row{display:flex;justify-content:space-between;align-items:flex-start;padding:9px 12px;border-bottom:1px solid #f1f5f9}.chip{display:inline-block;padding:3px 10px;border-radius:20px;background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;font-size:12px;font-weight:600;margin:3px}.footer{margin-top:36px;padding-top:18px;border-top:2px solid #e2e8f0;font-size:11px;color:#94a3b8}@media print{body{padding:20px}}</style></head><body>
   <div class="header"><div class="logo"><strong style="font-size:18px;color:#1a2f5e;font-family:Georgia,serif;letter-spacing:2px">POOL <span style="color:#c9a84c">CRAFT</span> PRO</strong><br><span style="font-size:11px;color:#94a3b8">Design Pools. Craft Outdoor Living.<</div><div class="project-name">${escapeHtml(projectName)}</div><div style="font-size:12px;color:#94a3b8">Generated ${date}</div>${parcelData?`<div style="font-size:12px;color:#94a3b8;margin-top:6px">📍 ${escapeHtml(parcelData.address)}</div>`:""}</div>
   <div class="section"><div class="section-title">Pool Design Summary</div><div class="grid-2"><div class="card"><div class="card-label">Size</div><div class="card-value">${len}' x ${wid}'</div></div><div class="card"><div class="card-label">Shape</div><div class="card-value">${shapeLabel}</div></div><div class="card"><div class="card-label">Depth Profile</div><div class="card-value" style="font-size:13px">${depthLabel}</div></div><div class="card"><div class="card-label">Volume</div><div class="card-value">${materials.gallons.toLocaleString()} gal</div></div><div class="card"><div class="card-label">Water Color</div><div class="card-value" style="font-size:13px">${colorLabel}</div></div><div class="card"><div class="card-label">Finish</div><div class="card-value" style="font-size:13px">${finishLabel}</div></div></div></div>
@@ -2894,7 +2848,7 @@ function generateProposal({ projectName, clientName, shape, len, wid, depthId, f
   const cats = [...new Set(items.map(i=>i.cat))];
   const catLabels = { "Pool Structure":"Pool Construction", "Entry & Features":"Pool Features & Entries", "Hardscapes":"Outdoor Living & Hardscapes", "Equipment":"Equipment Package", "Labor":"Labor, Permits & Engineering" };
 
-  const win = window.open("","_blank"); if (!win) return;
+  const win = window.open("","_blank"); if (!win) { alert("Please allow pop-ups for this site to export or print."); return; }
   win.document.write(`<!DOCTYPE html><html><head><title>Pool Proposal — ${escapeHtml(clientName || projectName)}</title>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
   <style>
@@ -3273,7 +3227,7 @@ function QuoteBuilder({ shape, len, wid, depthId, finishId, entries, hardscapes,
   const removeLine = (id) => setCustomLines(p=>p.filter(l=>l.id!==id));
 
   const printQuote = () => {
-    const win = window.open("","_blank"); if(!win) return;
+    const win = window.open("","_blank"); if(!win) { alert("Please allow pop-ups for this site to export or print."); return; }
     const date = new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"});
     const validUntil = new Date(Date.now()+30*24*60*60*1000).toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"});
     win.document.write(`<!DOCTYPE html><html><head><title>Quote - ${escapeHtml(clientName||projectName)}</title>
@@ -3517,6 +3471,7 @@ function QuickRender({ len, wid, shape, finishId, colorId, entries, hardscapes, 
 
   const uploadPhoto = (e) => {
     const file = e.target.files[0]; if (!file) return;
+    if (!file.type.startsWith("image/")) { setError("Please choose an image file (JPG, PNG, etc)."); return; }
     if (file.size > 8 * 1024 * 1024) { setError("Photo too large — keep under 8MB"); return; }
     const reader = new FileReader();
     reader.onload = ev => { setPhoto(ev.target.result); setRendered(null); setError(null); };
