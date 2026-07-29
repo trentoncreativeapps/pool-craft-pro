@@ -7,10 +7,14 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "node --test \"src/lib/**/*.test.js\""
   },
   "dependencies": {
+    "@mapbox/mapbox-gl-geocoder": "^5.1.2",
     "@supabase/supabase-js": "^2.110.8",
+    "@turf/turf": "^7.3.5",
+    "mapbox-gl": "^3.27.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "stripe": "^22.3.2"

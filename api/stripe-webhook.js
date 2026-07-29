@@ -53,8 +53,10 @@ export default async function handler(req, res) {
       case "checkout.session.completed": {
         const session = event.data.object;
         if (session.mode === "subscription") {
+          const seats = session.metadata?.seats ? Number(session.metadata.seats) : undefined;
           await setPlan(session.metadata?.supabase_user_id, session.metadata?.plan || null, {
             stripe_customer_id: session.customer,
+            ...(seats ? { seats } : {}),
           });
         }
         break;
@@ -63,8 +65,9 @@ export default async function handler(req, res) {
         const sub = event.data.object;
         const userId = sub.metadata?.supabase_user_id;
         const plan = sub.metadata?.plan;
+        const seats = sub.metadata?.seats ? Number(sub.metadata.seats) : undefined;
         const active = sub.status === "active" || sub.status === "trialing";
-        await setPlan(userId, active ? (plan || null) : null, { stripe_customer_id: sub.customer });
+        await setPlan(userId, active ? (plan || null) : null, { stripe_customer_id: sub.customer, ...(active && seats ? { seats } : {}) });
         break;
       }
       case "customer.subscription.deleted": {

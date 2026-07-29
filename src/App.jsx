@@ -1,8 +1,21 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
+import mapboxgl from "mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
+import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
+import "@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css";
+import * as turf from "@turf/turf";
+import { generateSchematic, polygonBounds } from "./lib/schematicEngine.js";
+import { buildPoolPolygon } from "./lib/poolShapes.js";
+import SchematicView from "./SchematicView.jsx";
+import { PLANS } from "../api/_plans.js";
 
 // Escapes free-text values (client names, addresses, etc.) before they're interpolated
 // into an HTML string passed to document.write() for printable exports.
 const escapeHtml = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+
+// Standalone render-service (fal.ai FLUX), deployed separately from the Vercel
+// app - not a relative /api path, so it needs its own origin.
+const RENDER_SERVICE_URL = import.meta.env.VITE_RENDER_SERVICE_URL || "http://localhost:3001";
 
 // ─── AFFILIATE LINKS ──────────────────────────────────────────────────────────
 const AFFILIATE_TAGS = { amazon: "YOURTAG-20", homedepot: "YOUR_HD_TAG", lowes: "YOUR_LOWES_TAG", wayfair: "YOUR_WAYFAIR_TAG" };
@@ -381,6 +394,7 @@ function calcMaterials(shape,len,wid,depthId,finishId) {
     coping:`${Math.round(2*(len+wid)*sf+10)} linear ft`,
     tile:`${Math.round(2*(len+wid)*sf+10)} sq ft`,
     finish:`${Math.round(shell)} sq ft`,
+    finishSqFt: shell, // raw floor+walls surface area (sq ft) - same value the "finish" string above is derived from
   };
 }
 
@@ -456,12 +470,14 @@ const RETAILER_COLORS = {
 
 const NAV_TABS=[
   {id:0,label:"Design",icon:"🏊"},
+  {id:13,label:"How It Works",icon:"✨"},
   {id:1,label:"Entry & Features",icon:"🏖️"},
   {id:2,label:"Hardscapes",icon:"🧱"},
-  {id:3,label:"Yard Planner",icon:"🗺️"},
+  {id:3,label:"Site Plan",icon:"🗺️"},
   {id:4,label:"Materials",icon:"📊"},
   {id:5,label:"Cost Est.",icon:"💰"},
   {id:6,label:"Equipment",icon:"⚙️"},
+  {id:12,label:"Schematic",icon:"📐"},
   {id:7,label:"Build Guide",icon:"📋"},
   {id:8,label:"Shop",icon:"🛍️"},
   {id:9,label:"⚡ Quick Render",icon:""},
@@ -517,6 +533,48 @@ const SUPABASE_SETUP_SQL = `create table if not exists pool_projects (
 );
 alter table pool_projects enable row level security;
 create policy "public access" on pool_projects for all using (true) with check (true);`;
+
+// Team accounts (Settings -> Team Management). Run this once in the same
+// Supabase SQL editor as the Cloud Sync setup above, if you want real
+// multi-login Team access instead of just Team billing. Unlike pool_projects
+// above, these policies are scoped to auth.uid() - team membership is more
+// sensitive than a design draft, so it's worth doing properly from the start.
+const TEAM_SETUP_SQL = `create table if not exists teams (
+  id uuid primary key default gen_random_uuid(),
+  owner_id uuid not null references auth.users(id) on delete cascade,
+  seats int not null default 2,
+  created_at timestamptz not null default now()
+);
+create table if not exists team_members (
+  id uuid primary key default gen_random_uuid(),
+  team_id uuid not null references teams(id) on delete cascade,
+  user_id uuid references auth.users(id) on delete cascade,
+  email text not null,
+  status text not null default 'pending',
+  invited_at timestamptz not null default now(),
+  joined_at timestamptz,
+  unique(team_id, email)
+);
+alter table teams enable row level security;
+alter table team_members enable row level security;
+
+create policy "owner manages own team" on teams
+  for all using (auth.uid() = owner_id) with check (auth.uid() = owner_id);
+
+create policy "members can view their team" on teams
+  for select using (exists (select 1 from team_members where team_members.team_id = teams.id and team_members.user_id = auth.uid()));
+
+create policy "owner manages members" on team_members
+  for all using (exists (select 1 from teams where teams.id = team_members.team_id and teams.owner_id = auth.uid()))
+  with check (exists (select 1 from teams where teams.id = team_members.team_id and teams.owner_id = auth.uid()));
+
+create policy "members can see their own membership row" on team_members
+  for select using (user_id = auth.uid());
+
+create policy "invited users can activate their own pending row" on team_members
+  for update
+  using (user_id is null and lower(email) = lower(auth.jwt() ->> 'email'))
+  with check (user_id = auth.uid() and lower(email) = lower(auth.jwt() ->> 'email'));`;
 
 // Unified project store: tries Supabase first (if configured), else localStorage.
 async function listProjects() {
@@ -934,429 +992,296 @@ function Pool3D({ poolLen, poolWid, poolShape, poolColor, depthId, entries, fini
   );
 }
 
-// ─── INTERACTIVE PROPERTY MAP ─────────────────────────────────────────────────
-function PropertyMap({ poolLen, poolWid, poolShape, poolColor, parcelData }) {
-  const canvasRef = useRef(null);
-  const [poolPos, setPoolPos] = useState({ x:0.5, y:0.65 });
-  const [dragging, setDragging] = useState(false);
-  const [dragOff, setDragOff] = useState({ x:0, y:0 });
-  const [showSetbacks, setShowSetbacks] = useState(true);
-  const [showMeasure, setShowMeasure] = useState(true);
-  const [mapImgUrl, setMapImgUrl] = useState(null);
-  const [mapLoaded, setMapLoaded] = useState(false);
-  const [mapError, setMapError] = useState(false);
-  const [coords, setCoords] = useState(null);
-  const [zoom, setZoom] = useState(20);
-  const mapImgRef = useRef(null);
+// ─── SITE PLAN GEOMETRY HELPERS (Mapbox GL + Regrid + Turf.js) ────────────────
+function getMapboxToken() {
+  try { return localStorage.getItem("pc_mapbox_token") || ""; } catch { return ""; }
+}
+function setMapboxTokenStorage(token) {
+  try {
+    if (token) localStorage.setItem("pc_mapbox_token", token);
+    else localStorage.removeItem("pc_mapbox_token");
+  } catch {}
+}
 
-  const CW = 560, CH = 440;
-  // Google Static Maps uses Web Mercator: ground resolution (meters/pixel) depends on
-  // latitude and zoom. Without this, a fixed px-per-foot constant makes the pool overlay
-  // wrong at every zoom level except the one it was tuned for.
-  const metersPerPixel = coords ? (156543.03392 * Math.cos(coords.lat*Math.PI/180)) / Math.pow(2, zoom) : null;
-  const pxPerFt = metersPerPixel ? (0.3048/metersPerPixel) : 5.2; // fallback for the pre-satellite illustration
-  const ftPerPx = metersPerPixel ? (metersPerPixel/0.3048) : (1/5.2);
-  const POOL_W = mapLoaded ? Math.max(poolLen*pxPerFt, 12) : Math.min(Math.max(poolLen*pxPerFt,55),CW*0.5);
-  const POOL_H = mapLoaded ? Math.max(poolWid*pxPerFt, 12) : Math.min(Math.max(poolWid*pxPerFt,34),CH*0.34);
-  const SB_SIDE=26, SB_REAR=50, SB_FRONT=100;
+// True-to-scale rectangular pool footprint built from real geographic offsets
+// (turf.destination), not screen pixels - it renders at the correct physical
+// size at any zoom level instead of being pinned to a fixed px-per-foot ratio.
+function buildRectPolygon(center, lengthFt, widthFt, rotationDeg) {
+  const halfL = lengthFt / 2, halfW = widthFt / 2;
+  const diag = Math.hypot(halfL, halfW);
+  const cornerAngle = Math.atan2(halfW, halfL) * 180 / Math.PI;
+  const bearings = [
+    rotationDeg + cornerAngle,
+    rotationDeg + 180 - cornerAngle,
+    rotationDeg + 180 + cornerAngle,
+    rotationDeg - cornerAngle,
+  ];
+  const coords = bearings.map(b => turf.destination(center, diag, b, { units: "feet" }).geometry.coordinates);
+  coords.push(coords[0]);
+  return turf.polygon([coords]);
+}
 
-  const geocode = async (address) => {
-    try {
-      const r = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`,{headers:{"Accept-Language":"en","User-Agent":"PoolCraftPro/1.0"}});
-      const d = await r.json();
-      if(d&&d[0]) return {lat:parseFloat(d[0].lat), lng:parseFloat(d[0].lon)};
-    } catch{}
-    return null;
-  };
+// Builds an inward "buildable envelope" by offsetting each parcel edge inward by
+// its own setback distance, then reconstructing the polygon from the
+// intersections of consecutive offset edges (standard offset-polygon
+// technique - exact for convex parcels, which covers the vast majority of
+// residential rectangular lots). The edge nearest the searched address point is
+// treated as the house/front-facing edge (Mapbox's geocoded point sits at the
+// street-facing side of the lot), the farthest edge as the rear, everything
+// else as a side. Falls back to a uniform turf.buffer if the reconstruction
+// fails - e.g. for a non-convex or unusually shaped parcel.
+function buildSetbackEnvelope(parcelPolygon, refPoint, { houseSetback, rearSetback, sideSetback }) {
+  try {
+    const ring = parcelPolygon.geometry.coordinates[0];
+    const centroid = turf.centroid(parcelPolygon);
+    const edges = [];
+    for (let i = 0; i < ring.length - 1; i++) {
+      const a = ring[i], b = ring[i + 1];
+      const mid = turf.midpoint(turf.point(a), turf.point(b));
+      const distFromRef = refPoint ? turf.distance(refPoint, mid, { units: "feet" }) : 0;
+      edges.push({ a, b, mid, distFromRef });
+    }
+    if (edges.length < 3) throw new Error("not enough edges");
 
-  // Routes through the /api/maps serverless proxy (server-side GOOGLE_MAPS_KEY) instead
-  // of calling Google directly with a client-exposed key.
-  const buildMapUrl = (lat, lng, z) => `/api/maps?lat=${lat}&lng=${lng}&zoom=${z}&width=${CW}&height=${CH}`;
-
-  useEffect(()=>{
-    if(!parcelData?.address) return;
-    let ignore = false;
-    (async()=>{
-      const c = await geocode(parcelData.address);
-      if(ignore) return; // a newer address change superseded this request
-      if(c){ setCoords(c); setMapLoaded(false); setMapError(false); setPoolPos({x:0.5,y:0.65}); setMapImgUrl(buildMapUrl(c.lat,c.lng,zoom)); }
-    })();
-    return () => { ignore = true; };
-  },[parcelData?.address]);
-
-  useEffect(()=>{
-    if(coords){ setMapImgUrl(buildMapUrl(coords.lat,coords.lng,zoom)); setMapLoaded(false); setMapError(false); }
-  },[zoom, coords]);
-
-  const drawOverlay = useCallback(()=>{
-    const canvas = canvasRef.current; if(!canvas) return;
-    const ctx = canvas.getContext("2d", { willReadFrequently: false });
-    ctx.clearRect(0,0,CW,CH);
-
-    if(mapImgRef.current && mapLoaded){
-      ctx.drawImage(mapImgRef.current,0,0,CW,CH);
-    } else {
-      const skyGrad=ctx.createLinearGradient(0,0,0,CH*0.45);
-      skyGrad.addColorStop(0,"#87ceeb"); skyGrad.addColorStop(1,"#b8e4f7");
-      ctx.fillStyle=skyGrad; ctx.fillRect(0,0,CW,CH*0.45);
-      const gndGrad=ctx.createLinearGradient(0,CH*0.45,0,CH);
-      gndGrad.addColorStop(0,"#4a8c35"); gndGrad.addColorStop(1,"#2d5a1b");
-      ctx.fillStyle=gndGrad; ctx.fillRect(0,CH*0.45,CW,CH*0.55);
-      ctx.fillStyle="#c9aa87";
-      ctx.beginPath(); ctx.roundRect(CW*0.12,CH*0.1,CW*0.76,CH*0.22,4); ctx.fill();
-      ctx.strokeStyle="#9a7a5a"; ctx.lineWidth=1.5;
-      ctx.beginPath(); ctx.moveTo(CW*0.12,CH*0.21); ctx.lineTo(CW*0.88,CH*0.21); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(CW*0.38,CH*0.1); ctx.lineTo(CW*0.38,CH*0.21); ctx.stroke();
-      ctx.strokeStyle="#7a5a3a"; ctx.lineWidth=2;
-      ctx.beginPath(); ctx.roundRect(CW*0.12,CH*0.1,CW*0.76,CH*0.22,4); ctx.stroke();
-      ctx.font="bold 10px Inter,sans-serif"; ctx.fillStyle="rgba(0,0,0,0.45)";
-      ctx.textAlign="center"; ctx.textBaseline="middle";
-      ctx.fillText("HOUSE",CW*0.5,CH*0.21);
-      ctx.fillStyle="#9ca3af";
-      ctx.fillRect(CW*0.16,0,CW*0.2,CH*0.12);
-      ctx.fillStyle="#d4c5a9";
-      ctx.beginPath(); ctx.roundRect(CW*0.08,CH*0.38,CW*0.84,CH*0.52,10); ctx.fill();
-      if(!parcelData){
-        ctx.fillStyle="rgba(11,17,32,0.72)";
-        ctx.beginPath(); ctx.roundRect(CW*0.15,CH*0.54,CW*0.7,40,10); ctx.fill();
-        ctx.font="bold 12px Inter,sans-serif"; ctx.fillStyle="#94a3b8";
-        ctx.textAlign="center"; ctx.textBaseline="middle";
-        ctx.fillText("Search an address above to load satellite view",CW/2,CH*0.585);
-      } else if(mapError){
-        ctx.fillStyle="rgba(11,17,32,0.72)";
-        ctx.beginPath(); ctx.roundRect(CW*0.1,CH*0.54,CW*0.8,40,10); ctx.fill();
-        ctx.font="bold 12px Inter,sans-serif"; ctx.fillStyle="#ef4444";
-        ctx.textAlign="center"; ctx.textBaseline="middle";
-        ctx.fillText("Satellite imagery unavailable - check server Maps key",CW/2,CH*0.585);
-      } else {
-        ctx.fillStyle="rgba(11,17,32,0.72)";
-        ctx.beginPath(); ctx.roundRect(CW*0.15,CH*0.54,CW*0.7,40,10); ctx.fill();
-        ctx.font="bold 12px Inter,sans-serif"; ctx.fillStyle="#94a3b8";
-        ctx.textAlign="center"; ctx.textBaseline="middle";
-        ctx.fillText("Loading satellite view...",CW/2,CH*0.585);
-      }
+    let houseIdx = 0, rearIdx = Math.min(2, edges.length - 1);
+    if (refPoint) {
+      houseIdx = edges.reduce((best, e, i) => (e.distFromRef < edges[best].distFromRef ? i : best), 0);
+      rearIdx = edges.reduce((best, e, i) => (e.distFromRef > edges[best].distFromRef ? i : best), 0);
     }
 
-    const px=poolPos.x*CW, py=poolPos.y*CH;
-
-    if(showSetbacks){
-      ctx.save(); ctx.globalAlpha=0.15; ctx.fillStyle="#f59e0b";
-      ctx.fillRect(0,0,CW,SB_FRONT); ctx.fillRect(0,CH-SB_REAR,CW,SB_REAR);
-      ctx.fillRect(0,0,SB_SIDE,CH); ctx.fillRect(CW-SB_SIDE,0,SB_SIDE,CH);
-      ctx.restore();
-      ctx.save(); ctx.strokeStyle="#f59e0b"; ctx.lineWidth=1.5; ctx.setLineDash([5,4]); ctx.globalAlpha=0.9;
-      ctx.beginPath(); ctx.moveTo(0,SB_FRONT); ctx.lineTo(CW,SB_FRONT); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(0,CH-SB_REAR); ctx.lineTo(CW,CH-SB_REAR); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(SB_SIDE,0); ctx.lineTo(SB_SIDE,CH); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(CW-SB_SIDE,0); ctx.lineTo(CW-SB_SIDE,CH); ctx.stroke();
-      ctx.setLineDash([]); ctx.restore();
-      ctx.save(); ctx.font="bold 9px Inter,sans-serif"; ctx.fillStyle="#f59e0b";
-      ctx.textAlign="center"; ctx.globalAlpha=0.95;
-      ctx.fillText("20ft front setback",CW/2,SB_FRONT-4);
-      ctx.fillText("10ft rear setback",CW/2,CH-SB_REAR+10); ctx.restore();
-    }
-
-    if(showSetbacks){
-      ctx.save(); ctx.strokeStyle="#22c55e"; ctx.lineWidth=1.5; ctx.setLineDash([4,3]); ctx.globalAlpha=0.65;
-      if(poolShape==="oval"||poolShape==="freeform"||poolShape==="figure8"){
-        ctx.beginPath(); ctx.ellipse(px,py,POOL_W/2+18,POOL_H/2+18,0,0,Math.PI*2); ctx.stroke();
-      } else { ctx.strokeRect(px-POOL_W/2-18,py-POOL_H/2-18,POOL_W+36,POOL_H+36); }
-      ctx.setLineDash([]); ctx.restore();
-    }
-
-    const grad=ctx.createRadialGradient(px-POOL_W*0.15,py-POOL_H*0.15,4,px,py,Math.max(POOL_W,POOL_H)*0.7);
-    grad.addColorStop(0,poolColor+"ff"); grad.addColorStop(0.6,poolColor+"cc"); grad.addColorStop(1,poolColor+"88");
-    ctx.save(); ctx.shadowColor=poolColor+"99"; ctx.shadowBlur=18; ctx.shadowOffsetY=4;
-    ctx.fillStyle=grad; ctx.beginPath();
-    if(poolShape==="oval"||poolShape==="freeform"||poolShape==="figure8") ctx.ellipse(px,py,POOL_W/2,POOL_H/2,0,0,Math.PI*2);
-    else ctx.roundRect(px-POOL_W/2,py-POOL_H/2,POOL_W,POOL_H,8);
-    ctx.fill(); ctx.restore();
-
-    ctx.save(); ctx.globalAlpha=0.18; ctx.strokeStyle="#fff"; ctx.lineWidth=1.5;
-    for(let i=0;i<5;i++){ const ly=py-POOL_H*0.3+i*(POOL_H*0.14); ctx.beginPath(); ctx.moveTo(px-POOL_W*0.35,ly); ctx.bezierCurveTo(px-POOL_W*0.1,ly-4,px+POOL_W*0.1,ly+4,px+POOL_W*0.35,ly); ctx.stroke(); }
-    ctx.restore();
-
-    ctx.save(); ctx.strokeStyle="rgba(210,190,160,0.82)"; ctx.lineWidth=6;
-    ctx.beginPath();
-    if(poolShape==="oval"||poolShape==="freeform") ctx.ellipse(px,py,POOL_W/2+4,POOL_H/2+4,0,0,Math.PI*2);
-    else ctx.roundRect(px-POOL_W/2-4,py-POOL_H/2-4,POOL_W+8,POOL_H+8,10);
-    ctx.stroke(); ctx.restore();
-
-    ctx.save(); ctx.fillStyle="rgba(0,0,0,0.72)"; ctx.beginPath(); ctx.roundRect(px-50,py-12,100,24,8); ctx.fill();
-    ctx.font="bold 11px Inter,sans-serif"; ctx.fillStyle="#fff"; ctx.textAlign="center"; ctx.textBaseline="middle";
-    ctx.fillText(`${poolLen}' x ${poolWid}'`,px,py); ctx.restore();
-
-    if(showMeasure){
-      const drawM=(x1,y1,x2,y2,label,color="#22c55e")=>{
-        const dx=x2-x1,dy=y2-y1,len=Math.sqrt(dx*dx+dy*dy); if(len<10) return;
-        const nx=-dy/len,ny=dx/len;
-        ctx.save(); ctx.strokeStyle=color; ctx.fillStyle=color; ctx.lineWidth=1.5; ctx.setLineDash([3,3]);
-        ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke(); ctx.setLineDash([]);
-        [[x1,y1],[x2,y2]].forEach(([tx,ty])=>{ ctx.beginPath(); ctx.moveTo(tx+nx*5,ty+ny*5); ctx.lineTo(tx-nx*5,ty-ny*5); ctx.stroke(); });
-        const mx=(x1+x2)/2,my=(y1+y2)/2; ctx.font="bold 9px Inter,sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle";
-        const tw=ctx.measureText(label).width+6; ctx.fillStyle="rgba(0,0,0,0.72)"; ctx.beginPath(); ctx.roundRect(mx-tw/2,my-7,tw,14,4); ctx.fill();
-        ctx.fillStyle=color; ctx.fillText(label,mx,my); ctx.restore();
-      };
-      const s=mapLoaded?ftPerPx:100/(CW-SB_SIDE*2);
-      drawM(SB_SIDE,py,px-POOL_W/2,py,`${Math.round(Math.max(0,px-POOL_W/2-SB_SIDE)*s)}ft`,"#22c55e");
-      drawM(px+POOL_W/2,py,CW-SB_SIDE,py,`${Math.round(Math.max(0,CW-SB_SIDE-px-POOL_W/2)*s)}ft`,"#22c55e");
-      drawM(px,py+POOL_H/2,px,CH-SB_REAR,`${Math.round(Math.max(0,CH-SB_REAR-py-POOL_H/2)*s)}ft`,"#22c55e");
-      if(py-POOL_H/2-SB_FRONT>10) drawM(px,SB_FRONT,px,py-POOL_H/2,`${Math.round((py-POOL_H/2-SB_FRONT)*s)}ft`,"#06b6d4");
-    }
-
-    const viol=[];
-    if(px-POOL_W/2<SB_SIDE) viol.push("left"); if(px+POOL_W/2>CW-SB_SIDE) viol.push("right");
-    if(py-POOL_H/2<SB_FRONT) viol.push("front"); if(py+POOL_H/2>CH-SB_REAR) viol.push("rear");
-    ctx.save(); ctx.fillStyle=viol.length?"rgba(239,68,68,0.9)":"rgba(34,197,94,0.9)";
-    ctx.beginPath(); ctx.roundRect(CW/2-130,CH-30,260,22,7); ctx.fill();
-    ctx.font="bold 10px Inter,sans-serif"; ctx.fillStyle="#fff"; ctx.textAlign="center"; ctx.textBaseline="middle";
-    ctx.fillText(viol.length?`Setback: ${viol.join(", ")} - drag to fix`:"Within all setbacks",CW/2,CH-19);
-    ctx.restore();
-
-    ctx.save(); ctx.fillStyle="rgba(0,0,0,0.75)"; ctx.beginPath(); ctx.arc(CW-22,22,14,0,Math.PI*2); ctx.fill();
-    ctx.font="bold 9px Inter,sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle";
-    ctx.fillStyle="#ef4444"; ctx.fillText("N",CW-22,15);
-    ctx.fillStyle="#fff"; ctx.fillText("S",CW-22,29); ctx.fillText("W",CW-30,22); ctx.fillText("E",CW-14,22);
-    ctx.restore();
-  },[poolPos,poolLen,poolWid,poolShape,poolColor,showSetbacks,showMeasure,mapLoaded,mapError,parcelData,zoom,coords]);
-
-  const rafPending = useRef(false);
-  useEffect(()=>{
-    if(rafPending.current) return;
-    rafPending.current = true;
-    requestAnimationFrame(()=>{ rafPending.current = false; drawOverlay(); });
-  },[drawOverlay]);
-
-  useEffect(()=>{
-    if(!mapImgUrl) return;
-    const img = new Image();
-    img.onload = ()=>{ mapImgRef.current=img; setMapLoaded(true); setMapError(false); };
-    img.onerror = ()=>{ mapImgRef.current=null; setMapLoaded(false); setMapError(true); };
-    img.src = mapImgUrl;
-  },[mapImgUrl]);
-
-  const getPos=(e)=>{
-    const rect=canvasRef.current.getBoundingClientRect();
-    const sx=CW/rect.width,sy=CH/rect.height;
-    const cx=e.touches?e.touches[0].clientX:e.clientX;
-    const cy=e.touches?e.touches[0].clientY:e.clientY;
-    return{x:(cx-rect.left)*sx,y:(cy-rect.top)*sy};
-  };
-  const onDown=(e)=>{
-    const pos=getPos(e),px=poolPos.x*CW,py=poolPos.y*CH;
-    if(Math.abs(pos.x-px)<POOL_W/2+16&&Math.abs(pos.y-py)<POOL_H/2+16){ setDragging(true); setDragOff({x:pos.x-px,y:pos.y-py}); }
-    e.preventDefault();
-  };
-  const onMove=(e)=>{
-    if(!dragging) return;
-    const pos=getPos(e);
-    setPoolPos({
-      x:Math.max((POOL_W/2+4)/CW,Math.min(1-(POOL_W/2+4)/CW,(pos.x-dragOff.x)/CW)),
-      y:Math.max((POOL_H/2+4)/CH,Math.min(1-(POOL_H/2+4)/CH,(pos.y-dragOff.y)/CH)),
+    const offsetLines = edges.map((e, i) => {
+      const distFt = i === houseIdx ? houseSetback : i === rearIdx ? rearSetback : sideSetback;
+      const line = turf.lineString([e.a, e.b]);
+      if (!distFt || distFt <= 0) return line;
+      let offset = turf.lineOffset(line, distFt, { units: "feet" });
+      const offMid = turf.midpoint(turf.point(offset.geometry.coordinates[0]), turf.point(offset.geometry.coordinates[1]));
+      const before = turf.distance(e.mid, centroid, { units: "feet" });
+      const after = turf.distance(offMid, centroid, { units: "feet" });
+      if (after >= before) offset = turf.lineOffset(line, -distFt, { units: "feet" });
+      return offset;
     });
+
+    // Extend each offset edge well beyond the parcel so neighboring edges
+    // reliably intersect even after a large inward shift.
+    const extended = offsetLines.map(line => {
+      const [p1, p2] = line.geometry.coordinates;
+      const bearing = turf.bearing(turf.point(p1), turf.point(p2));
+      const ext1 = turf.destination(turf.point(p1), 500, bearing + 180, { units: "feet" });
+      const ext2 = turf.destination(turf.point(p2), 500, bearing, { units: "feet" });
+      return turf.lineString([ext1.geometry.coordinates, ext2.geometry.coordinates]);
+    });
+
+    const n = extended.length;
+    const corners = extended.map((line, i) => {
+      const prev = extended[(i - 1 + n) % n];
+      const hit = turf.lineIntersect(prev, line);
+      if (!hit.features.length) throw new Error("no intersection");
+      return hit.features[0].geometry.coordinates;
+    });
+    corners.push(corners[0]);
+    return turf.polygon([corners]);
+  } catch {
+    const minSetback = Math.max(1, Math.min(houseSetback || 5, rearSetback || 5, sideSetback || 5));
+    return turf.buffer(parcelPolygon, -minSetback, { units: "feet" });
+  }
+}
+
+// Fetches the real parcel boundary from Regrid's v2 point-search API (requires
+// a user-supplied Regrid key, same BYOK pattern as lookupParcel() above). Falls
+// back to a synthesized rectangular parcel centered near the searched point,
+// sized from a typical suburban 0.25-acre lot, when no key is set or the call
+// fails - matching the app's existing estimated/live data pattern.
+async function fetchParcelPolygon(lat, lng) {
+  const token = getRegridKey();
+  if (token) {
+    try {
+      const resp = await fetch(`https://app.regrid.com/api/v2/parcels/point?lat=${lat}&lon=${lng}&radius=60&limit=1&token=${token}`);
+      if (resp.ok) {
+        const data = await resp.json();
+        const feature = data?.parcels?.features?.[0];
+        if (feature?.geometry) {
+          const fields = feature.properties?.fields || {};
+          return {
+            polygon: turf.feature(feature.geometry),
+            attrs: {
+              parcel: fields.parcelnumb || "—",
+              lot_size: fields.ll_gisacre ? `${Number(fields.ll_gisacre).toFixed(2)} acres` : "—",
+              lot_sqft: fields.ll_gissqft ? `${Math.round(fields.ll_gissqft).toLocaleString()} sq ft` : "—",
+              zoning: fields.zoning_description || fields.zoning || "Residential",
+            },
+            source: "regrid",
+          };
+        }
+      }
+    } catch {}
+  }
+  const estSqFt = 10890; // ~0.25 acre typical suburban lot
+  const ratio = 4 / 3;
+  const estWidthFt = Math.sqrt(estSqFt / ratio);
+  const estDepthFt = estSqFt / estWidthFt;
+  // Shift the rectangle's center back from the searched point so that point
+  // sits near the front edge, matching where a geocoded address typically falls.
+  const parcelCenter = turf.destination([lng, lat], estDepthFt / 2, 0, { units: "feet" }).geometry.coordinates;
+  const rect = buildRectPolygon(parcelCenter, estDepthFt, estWidthFt, 0);
+  return {
+    polygon: rect,
+    attrs: {
+      parcel: "—",
+      lot_size: `${(estSqFt / 43560).toFixed(2)} acres (estimated)`,
+      lot_sqft: `${estSqFt.toLocaleString()} sq ft (estimated)`,
+      zoning: "Estimated — verify with county",
+    },
+    source: "estimated",
+  };
+}
+
+// ─── MASK TWEAK PANEL (FLUX Fill inpainting) ──────────────────────────────────
+// Lets the user paint over part of an existing render and describe a targeted
+// change (e.g. "change the deck to dark slate"), instead of re-rendering the
+// whole scene. Reused across all three render surfaces (pool, hardscape, quick).
+function MaskTweakPanel({ imageUrl, onTweaked, dailyRenders=0, dailyLimit=10, bumpDailyRender=()=>{} }) {
+  const [open, setOpen] = useState(false);
+  const [brushSize, setBrushSize] = useState(50);
+  const [hasMask, setHasMask] = useState(false);
+  const [tweakPrompt, setTweakPrompt] = useState("");
+  const [tweaking, setTweaking] = useState(false);
+  const [tweakError, setTweakError] = useState(null);
+  const canvasRef = useRef(null);
+  const drawingRef = useRef(false);
+  const lastPtRef = useRef(null);
+
+  const onImgLoad = (e) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    canvas.width = e.target.naturalWidth;
+    canvas.height = e.target.naturalHeight;
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setHasMask(false);
+  };
+
+  const pointFromEvent = (e) => {
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
+  };
+
+  const startDraw = (e) => {
     e.preventDefault();
-  };
-  const onUp=()=>setDragging(false);
-
-  const printMap=()=>{
-    const canvas=canvasRef.current; if(!canvas) return;
-    const dataUrl=canvas.toDataURL("image/png");
-    const win=window.open("","_blank"); if(!win) { alert("Please allow pop-ups for this site to export or print."); return; }
-    win.document.write(`<!DOCTYPE html><html><head><title>Pool Craft Pro - Site Plan</title>
-    <style>body{margin:0;padding:20px;font-family:Inter,sans-serif}h2{font-size:16px;margin:0 0 4px}
-    p{color:#64748b;font-size:12px;margin:0 0 14px}img.map{max-width:100%;border:2px solid #e2e8f0;border-radius:8px}
-    .meta{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
-    .mb{border:1px solid #e2e8f0;border-radius:6px;padding:10px}.mb label{font-size:10px;color:#94a3b8;text-transform:uppercase;display:block}
-    .mb span{font-size:14px;font-weight:700;color:#0f172a}
-    .footer{margin-top:14px;font-size:10px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:10px}
-    </style></head><body>
-    <h2>Pool Craft Pro - Pool Placement Site Plan</h2>
-    <p>${escapeHtml(parcelData?.address)||"Property Site Plan"} - ${new Date().toLocaleDateString()}</p>
-    <img class="map" src="${dataUrl}"/>
-    <div class="meta">
-      <div class="mb"><label>Pool Size</label><span>${poolLen}' x ${poolWid}'</span></div>
-      <div class="mb"><label>APN</label><span>${escapeHtml(parcelData?.parcel)||"-"}</span></div>
-      <div class="mb"><label>Front Setback</label><span>${escapeHtml(parcelData?.setback_front)||"20 ft"}</span></div>
-      <div class="mb"><label>Pool Setback</label><span>${escapeHtml(parcelData?.pool_setback)||"5 ft"}</span></div>
-    </div>
-    <div class="footer">For planning reference only. Verify setbacks with your local building department before permits. Generated by Pool Craft Pro · Design Pools. Craft Outdoor Living..</div>
-    <script>window.onload=()=>window.print();</script></body></html>`);
-    win.document.close();
+    const canvas = canvasRef.current;
+    canvas.setPointerCapture(e.pointerId);
+    drawingRef.current = true;
+    const pt = pointFromEvent(e);
+    lastPtRef.current = pt;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#fff";
+    ctx.beginPath(); ctx.arc(pt.x, pt.y, brushSize / 2, 0, Math.PI * 2); ctx.fill();
+    setHasMask(true);
   };
 
-  const printScaledSitePlan = () => {
-    // Builds a dedicated, dimensioned, scaled drawing - separate canvas from
-    // the interactive map so the output reads like an actual site plan rather
-    // than a screenshot of the app UI.
-    const PW = 1000, PH = 760;
-    const drawCanvas = document.createElement("canvas");
-    drawCanvas.width = PW; drawCanvas.height = PH;
-    const ctx = drawCanvas.getContext("2d", { willReadFrequently: false });
-    ctx.fillStyle = "#ffffff"; ctx.fillRect(0,0,PW,PH);
+  const moveDraw = (e) => {
+    if (!drawingRef.current) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    const pt = pointFromEvent(e);
+    ctx.strokeStyle = "#fff"; ctx.lineWidth = brushSize; ctx.lineCap = "round"; ctx.lineJoin = "round";
+    ctx.beginPath(); ctx.moveTo(lastPtRef.current.x, lastPtRef.current.y); ctx.lineTo(pt.x, pt.y); ctx.stroke();
+    lastPtRef.current = pt;
+  };
 
-    // Determine a feet-per-pixel scale: fit pool + 30ft margin into drawing area
-    const marginFt = 25;
-    const drawAreaW = PW - 160, drawAreaH = PH - 220;
-    const spanFt = Math.max(poolLen, poolWid) + marginFt*2;
-    const scale = Math.min(drawAreaW/spanFt, drawAreaH/spanFt); // px per ft
-    const originX = PW/2, originY = 130 + drawAreaH/2;
+  const endDraw = () => { drawingRef.current = false; };
 
-    const ftToPx = (ftX, ftY) => ({ x: originX + ftX*scale, y: originY + ftY*scale });
+  const clearMask = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
+    setHasMask(false);
+  };
 
-    // Property line (dashed)
-    ctx.strokeStyle = "#94a3b8"; ctx.lineWidth = 1.5; ctx.setLineDash([6,4]);
-    const propPad = marginFt*0.85;
-    const pTL = ftToPx(-poolLen/2-propPad, -poolWid/2-propPad);
-    const pBR = ftToPx(poolLen/2+propPad, poolWid/2+propPad);
-    ctx.strokeRect(pTL.x, pTL.y, pBR.x-pTL.x, pBR.y-pTL.y);
-    ctx.setLineDash([]);
-    ctx.fillStyle = "#94a3b8"; ctx.font = "11px Inter,sans-serif"; ctx.textAlign="left";
-    ctx.fillText("Approximate property boundary (verify with survey)", pTL.x, pTL.y - 8);
+  // Overlay canvas is transparent with opaque white strokes, dimmed via CSS
+  // opacity for display - CSS opacity doesn't touch the pixel buffer, so
+  // drawing it onto a black-filled canvas here yields a clean binary mask.
+  const exportMask = () => {
+    const overlay = canvasRef.current;
+    const maskCanvas = document.createElement("canvas");
+    maskCanvas.width = overlay.width;
+    maskCanvas.height = overlay.height;
+    const mctx = maskCanvas.getContext("2d");
+    mctx.fillStyle = "#000";
+    mctx.fillRect(0, 0, maskCanvas.width, maskCanvas.height);
+    mctx.drawImage(overlay, 0, 0);
+    return maskCanvas.toDataURL("image/png");
+  };
 
-    // Setback zone (front)
-    const setbackFt = 20;
-    ctx.fillStyle = "rgba(245,158,11,0.08)";
-    const sbTop = ftToPx(-poolLen/2-propPad, -poolWid/2-propPad);
-    const sbBot = ftToPx(poolLen/2+propPad, -poolWid/2-propPad+setbackFt);
-    ctx.fillRect(sbTop.x, sbTop.y, sbBot.x-sbTop.x, sbBot.y-sbTop.y);
-    ctx.strokeStyle = "#f59e0b"; ctx.lineWidth=1; ctx.setLineDash([4,3]);
-    ctx.strokeRect(sbTop.x, sbTop.y, sbBot.x-sbTop.x, sbBot.y-sbTop.y);
-    ctx.setLineDash([]);
-    ctx.fillStyle = "#b45309"; ctx.font="10px Inter,sans-serif"; ctx.textAlign="center";
-    ctx.fillText(`${setbackFt}ft front setback`, (sbTop.x+sbBot.x)/2, (sbTop.y+sbBot.y)/2+3);
+  const applyTweak = async () => {
+    if (!hasMask) { setTweakError("Paint over the area you want to change first."); return; }
+    if (!tweakPrompt.trim()) { setTweakError("Describe what to change in the painted area."); return; }
+    if (dailyRenders >= dailyLimit) { setTweakError(`You've used all ${dailyLimit} renders for today.`); return; }
 
-    // Pool outline
-    const poolTL = ftToPx(-poolLen/2, -poolWid/2);
-    const poolBR = ftToPx(poolLen/2, poolWid/2);
-    const pw = poolBR.x-poolTL.x, ph = poolBR.y-poolTL.y;
-    ctx.fillStyle = poolColor+"cc";
-    ctx.beginPath();
-    if (poolShape==="oval"||poolShape==="freeform"||poolShape==="figure8") {
-      ctx.ellipse((poolTL.x+poolBR.x)/2,(poolTL.y+poolBR.y)/2, pw/2, ph/2, 0,0,Math.PI*2);
-    } else { ctx.roundRect(poolTL.x, poolTL.y, pw, ph, 6); }
-    ctx.fill();
-    ctx.strokeStyle = "#0c4a6e"; ctx.lineWidth = 2; ctx.stroke();
-    // Coping ring
-    ctx.strokeStyle = "rgba(180,150,110,0.9)"; ctx.lineWidth = 5;
-    ctx.beginPath();
-    if (poolShape==="oval"||poolShape==="freeform"||poolShape==="figure8") ctx.ellipse((poolTL.x+poolBR.x)/2,(poolTL.y+poolBR.y)/2, pw/2+3, ph/2+3, 0,0,Math.PI*2);
-    else ctx.roundRect(poolTL.x-3, poolTL.y-3, pw+6, ph+6, 8);
-    ctx.stroke();
-
-    // Dimension lines: width (top), length (right side)
-    const dimOffset = 28;
-    const drawDim = (x1,y1,x2,y2,label) => {
-      ctx.strokeStyle = "#1e293b"; ctx.fillStyle = "#1e293b"; ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
-      // end ticks
-      const ang = Math.atan2(y2-y1, x2-x1) + Math.PI/2;
-      [[x1,y1],[x2,y2]].forEach(([tx,ty])=>{
-        ctx.beginPath(); ctx.moveTo(tx+5*Math.cos(ang), ty+5*Math.sin(ang)); ctx.lineTo(tx-5*Math.cos(ang), ty-5*Math.sin(ang)); ctx.stroke();
+    setTweaking(true); setTweakError(null);
+    try {
+      const maskUrl = exportMask();
+      const resp = await fetch(`${RENDER_SERVICE_URL}/api/tweak-render`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ renderedImageUrl: imageUrl, maskUrl, tweakPrompt: tweakPrompt.trim() }),
       });
-      const mx=(x1+x2)/2, my=(y1+y2)/2;
-      ctx.font = "bold 12px Inter,sans-serif"; ctx.textAlign="center";
-      const tw = ctx.measureText(label).width + 10;
-      ctx.fillStyle = "#fff"; ctx.fillRect(mx-tw/2, my-9, tw, 18);
-      ctx.fillStyle = "#1e293b"; ctx.fillText(label, mx, my+4);
-    };
-    drawDim(poolTL.x, poolTL.y - dimOffset, poolBR.x, poolTL.y - dimOffset, `${poolLen} ft`);
-    drawDim(poolBR.x + dimOffset, poolTL.y, poolBR.x + dimOffset, poolBR.y, `${poolWid} ft`);
-
-    // Scale bar (bottom left of drawing area)
-    const sbX = 60, sbY = PH - 70, sbLenFt = 10, sbLenPx = sbLenFt*scale;
-    ctx.strokeStyle = "#1e293b"; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(sbX,sbY); ctx.lineTo(sbX+sbLenPx,sbY); ctx.stroke();
-    [sbX, sbX+sbLenPx].forEach(x=>{ ctx.beginPath(); ctx.moveTo(x,sbY-5); ctx.lineTo(x,sbY+5); ctx.stroke(); });
-    ctx.fillStyle = "#1e293b"; ctx.font = "11px Inter,sans-serif"; ctx.textAlign="left";
-    ctx.fillText(`Scale: ${sbLenFt} ft`, sbX, sbY+20);
-
-    // North arrow (bottom right)
-    const naX = PW-80, naY = PH-70;
-    ctx.strokeStyle="#1e293b"; ctx.fillStyle="#1e293b"; ctx.lineWidth=1.5;
-    ctx.beginPath(); ctx.moveTo(naX,naY+18); ctx.lineTo(naX,naY-10); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(naX,naY-14); ctx.lineTo(naX-5,naY-6); ctx.lineTo(naX+5,naY-6); ctx.closePath(); ctx.fill();
-    ctx.font="bold 12px Inter,sans-serif"; ctx.textAlign="center"; ctx.fillText("N", naX, naY-18);
-
-    const dataUrl = drawCanvas.toDataURL("image/png");
-    const win = window.open("","_blank"); if (!win) { alert("Please allow pop-ups for this site to export or print."); return; }
-    win.document.write(`<!DOCTYPE html><html><head><title>Pool Craft Pro - Scaled Site Plan</title>
-    <style>
-      *{margin:0;padding:0;box-sizing:border-box} body{font-family:Inter,system-ui,sans-serif;background:#fff;color:#1e293b;padding:30px}
-      .titleblock{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #1e293b;padding-bottom:14px;margin-bottom:16px}
-      .titleblock h1{font-size:18px;font-weight:800} .titleblock .sub{font-size:12px;color:#64748b;margin-top:2px}
-      .drawing{width:100%;border:1px solid #e2e8f0;border-radius:8px}
-      .specs{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:16px}
-      .spec{border:1px solid #e2e8f0;border-radius:8px;padding:10px}.spec label{font-size:10px;color:#94a3b8;text-transform:uppercase;display:block;margin-bottom:3px}
-      .spec span{font-size:13px;font-weight:700}
-      .footer{margin-top:18px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:10px;color:#94a3b8;line-height:1.6}
-      @media print{body{padding:10px}}
-    </style></head><body>
-      <div class="titleblock">
-        <div><h1>POOL CRAFT PRO — Scaled Site Plan</h1><div class="sub">${escapeHtml(parcelData?.address) || "Property address not yet entered"}</div></div>
-        <div style="text-align:right"><div class="sub">Generated ${new Date().toLocaleDateString()}</div><div class="sub">Drawing not to engineering scale - reference only</div></div>
-      </div>
-      <img class="drawing" src="${dataUrl}" />
-      <div class="specs">
-        <div class="spec"><label>Pool Dimensions</label><span>${poolLen}' x ${poolWid}'</span></div>
-        <div class="spec"><label>Shape</label><span>${escapeHtml(POOL_SHAPES.find(s=>s.id===poolShape)?.label||poolShape)}</span></div>
-        <div class="spec"><label>Parcel / APN</label><span>${escapeHtml(parcelData?.parcel)||"Not looked up"}</span></div>
-        <div class="spec"><label>Front Setback Shown</label><span>20 ft (verify locally)</span></div>
-      </div>
-      <div class="footer">This drawing is a proportional site plan generated for early planning and discussion purposes. It is <strong>not</strong> a surveyed or engineer-stamped document. All dimensions, setbacks, and property boundaries must be verified by a licensed surveyor and your local building department before permit submission. Generated by Pool Craft Pro · Design Pools. Craft Outdoor Living..</div>
-      <script>window.onload=()=>setTimeout(()=>window.print(),600);</script>
-    </body></html>`);
-    win.document.close();
+      if (!resp.ok) {
+        const txt = await resp.text().catch(() => "");
+        let parsed = {}; try { parsed = JSON.parse(txt); } catch {}
+        const msg = parsed?.error || txt.slice(0, 140);
+        if (resp.status === 429) throw new Error("Rate limit reached - wait 60 seconds and try again.");
+        throw new Error(msg || `Tweak error ${resp.status}`);
+      }
+      const data = await resp.json();
+      if (!data?.url) throw new Error("No image returned - please try again.");
+      onTweaked(data.url);
+      bumpDailyRender();
+      setOpen(false); setTweakPrompt(""); clearMask();
+    } catch (err) {
+      setTweakError(err.message || "Something went wrong - please try again.");
+    } finally {
+      setTweaking(false);
+    }
   };
 
-  const isOk=()=>{const px=poolPos.x*CW,py=poolPos.y*CH;return px-POOL_W/2>=SB_SIDE&&px+POOL_W/2<=CW-SB_SIDE&&py-POOL_H/2>=SB_FRONT&&py+POOL_H/2<=CH-SB_REAR;};
+  if (!open) {
+    return (
+      <button onClick={() => setOpen(true)} disabled={dailyRenders >= dailyLimit}
+        style={{width:"100%",padding:"12px",borderRadius:10,background:"rgba(6,182,212,0.1)",border:"1px solid rgba(6,182,212,0.3)",color:dailyRenders>=dailyLimit?"#475569":"#06b6d4",fontWeight:700,fontSize:13,cursor:dailyRenders>=dailyLimit?"not-allowed":"pointer"}}>
+        🖌️ Tweak a Specific Area
+      </button>
+    );
+  }
 
   return (
-    <div style={{display:"flex",flexDirection:"column",gap:12}}>
-      {coords && mapLoaded ? (
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 14px",background:"rgba(34,197,94,0.08)",border:"1px solid rgba(34,197,94,0.25)",borderRadius:10}}>
-          <div style={{fontSize:12,fontWeight:700,color:"#22c55e"}}>✅ Google Maps Satellite - Active</div>
-        </div>
-      ) : coords && mapError ? (
-        <div style={{padding:"10px 14px",background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.25)",borderRadius:10,fontSize:12,fontWeight:700,color:"#ef4444"}}>
-          ⚠️ Couldn't load satellite imagery - check the server's GOOGLE_MAPS_KEY
-        </div>
-      ) : null}
-
-      <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-        <button onClick={()=>setShowSetbacks(p=>!p)} style={{padding:"10px 14px",minHeight:40,borderRadius:8,border:`2px solid ${showSetbacks?"#f59e0b88":"#334155"}`,background:showSetbacks?"rgba(245,158,11,0.1)":"#111827",color:showSetbacks?"#f59e0b":"#64748b",fontSize:12,fontWeight:700,cursor:"pointer"}}>📐 Setbacks {showSetbacks?"On":"Off"}</button>
-        <button onClick={()=>setShowMeasure(p=>!p)} style={{padding:"10px 14px",minHeight:40,borderRadius:8,border:`2px solid ${showMeasure?"#22c55e88":"#334155"}`,background:showMeasure?"rgba(34,197,94,0.1)":"#111827",color:showMeasure?"#22c55e":"#64748b",fontSize:12,fontWeight:700,cursor:"pointer"}}>📏 Measurements {showMeasure?"On":"Off"}</button>
-        {coords&&<>
-          <button onClick={()=>setZoom(z=>Math.min(21,z+1))} style={{width:40,height:40,borderRadius:8,border:"1px solid #334155",background:"#1e293b",color:"#e2e8f0",fontSize:18,fontWeight:700,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
-          <button onClick={()=>setZoom(z=>Math.max(16,z-1))} style={{width:40,height:40,borderRadius:8,border:"1px solid #334155",background:"#1e293b",color:"#e2e8f0",fontSize:18,fontWeight:700,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
-        </>}
-        <button onClick={printMap} style={{padding:"10px 14px",minHeight:40,borderRadius:8,border:"2px solid rgba(167,139,250,0.4)",background:"rgba(167,139,250,0.1)",color:"#a78bfa",fontSize:12,fontWeight:700,cursor:"pointer",marginLeft:"auto"}}>🖨️ Print Map View</button>
-        <button onClick={printScaledSitePlan} style={{padding:"10px 14px",minHeight:40,borderRadius:8,border:"2px solid rgba(34,197,94,0.4)",background:"rgba(34,197,94,0.1)",color:"#22c55e",fontSize:12,fontWeight:700,cursor:"pointer"}}>📐 Dimensioned Site Plan</button>
+    <div style={{background:"#0f172a",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
+      <div style={{fontSize:12,color:"#94a3b8",marginBottom:8}}>Paint over the area you want changed, then describe the change (e.g. "change travertine deck to dark slate stone").</div>
+      <div style={{position:"relative",width:"100%",borderRadius:10,overflow:"hidden",border:"1px solid #334155",lineHeight:0}}>
+        <img src={imageUrl} alt="Render to tweak" onLoad={onImgLoad} draggable={false} style={{width:"100%",display:"block"}} />
+        <canvas ref={canvasRef}
+          onPointerDown={startDraw} onPointerMove={moveDraw} onPointerUp={endDraw} onPointerLeave={endDraw} onPointerCancel={endDraw}
+          style={{position:"absolute",inset:0,width:"100%",height:"100%",opacity:0.55,cursor:"crosshair",touchAction:"none"}} />
       </div>
-
-      <div style={{borderRadius:14,overflow:"hidden",border:"2px solid #334155",boxShadow:"0 4px 24px rgba(0,0,0,0.5)"}}>
-        <canvas ref={canvasRef} width={CW} height={CH}
-          style={{display:"block",width:"100%",cursor:dragging?"grabbing":"grab",touchAction:"none"}}
-          onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp} onMouseLeave={onUp}
-          onTouchStart={onDown} onTouchMove={onMove} onTouchEnd={onUp}/>
+      <div style={{display:"flex",alignItems:"center",gap:10,marginTop:10}}>
+        <span style={{fontSize:11,color:"#64748b",whiteSpace:"nowrap"}}>Brush size</span>
+        <input type="range" min="15" max="150" value={brushSize} onChange={e=>setBrushSize(Number(e.target.value))} style={{flex:1}} />
+        <button onClick={clearMask} style={{padding:"6px 12px",borderRadius:8,background:"#1e293b",border:"1px solid #334155",color:"#94a3b8",fontSize:11,fontWeight:700,cursor:"pointer"}}>Clear</button>
       </div>
-
-      <div style={{padding:"10px 14px",borderRadius:10,background:isOk()?"rgba(34,197,94,0.1)":"rgba(239,68,68,0.1)",border:`1px solid ${isOk()?"rgba(34,197,94,0.3)":"rgba(239,68,68,0.3)"}`,fontSize:13,color:isOk()?"#22c55e":"#ef4444",fontWeight:700}}>
-        {isOk()?"✅ Pool placement within all setback requirements - ready for permit submission":"⚠️ Pool overlaps a setback zone - drag to adjust before submitting permits"}
-      </div>
-
-      {parcelData&&(
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8}}>
-          {[{label:"Front Setback",val:parcelData.setback_front},{label:"Rear Setback",val:parcelData.setback_rear},{label:"Side Setback",val:parcelData.setback_side},{label:"Pool Setback",val:parcelData.pool_setback}].map(s=>(
-            <div key={s.label} style={{background:"#1e293b",borderRadius:8,padding:"8px 10px",textAlign:"center"}}>
-              <div style={{fontSize:9,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:3}}>{s.label}</div>
-              <div style={{fontSize:13,fontWeight:700,color:"#f59e0b"}}>{s.val}</div>
-            </div>
-          ))}
-        </div>
-      )}
-      <RegridKeyPanel />
-      <div style={{fontSize:11,color:"#334155",textAlign:"center"}}>
-        {mapLoaded?"🛰️ Satellite (c) Google Maps - Geocoding (c) OpenStreetMap":"🗺️ Search an address above to load real satellite imagery"}
+      <textarea value={tweakPrompt} onChange={e=>setTweakPrompt(e.target.value)}
+        placeholder={`e.g. "Change travertine deck to dark slate stone"`} rows={2}
+        style={{width:"100%",marginTop:10,background:"#1e293b",border:"1px solid #334155",borderRadius:10,padding:"10px 12px",color:"#e2e8f0",fontSize:13,outline:"none",resize:"vertical",boxSizing:"border-box",lineHeight:1.6,fontFamily:"inherit"}} />
+      {tweakError && <div style={{fontSize:12,color:"#ef4444",fontWeight:600,marginTop:8}}>⚠️ {tweakError}</div>}
+      <div style={{display:"flex",gap:8,marginTop:10}}>
+        <button onClick={applyTweak} disabled={tweaking}
+          style={{flex:1,padding:"12px",borderRadius:10,background:tweaking?"#1e293b":"linear-gradient(135deg,#06b6d4,#0891b2)",border:"none",color:"white",fontWeight:700,fontSize:13,cursor:tweaking?"not-allowed":"pointer"}}>
+          {tweaking ? "⏳ Applying tweak..." : "✨ Apply Tweak"}
+        </button>
+        <button onClick={() => { setOpen(false); clearMask(); setTweakError(null); }} disabled={tweaking}
+          style={{padding:"12px 16px",borderRadius:10,background:"#1e293b",border:"1px solid #334155",color:"#94a3b8",fontWeight:700,fontSize:13,cursor:tweaking?"not-allowed":"pointer"}}>
+          Cancel
+        </button>
       </div>
     </div>
   );
@@ -1429,7 +1354,7 @@ function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, fin
   };
 
   const handleRender = async () => {
-    if (!bgPhoto) { setError("Please upload a backyard photo first. Grok edits your real photo - it needs to see the actual space."); return; }
+    if (!bgPhoto) { setError("Please upload a backyard photo first. FLUX edits your real photo - it needs to see the actual space."); return; }
     if (dailyLimit <= 0) { setError("AI rendering needs an active Basic or Pro plan - subscribe in Settings to unlock it."); return; }
     if (dailyRenders >= dailyLimit) { setError(`You've used all ${dailyLimit} renders for today - pool and hardscape renders share this limit.`); return; }
 
@@ -1437,7 +1362,7 @@ function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, fin
     setProgress(0); setProgressMsg("Queuing render request..."); setRenderedImage(null); setAiDescription(null);
 
     const steps = [
-      [8,  "Sending photo to Grok Aurora..."], [20, "Grok is analyzing your backyard..."],
+      [8,  "Sending photo to FLUX..."], [20, "FLUX is analyzing your backyard..."],
       [38, "Placing pool at correct perspective..."], [55, "Rendering water, light & reflections..."],
       [70, "Matching shadows & ground texture..."], [84, "Polishing photorealistic details..."], [95, "Almost done..."],
     ];
@@ -1449,7 +1374,7 @@ function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, fin
       const mediaType = bgPhoto.startsWith("data:image/png") ? "image/png" : "image/jpeg";
       const prompt = buildPrompt();
 
-      const resp = await fetch("/api/render", {
+      const resp = await fetch(`${RENDER_SERVICE_URL}/api/generate-pool-render`, {
         method:"POST", headers:{ "Content-Type":"application/json" },
         body: JSON.stringify({ prompt, image: { b64_json: b64, media_type: mediaType } }),
       });
@@ -1462,13 +1387,13 @@ function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, fin
         const msg = parsed?.error || txt.slice(0,140);
         if (resp.status === 429) { setQueued(true); throw new Error("Rate limit reached - wait 60 seconds and try again."); }
         if (resp.status === 400) throw new Error(`Bad request: ${msg}. Try a smaller photo (under 4MB) or a different image format.`);
-        throw new Error(`Grok API error ${resp.status}: ${msg}`);
+        throw new Error(`FLUX API error ${resp.status}: ${msg}`);
       }
 
       const data = await resp.json();
       const b64Result = data?.b64_json;
       const urlResult = data?.url;
-      if (!b64Result && !urlResult) throw new Error("Grok returned no image. Please try again.");
+      if (!b64Result && !urlResult) throw new Error("FLUX returned no image. Please try again.");
 
       setProgress(100); setProgressMsg("Done!");
       const finalImg = b64Result ? `data:image/jpeg;base64,${b64Result}` : urlResult;
@@ -1505,7 +1430,7 @@ function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, fin
     <div style={{display:"flex",flexDirection:"column",gap:14}}>
       <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,marginBottom:10}}>
-          <div><div style={{fontSize:13,fontWeight:800,color:"#22c55e"}}>✅ Grok Aurora AI Rendering</div><div style={{fontSize:12,color:"#64748b",marginTop:2}}>The same Aurora AI you use in Super Grok - photorealistically renders your pool into a real backyard photo.</div></div>
+          <div><div style={{fontSize:13,fontWeight:800,color:"#22c55e"}}>✅ FLUX AI Rendering</div><div style={{fontSize:12,color:"#64748b",marginTop:2}}>fal.ai's FLUX model photorealistically renders your pool into a real backyard photo.</div></div>
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
           {[{label:"Renders This Month", val:monthlyRenders, of:MONTHLY_LIMIT, color:"#06b6d4"},{label:"Total Renders", val:renderCount, of:null, color:"#a78bfa"},{label:"Est. API Cost", val:`$${(monthlyRenders*0.07).toFixed(2)}`, of:null, color:"#22c55e"}].map(s=>(
@@ -1518,15 +1443,15 @@ function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, fin
       </div>
 
       <div style={{background:"rgba(245,158,11,0.08)",border:"1px solid rgba(245,158,11,0.25)",borderRadius:12,padding:12}}>
-        <div style={{fontSize:11,color:"#f59e0b",fontWeight:700,marginBottom:4}}>⚠️ Important: Developer API vs Super Grok</div>
+        <div style={{fontSize:11,color:"#f59e0b",fontWeight:700,marginBottom:4}}>⚠️ Fair use applies</div>
         <div style={{fontSize:12,color:"#94a3b8",lineHeight:1.6}}>
-          Your Super Grok subscription has a daily render cap. The <strong style={{color:"#e2e8f0"}}>xAI Developer API</strong> (console.x.ai) is completely separate - no daily cap, pay per image. This is what your app needs to serve multiple customers simultaneously.
+          Renders run on a shared <strong style={{color:"#e2e8f0"}}>fal.ai</strong> API key (fal.ai/dashboard) - pay per image, no per-user cap on our end. Your plan's daily render limit is what keeps usage fair across customers.
         </div>
       </div>
 
       <div style={{background:"#0f172a",border:`2px solid ${bgPhoto?"rgba(34,197,94,0.4)":"rgba(6,182,212,0.2)"}`,borderRadius:14,padding:14}}>
         <div style={{fontSize:11,color:"#06b6d4",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>📸 Backyard Photo - Required</div>
-        <div style={{fontSize:12,color:"#64748b",marginBottom:10}}>Grok edits your actual photo - the pool is rendered realistically into your real space matching lighting, perspective & shadows. Keep photos under 8MB.</div>
+        <div style={{fontSize:12,color:"#64748b",marginBottom:10}}>FLUX edits your actual photo - the pool is rendered realistically into your real space matching lighting, perspective & shadows. Keep photos under 8MB.</div>
         <div style={{display:"flex",gap:8}}>
           <label style={{flex:1,padding:"13px 0",borderRadius:10,background:bgPhoto?"rgba(34,197,94,0.1)":"rgba(6,182,212,0.08)",border:`1px solid ${bgPhoto?"rgba(34,197,94,0.35)":"rgba(6,182,212,0.2)"}`,color:bgPhoto?"#22c55e":"#06b6d4",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
             {bgPhoto?"✅ Photo ready - tap to change":"📁 Upload Backyard Photo"}
@@ -1560,7 +1485,7 @@ function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, fin
       </div>
 
       <div style={{background:"#0f172a",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
-        <div style={{fontSize:11,color:"#06b6d4",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>✍️ Tell Grok What to Add</div>
+        <div style={{fontSize:11,color:"#06b6d4",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>✍️ Tell FLUX What to Add</div>
         <textarea value={userTweak} onChange={e=>setUserTweak(e.target.value)}
           placeholder="e.g. 'add a natural rock waterfall on the left side with tropical palms and a fire pit in the back right corner'" rows={3}
           style={{width:"100%",background:"#1e293b",border:"1px solid #334155",borderRadius:10,padding:"10px 12px",color:"#e2e8f0",fontSize:13,outline:"none",resize:"vertical",boxSizing:"border-box",lineHeight:1.6,fontFamily:"inherit"}} />
@@ -1590,14 +1515,14 @@ function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, fin
       <button onClick={rendering||dailyRenders>=dailyLimit?null:handleRender}
         style={{width:"100%",padding:"17px",borderRadius:12,background:rendering?"#1e293b":"linear-gradient(135deg,#7c3aed,#5b21b6)",
           border:"none",color:"white",fontWeight:800,fontSize:16,cursor:rendering?"not-allowed":"pointer",boxShadow:!rendering?"0 4px 24px rgba(124,58,237,0.35)":"none",letterSpacing:"0.02em",transition:"all 0.2s"}}>
-        {rendering ? `⏳ ${progressMsg}` : (renderedImage ? "🔄 Generate New Variation" : "🚀 Generate with Grok Aurora")}
+        {rendering ? `⏳ ${progressMsg}` : (renderedImage ? "🔄 Generate New Variation" : "🚀 Generate with FLUX")}
       </button>
 
       {rendering&&(
         <div style={{background:"#0f172a",border:"1px solid #1e293b",borderRadius:12,padding:16}}>
           <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}><span style={{fontSize:12,color:"#a78bfa",fontWeight:600}}>{progressMsg}</span><span style={{fontSize:12,color:"#64748b"}}>{progress}%</span></div>
           <div style={{height:6,background:"#1e293b",borderRadius:3,overflow:"hidden"}}><div style={{height:"100%",width:`${progress}%`,background:"linear-gradient(90deg,#7c3aed,#a78bfa,#06b6d4)",borderRadius:3,transition:"width 2.5s ease"}} /></div>
-          <div style={{marginTop:16,textAlign:"center"}}><div style={{fontSize:36}}>🚀</div><div style={{fontSize:13,color:"#a78bfa",marginTop:6,fontWeight:600}}>Grok Aurora is working on your render...</div><div style={{fontSize:11,color:"#64748b",marginTop:3}}>Photo-realistic results take 20-45 seconds</div></div>
+          <div style={{marginTop:16,textAlign:"center"}}><div style={{fontSize:36}}>🚀</div><div style={{fontSize:13,color:"#a78bfa",marginTop:6,fontWeight:600}}>FLUX is working on your render...</div><div style={{fontSize:11,color:"#64748b",marginTop:3}}>Photo-realistic results take 20-45 seconds</div></div>
         </div>
       )}
 
@@ -1614,8 +1539,8 @@ function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, fin
       {renderedImage&&!rendering&&(
         <div style={{background:"#0f172a",border:"2px solid rgba(124,58,237,0.35)",borderRadius:16,overflow:"hidden",boxShadow:"0 8px 40px rgba(124,58,237,0.18)"}}>
           <div style={{position:"relative"}}>
-            <img src={renderedImage} alt="Grok Aurora pool rendering" style={{width:"100%",display:"block"}} />
-            <div style={{position:"absolute",top:10,left:10,background:"rgba(124,58,237,0.92)",borderRadius:8,padding:"5px 12px",fontSize:11,color:"white",fontWeight:700}}>🚀 Grok Aurora - Render #{renderCount}</div>
+            <img src={renderedImage} alt="FLUX pool rendering" style={{width:"100%",display:"block"}} />
+            <div style={{position:"absolute",top:10,left:10,background:"rgba(124,58,237,0.92)",borderRadius:8,padding:"5px 12px",fontSize:11,color:"white",fontWeight:700}}>🚀 FLUX - Render #{renderCount}</div>
             <div style={{position:"absolute",top:10,right:10,background:"rgba(0,0,0,0.6)",borderRadius:8,padding:"5px 10px",fontSize:10,color:"#94a3b8"}}>Pool Craft Pro</div>
           </div>
           {aiDescription&&(
@@ -1632,6 +1557,10 @@ function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, fin
             <div style={{fontSize:11,color:"#334155",textAlign:"center"}}>{len}' x {wid}' {POOL_SHAPES.find(s=>s.id===shape)?.label} - {STYLES.find(s=>s.id===selectedStyle)?.label}</div>
           </div>
         </div>
+      )}
+
+      {renderedImage&&!rendering&&(
+        <MaskTweakPanel imageUrl={renderedImage} onTweaked={setRenderedImage} dailyRenders={dailyRenders} dailyLimit={dailyLimit} bumpDailyRender={onRenderComplete} />
       )}
 
       {allLinks.length>0&&(
@@ -1879,7 +1808,7 @@ function HardscapeDesigner({ hardscapes, toggleHardscape, setHSQty, dailyRenders
     setRendering(true); setError(null);
     setProgress(0); setProgressMsg("Preparing your design..."); setRendered(null); setAiDesc(null);
 
-    const steps = [[10,"Sending to Grok Aurora..."],[24,"Analyzing your outdoor space..."],[40,"Placing hardscape elements..."],[56,"Rendering materials & textures..."],[70,"Adding lighting & atmosphere..."],[85,"Polishing final details..."]];
+    const steps = [[10,"Sending to FLUX..."],[24,"Analyzing your outdoor space..."],[40,"Placing hardscape elements..."],[56,"Rendering materials & textures..."],[70,"Adding lighting & atmosphere..."],[85,"Polishing final details..."]];
     let si=0;
     const interval = setInterval(()=>{ if(si<steps.length){ setProgress(steps[si][0]); setProgressMsg(steps[si][1]); si++; } }, 3000);
 
@@ -1893,7 +1822,7 @@ function HardscapeDesigner({ hardscapes, toggleHardscape, setHSQty, dailyRenders
       const b64 = photo.split(",")[1];
       const mediaType = photo.startsWith("data:image/png") ? "image/png" : "image/jpeg";
 
-      const resp = await fetch("/api/render", {
+      const resp = await fetch(`${RENDER_SERVICE_URL}/api/generate-pool-render`, {
         method:"POST", headers:{ "Content-Type":"application/json" },
         body: JSON.stringify({ prompt, image:{ b64_json:b64, media_type:mediaType } }),
       });
@@ -1903,7 +1832,7 @@ function HardscapeDesigner({ hardscapes, toggleHardscape, setHSQty, dailyRenders
         const txt = await resp.text().catch(()=>""); let parsed={}; try{parsed=JSON.parse(txt);}catch{}
         const msg = parsed?.error||txt.slice(0,120);
         if(resp.status===429) throw new Error("Rate limit - wait 60 seconds and try again.");
-        throw new Error(`Grok error ${resp.status}: ${msg}`);
+        throw new Error(`FLUX error ${resp.status}: ${msg}`);
       }
 
       const data = await resp.json();
@@ -1927,7 +1856,7 @@ function HardscapeDesigner({ hardscapes, toggleHardscape, setHSQty, dailyRenders
       <div style={{background:"#111827",border:`2px solid ${photo?"rgba(52,211,153,0.45)":"#1e293b"}`,borderRadius:16,overflow:"hidden"}}>
         <div style={{background:"linear-gradient(135deg,#134e4a,#0f3d38)",padding:"14px 16px"}}>
           <div style={{fontSize:14,fontWeight:800,color:"#34d399",marginBottom:3}}>🏡 Outdoor Space Designer</div>
-          <div style={{fontSize:12,color:"#6ee7b7",lineHeight:1.5}}>Upload your backyard photo - Select elements below - Grok Aurora renders everything into your real space</div>
+          <div style={{fontSize:12,color:"#6ee7b7",lineHeight:1.5}}>Upload your backyard photo - Select elements below - FLUX renders everything into your real space</div>
         </div>
         <div style={{padding:14}}>
           <div style={{display:"flex",gap:8,marginBottom:photo?10:0}}>
@@ -2056,7 +1985,7 @@ function HardscapeDesigner({ hardscapes, toggleHardscape, setHSQty, dailyRenders
           <div style={{background:"#0f172a",border:"2px solid rgba(52,211,153,0.35)",borderRadius:14,overflow:"hidden",boxShadow:"0 6px 30px rgba(52,211,153,0.12)"}}>
             <div style={{position:"relative"}}>
               <img src={rendered} alt="Hardscape rendering" style={{width:"100%",display:"block"}} />
-              <div style={{position:"absolute",top:10,left:10,background:"rgba(5,150,105,0.92)",borderRadius:8,padding:"5px 12px",fontSize:11,color:"white",fontWeight:700}}>🏡 Grok Aurora - Outdoor Design #{renderCount}</div>
+              <div style={{position:"absolute",top:10,left:10,background:"rgba(5,150,105,0.92)",borderRadius:8,padding:"5px 12px",fontSize:11,color:"white",fontWeight:700}}>🏡 FLUX - Outdoor Design #{renderCount}</div>
               <div style={{position:"absolute",top:10,right:10,background:"rgba(0,0,0,0.6)",borderRadius:8,padding:"4px 10px",fontSize:10,color:"#94a3b8"}}>Pool Craft Pro</div>
             </div>
             {aiDesc&&(<div style={{padding:"12px 14px",background:"rgba(52,211,153,0.06)",borderTop:"1px solid rgba(52,211,153,0.15)"}}><div style={{fontSize:10,color:"#34d399",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:5}}>🤖 AI Designer Notes</div><div style={{fontSize:13,color:"#94a3b8",lineHeight:1.6,fontStyle:"italic"}}>{aiDesc}</div></div>)}
@@ -2066,257 +1995,533 @@ function HardscapeDesigner({ hardscapes, toggleHardscape, setHSQty, dailyRenders
             </div>
           </div>
         )}
+
+        {rendered&&!rendering&&(
+          <MaskTweakPanel imageUrl={rendered} onTweaked={setRendered} dailyRenders={dailyRenders} dailyLimit={dailyLimit} bumpDailyRender={bumpDailyRender} />
+        )}
       </div>
     </div>
   );
 }
 
-// ─── YARD PLANNER ─────────────────────────────────────────────────────────────
-const YARD_ELEMENTS = [
-  { id:"pool", cat:"Pool", label:"Swimming Pool", icon:"🏊", color:"#0ea5e9", w:80, h:50, shape:"rect" },
-  { id:"spa", cat:"Pool", label:"Spa / Hot Tub", icon:"🛁", color:"#8b5cf6", w:32, h:32, shape:"circle" },
-  { id:"pergola", cat:"Structures", label:"Pergola", icon:"🏠", color:"#d97706", w:60, h:50, shape:"rect" },
-  { id:"outdoor_kit", cat:"Structures", label:"Outdoor Kitchen", icon:"🍳", color:"#0ea5e9", w:50, h:36, shape:"rect" },
-  { id:"gazebo", cat:"Structures", label:"Gazebo", icon:"⛺", color:"#7c3aed", w:44, h:44, shape:"circle" },
-  { id:"fire_pit", cat:"Fire & Water", label:"Fire Pit", icon:"🔥", color:"#ef4444", w:28, h:28, shape:"circle" },
-  { id:"waterfall", cat:"Fire & Water", label:"Waterfall", icon:"💧", color:"#06b6d4", w:24, h:36, shape:"rect" },
-  { id:"fountain", cat:"Fire & Water", label:"Fountain", icon:"⛲", color:"#22d3ee", w:24, h:24, shape:"circle" },
-  { id:"tree_lg", cat:"Landscaping", label:"Large Tree", icon:"🌳", color:"#16a34a", w:36, h:36, shape:"circle" },
-  { id:"tree_sm", cat:"Landscaping", label:"Small Tree", icon:"🌲", color:"#22c55e", w:24, h:24, shape:"circle" },
-  { id:"palm", cat:"Landscaping", label:"Palm Tree", icon:"🌴", color:"#4ade80", w:22, h:22, shape:"circle" },
-  { id:"shrub", cat:"Landscaping", label:"Shrub / Hedge", icon:"🌿", color:"#86efac", w:20, h:20, shape:"circle" },
-  { id:"planting_bed", cat:"Landscaping", label:"Planting Bed", icon:"🪴", color:"#a3e635", w:50, h:28, shape:"rect" },
-  { id:"patio", cat:"Hardscape", label:"Patio / Deck", icon:"🪵", color:"#d97706", w:80, h:60, shape:"rect" },
-  { id:"pathway", cat:"Hardscape", label:"Pathway", icon:"🛤️", color:"#a8a29e", w:16, h:60, shape:"rect" },
-  { id:"ret_wall", cat:"Hardscape", label:"Retaining Wall", icon:"🧱", color:"#78716c", w:80, h:14, shape:"rect" },
-  { id:"sport_court", cat:"Hardscape", label:"Sport Court", icon:"🏀", color:"#f59e0b", w:70, h:50, shape:"rect" },
-  { id:"table_set", cat:"Furniture", label:"Dining Set", icon:"🍽️", color:"#94a3b8", w:36, h:36, shape:"rect" },
-  { id:"loungers", cat:"Furniture", label:"Lounge Chairs", icon:"🪑", color:"#f59e0b", w:40, h:20, shape:"rect" },
-  { id:"umbrella", cat:"Furniture", label:"Patio Umbrella", icon:"⛱️", color:"#ec4899", w:24, h:24, shape:"circle" },
-  { id:"fence_pool", cat:"Safety", label:"Pool Safety Fence", icon:"🚧", color:"#f59e0b", w:100, h:8, shape:"rect" },
-  { id:"lighting", cat:"Safety", label:"Outdoor Lighting", icon:"💡", color:"#fbbf24", w:10, h:10, shape:"circle" },
-];
-const YARD_CATS = [...new Set(YARD_ELEMENTS.map(e=>e.cat))];
-
-function YardOverlayCanvas({ placed, setPlaced, selected, setSelected, showDims }) {
-  const canvasRef = useRef(null);
-  const [dragging, setDragging] = useState(null);
-  const draggingRef = useRef(null); // sync ref so onMove doesn't use stale closure
-  const rafPending = useRef(false);
-
-  const draw = useCallback(() => {
-    const canvas = canvasRef.current; if (!canvas) return;
-    const ctx = canvas.getContext("2d", { willReadFrequently: false });
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    placed.forEach(el => {
-      const isSel = el.id === selected;
-      ctx.save(); ctx.globalAlpha = 0.82; ctx.shadowColor = "rgba(0,0,0,0.6)"; ctx.shadowBlur = isSel ? 18 : 8; ctx.shadowOffsetY = 3;
-      if (el.shape === "circle") {
-        const r = el.w / 2;
-        ctx.fillStyle = el.color + "cc"; ctx.beginPath(); ctx.arc(el.x + r, el.y + r, r, 0, Math.PI * 2); ctx.fill();
-        if (isSel) { ctx.strokeStyle = "#fff"; ctx.lineWidth = 2.5; ctx.stroke(); }
-      } else {
-        ctx.fillStyle = el.color + "cc"; ctx.beginPath(); ctx.roundRect(el.x, el.y, el.w, el.h, 5); ctx.fill();
-        if (isSel) { ctx.strokeStyle = "#fff"; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.roundRect(el.x, el.y, el.w, el.h, 5); ctx.stroke(); }
-      }
-      ctx.restore();
-      const fontSize = Math.min(el.w, el.h) * 0.48;
-      ctx.font = `${fontSize}px serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.fillText(el.icon, el.x + el.w / 2, el.y + el.h / 2);
-      if (showDims || isSel) {
-        ctx.font = "bold 9px Inter,sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "top";
-        const lbl = `${el.label.slice(0,12)}`; const tw = ctx.measureText(lbl).width + 6;
-        ctx.fillStyle = "rgba(0,0,0,0.65)"; ctx.beginPath(); ctx.roundRect(el.x + el.w/2 - tw/2, el.y + el.h + 2, tw, 11, 3); ctx.fill();
-        ctx.fillStyle = "#fff"; ctx.fillText(lbl, el.x + el.w/2, el.y + el.h + 3);
-      }
-      if (isSel) { ctx.fillStyle = "#fff"; [[el.x, el.y],[el.x+el.w, el.y],[el.x, el.y+el.h],[el.x+el.w, el.y+el.h]].forEach(([hx,hy]) => { ctx.beginPath(); ctx.arc(hx, hy, 4, 0, Math.PI*2); ctx.fill(); }); }
-    });
-  }, [placed, selected, showDims]);
-  useEffect(() => {
-    if(rafPending.current) return;
-    rafPending.current = true;
-    requestAnimationFrame(()=>{ rafPending.current = false; draw(); });
-  }, [draw]);
-
-  const getPos = (e) => {
-    const rect = canvasRef.current.getBoundingClientRect();
-    const sx = canvasRef.current.width / rect.width, sy = canvasRef.current.height / rect.height;
-    const cx = e.touches ? e.touches[0].clientX : e.clientX, cy = e.touches ? e.touches[0].clientY : e.clientY;
-    return { x: (cx - rect.left) * sx, y: (cy - rect.top) * sy };
-  };
-  const onDown = (e) => {
-    const pos = getPos(e);
-    for (let i = placed.length - 1; i >= 0; i--) {
-      const el = placed[i];
-      if (pos.x >= el.x && pos.x <= el.x+el.w && pos.y >= el.y && pos.y <= el.y+el.h) {
-        setSelected(el.id); setDragging({ pid: el.id, offX: pos.x - el.x, offY: pos.y - el.y });
-        draggingRef.current = { pid: el.id, offX: pos.x - el.x, offY: pos.y - el.y };
-        e.preventDefault(); return;
-      }
-    }
-    setSelected(null); draggingRef.current = null; e.preventDefault();
-  };
-  const onMove = (e) => {
-    if (!draggingRef.current) return;
-    const pos = getPos(e); const canvas = canvasRef.current;
-    const d = draggingRef.current;
-    setPlaced(prev => prev.map(el => el.id === d.pid ? { ...el, x: Math.max(0, Math.min(canvas.width - el.w, pos.x - d.offX)), y: Math.max(0, Math.min(canvas.height - el.h, pos.y - d.offY)) } : el));
-    e.preventDefault();
-  };
-  const onUp = () => { setDragging(null); draggingRef.current = null; };
-
-  return (
-    <canvas ref={canvasRef} width={600} height={480} style={{ position:"absolute", inset:0, width:"100%", height:"100%", cursor: dragging ? "grabbing" : selected ? "grab" : "crosshair", touchAction:"none" }}
-      onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp} onMouseLeave={onUp} onTouchStart={onDown} onTouchMove={onMove} onTouchEnd={onUp} />
-  );
-}
-
-function YardPlanner({ poolLen, poolWid, poolShape, poolColor, parcelData }) {
-  const [address, setAddress] = useState(parcelData?.address || "");
-  const [mapSrc, setMapSrc] = useState(null);
-  const [mapLoading, setMapLoading] = useState(false);
-  const [mapError, setMapError] = useState(false);
-  const [placed, setPlaced] = useState([]);
-  const [selected, setSelected] = useState(null);
-  const [activeCat, setActiveCat] = useState("Pool");
-  const [showDims, setShowDims] = useState(true);
-  const [nextId, setNextId] = useState(1);
-  const [zoom, setZoom] = useState(20);
+// ─── SITE PLAN MAP — Mapbox GL JS + Regrid parcels + Turf.js setbacks ─────────
+function SitePlanMap({ poolLen, poolWid, poolShape, poolColor, initialAddress }) {
   const mapContainerRef = useRef(null);
+  const mapRef = useRef(null);
+  const geocoderRef = useRef(null);
+  const centerMarkerRef = useRef(null);
+  const rotateMarkerRef = useRef(null);
+  const rotatingRef = useRef(false);
+  const poolCenterRef = useRef(null);
+  const poolLenRef = useRef(poolLen);
+  const rotationDegRef = useRef(0);
 
-  useEffect(() => { if (parcelData?.address && !mapSrc) { setAddress(parcelData.address); loadMap(parcelData.address); } }, [parcelData]);
+  const [mapboxToken, setMapboxTokenState] = useState(getMapboxToken());
+  const [tokenInput, setTokenInput] = useState("");
+  const [mapReady, setMapReady] = useState(false);
 
-  // Routes through the /api/maps serverless proxy (server-side GOOGLE_MAPS_KEY) instead
-  // of embedding a client-exposed key, matching the fix applied to PropertyMap.
-  const buildMapUrl = (addr, z) => `/api/maps?address=${encodeURIComponent(addr)}&zoom=${z}&width=600&height=480`;
-  const loadMap = (addr) => { if (!addr.trim()) return; setMapLoading(true); setMapError(false); setMapSrc(buildMapUrl(addr, zoom)); };
-  const handleSearch = () => loadMap(address);
-  const handleZoom = (delta) => { const nz = Math.max(16, Math.min(21, zoom + delta)); setZoom(nz); if (mapSrc) { setMapLoading(true); setMapError(false); setMapSrc(buildMapUrl(address, nz)); } };
-  const addElement = (el) => { const newEl = { ...el, id: nextId, x: 200, y: 180 }; setPlaced(p => [...p, newEl]); setNextId(n => n + 1); setSelected(newEl.id); };
-  const selectedEl = placed.find(e => e.id === selected);
-  const resizeSelected = (axis, delta) => setPlaced(p => p.map(el => el.id === selected ? { ...el, w: axis === "w" ? Math.max(12, el.w + delta) : el.w, h: axis === "h" ? Math.max(12, el.h + delta) : el.h } : el));
-  const removeSelected = () => { setPlaced(p => p.filter(e => e.id !== selected)); setSelected(null); };
-  const clearAll = () => { setPlaced([]); setSelected(null); };
+  const [parcelPolygon, setParcelPolygon] = useState(null);
+  const [parcelAttrs, setParcelAttrs] = useState(null);
+  const [parcelSource, setParcelSource] = useState(null);
+  const [searchPoint, setSearchPoint] = useState(null);
+  const [loadingParcel, setLoadingParcel] = useState(false);
+  const [parcelError, setParcelError] = useState(null);
 
-  const printMap = () => {
-    const win = window.open("", "_blank"); if (!win) { alert("Please allow pop-ups for this site to export or print."); return; }
-    const elList = placed.map(e => `${e.icon} ${e.label}`).join(", ");
-    win.document.write(`<!DOCTYPE html><html><head><title>Pool Craft Pro - Yard Plan</title>
-    <style>body{margin:0;padding:20px;font-family:Inter,sans-serif;background:#fff}h2{font-size:16px;margin:0 0 4px}p{color:#64748b;font-size:12px;margin:0 0 14px}
-    .map-wrap{position:relative;width:100%;padding-bottom:80%;border:2px solid #e2e8f0;border-radius:8px;overflow:hidden}.map-wrap img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-    .elements{margin-top:14px;font-size:12px;color:#374151}.footer{margin-top:14px;font-size:10px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:10px}</style></head><body>
-    <h2>Pool Craft Pro - Yard Layout Plan</h2><p>${escapeHtml(address) || "Property Site Plan"} - Generated ${new Date().toLocaleDateString()}</p>
-    <div class="map-wrap"><img src="${mapSrc}"/></div>
-    ${elList ? `<div class="elements"><strong>Design elements placed:</strong> ${escapeHtml(elList)}</div>` : ""}
-    <div class="footer">Satellite imagery is for planning reference only. Verify all setbacks and measurements with your local building department before construction. Generated by Pool Craft Pro · Design Pools. Craft Outdoor Living..</div>
-    <script>window.onload=()=>setTimeout(()=>window.print(),1500);</script></body></html>`);
-    win.document.close();
+  const [rearSetback, setRearSetback] = useState(10);
+  const [sideSetback, setSideSetback] = useState(5);
+  const [houseSetback, setHouseSetback] = useState(20);
+
+  const [poolCenter, setPoolCenter] = useState(null);
+  const [rotationDeg, setRotationDeg] = useState(0);
+  const [initError, setInitError] = useState(null);
+
+  useEffect(() => { poolCenterRef.current = poolCenter; }, [poolCenter]);
+  useEffect(() => { poolLenRef.current = poolLen; }, [poolLen]);
+  useEffect(() => { rotationDegRef.current = rotationDeg; }, [rotationDeg]);
+
+  const saveMapboxToken = () => {
+    const t = tokenInput.trim();
+    if (!t) return;
+    setMapboxTokenStorage(t);
+    setMapboxTokenState(t);
+    setTokenInput("");
+  };
+  const removeMapboxToken = () => {
+    setMapboxTokenStorage("");
+    setMapboxTokenState("");
+    setMapReady(false);
+    setInitError(null);
+    if (mapRef.current) { mapRef.current.remove(); mapRef.current = null; }
   };
 
-  const catItems = YARD_ELEMENTS.filter(e => e.cat === activeCat);
+  // Initialize the map once a token is available. Reused across address
+  // searches - only torn down on unmount or when the token itself changes.
+  // A malformed/invalid token throws synchronously inside the Geocoder
+  // plugin's constructor (it validates the token's JWT-like shape) - without
+  // this try/catch that exception has no boundary and takes down the whole
+  // app to a blank screen, so every step here is guarded.
+  useEffect(() => {
+    if (!mapboxToken || mapRef.current || !mapContainerRef.current) return;
+    try {
+      mapboxgl.accessToken = mapboxToken;
+      const map = new mapboxgl.Map({
+        container: mapContainerRef.current,
+        style: "mapbox://styles/mapbox/satellite-streets-v12",
+        center: [-98.5795, 39.8283],
+        zoom: 4,
+        pitch: 0,
+      });
+      mapRef.current = map;
+      map.addControl(new mapboxgl.NavigationControl(), "top-right");
+
+      const geocoder = new MapboxGeocoder({
+        accessToken: mapboxToken,
+        mapboxgl,
+        marker: false,
+        placeholder: "Enter property address...",
+        types: "address",
+      });
+      geocoderRef.current = geocoder;
+      map.addControl(geocoder, "top-left");
+
+      geocoder.on("result", (e) => {
+        const center = e.result.center;
+        map.flyTo({ center, zoom: 19, pitch: 0, essential: true });
+        setParcelError(null);
+        setSearchPoint(center);
+      });
+
+      map.on("error", (e) => {
+        setInitError(e?.error?.message || "This Mapbox token was rejected — double check it's a valid public token (starts with \"pk.\").");
+      });
+
+      map.on("load", () => {
+        setMapReady(true);
+        if (initialAddress) geocoder.query(initialAddress);
+      });
+    } catch (err) {
+      if (mapRef.current) { mapRef.current.remove(); mapRef.current = null; }
+      setInitError(err.message || "Couldn't initialize the map — this Mapbox token looks invalid.");
+      return;
+    }
+
+    return () => {
+      if (mapRef.current) { mapRef.current.remove(); mapRef.current = null; }
+      setMapReady(false);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapboxToken]);
+
+  // Add sources/layers once, after the style has loaded.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady || map.getSource("parcel-src")) return;
+
+    map.addSource("parcel-src", { type: "geojson", data: turf.featureCollection([]) });
+    map.addLayer({ id: "parcel-fill", type: "fill", source: "parcel-src", paint: { "fill-color": "#e2e8f0", "fill-opacity": 0.05 } });
+    map.addLayer({ id: "parcel-line", type: "line", source: "parcel-src", paint: { "line-color": "#e2e8f0", "line-width": 2 } });
+
+    map.addSource("envelope-src", { type: "geojson", data: turf.featureCollection([]) });
+    map.addLayer({ id: "envelope-line", type: "line", source: "envelope-src", paint: { "line-color": "#3b82f6", "line-width": 2, "line-dasharray": [2, 2] } });
+
+    map.addSource("pool-src", { type: "geojson", data: turf.featureCollection([]) });
+    map.addLayer({ id: "pool-fill", type: "fill", source: "pool-src", paint: { "fill-color": poolColor || "#0ea5e9", "fill-opacity": 0.55 } });
+    map.addLayer({ id: "pool-line", type: "line", source: "pool-src", paint: { "line-color": "#22c55e", "line-width": 3 } });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapReady]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady || !map.getLayer("pool-fill")) return;
+    map.setPaintProperty("pool-fill", "fill-color", poolColor || "#0ea5e9");
+  }, [poolColor, mapReady]);
+
+  // Fetch parcel data whenever a new address is searched.
+  useEffect(() => {
+    if (!searchPoint) return;
+    let ignore = false;
+    if (centerMarkerRef.current) { centerMarkerRef.current.remove(); centerMarkerRef.current = null; }
+    if (rotateMarkerRef.current) { rotateMarkerRef.current.remove(); rotateMarkerRef.current = null; }
+    (async () => {
+      setLoadingParcel(true);
+      setParcelError(null);
+      try {
+        const [lng, lat] = searchPoint;
+        const result = await fetchParcelPolygon(lat, lng);
+        if (ignore) return;
+        setParcelPolygon(result.polygon);
+        setParcelAttrs(result.attrs);
+        setParcelSource(result.source);
+        setRotationDeg(0);
+        setPoolCenter(turf.centroid(result.polygon).geometry.coordinates);
+      } catch (err) {
+        if (!ignore) setParcelError(err.message || "Couldn't load parcel data");
+      } finally {
+        if (!ignore) setLoadingParcel(false);
+      }
+    })();
+    return () => { ignore = true; };
+  }, [searchPoint]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady || !map.getSource("parcel-src")) return;
+    map.getSource("parcel-src").setData(parcelPolygon ? turf.featureCollection([parcelPolygon]) : turf.featureCollection([]));
+  }, [parcelPolygon, mapReady]);
+
+  const envelopePolygon = useMemo(() => {
+    if (!parcelPolygon) return null;
+    try {
+      return buildSetbackEnvelope(parcelPolygon, searchPoint ? turf.point(searchPoint) : null, { houseSetback, rearSetback, sideSetback });
+    } catch { return null; }
+  }, [parcelPolygon, searchPoint, houseSetback, rearSetback, sideSetback]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady || !map.getSource("envelope-src")) return;
+    map.getSource("envelope-src").setData(envelopePolygon ? turf.featureCollection([envelopePolygon]) : turf.featureCollection([]));
+  }, [envelopePolygon, mapReady]);
+
+  const poolPolygon = useMemo(() => {
+    if (!poolCenter) return null;
+    return buildRectPolygon(poolCenter, poolLen, poolWid, rotationDeg);
+  }, [poolCenter, poolLen, poolWid, rotationDeg]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady || !map.getSource("pool-src")) return;
+    map.getSource("pool-src").setData(poolPolygon ? turf.featureCollection([poolPolygon]) : turf.featureCollection([]));
+  }, [poolPolygon, mapReady]);
+
+  const collision = useMemo(() => {
+    if (!poolPolygon) return false;
+    const boundary = envelopePolygon || parcelPolygon;
+    if (!boundary) return false;
+    try { return !turf.booleanWithin(poolPolygon, boundary); }
+    catch { return false; }
+  }, [poolPolygon, envelopePolygon, parcelPolygon]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady || !map.getLayer("pool-line")) return;
+    map.setPaintProperty("pool-line", "line-color", collision ? "#ef4444" : "#22c55e");
+  }, [collision, mapReady]);
+
+  // Create the move/rotate drag handles once per new parcel search.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady || !parcelPolygon || !poolCenterRef.current) return;
+    if (centerMarkerRef.current || rotateMarkerRef.current) return;
+
+    const centerEl = document.createElement("div");
+    centerEl.textContent = "✛";
+    centerEl.style.cssText = "font-size:24px;line-height:1;color:#fff;text-shadow:0 0 3px #000,0 0 3px #000,0 0 3px #000;cursor:grab;user-select:none;";
+    const centerMarker = new mapboxgl.Marker({ element: centerEl, draggable: true, anchor: "center" })
+      .setLngLat(poolCenterRef.current).addTo(map);
+    centerMarker.on("drag", () => {
+      const ll = centerMarker.getLngLat();
+      setPoolCenter([ll.lng, ll.lat]);
+    });
+    centerMarkerRef.current = centerMarker;
+
+    const rotateEl = document.createElement("div");
+    rotateEl.textContent = "↻";
+    rotateEl.style.cssText = "font-size:15px;line-height:1;width:26px;height:26px;border-radius:50%;background:rgba(15,23,42,0.78);border:2px solid #fbbf24;color:#fbbf24;display:flex;align-items:center;justify-content:center;cursor:grab;user-select:none;";
+    const initHandlePos = turf.destination(poolCenterRef.current, poolLenRef.current / 2 + 8, rotationDegRef.current, { units: "feet" }).geometry.coordinates;
+    const rotateMarker = new mapboxgl.Marker({ element: rotateEl, draggable: true, anchor: "center" })
+      .setLngLat(initHandlePos).addTo(map);
+    rotateMarker.on("dragstart", () => { rotatingRef.current = true; });
+    rotateMarker.on("drag", () => {
+      const ll = rotateMarker.getLngLat();
+      setRotationDeg(turf.bearing(poolCenterRef.current, [ll.lng, ll.lat]));
+    });
+    rotateMarker.on("dragend", () => { rotatingRef.current = false; });
+    rotateMarkerRef.current = rotateMarker;
+
+    return () => {
+      centerMarker.remove(); centerMarkerRef.current = null;
+      rotateMarker.remove(); rotateMarkerRef.current = null;
+    };
+  }, [mapReady, parcelPolygon]);
+
+  // Keep the rotate handle glued to the pool as it moves/rotates/resizes,
+  // except while the user has it actively grabbed (avoid fighting the drag).
+  useEffect(() => {
+    if (rotatingRef.current || !rotateMarkerRef.current || !poolCenter) return;
+    const handlePos = turf.destination(poolCenter, poolLen / 2 + 8, rotationDeg, { units: "feet" }).geometry.coordinates;
+    rotateMarkerRef.current.setLngLat(handlePos);
+  }, [poolCenter, rotationDeg, poolLen]);
+
+  useEffect(() => () => {
+    if (mapRef.current) { mapRef.current.remove(); mapRef.current = null; }
+  }, []);
+
+  if (!mapboxToken) {
+    return (
+      <div style={{background:"#0f172a",border:"1px dashed #334155",borderRadius:14,padding:20,textAlign:"center"}}>
+        <div style={{fontSize:32,marginBottom:8}}>🗺️</div>
+        <div style={{fontSize:14,fontWeight:700,color:"#e2e8f0",marginBottom:6}}>Add a Mapbox token to enable the Site Plan map</div>
+        <div style={{fontSize:12,color:"#64748b",marginBottom:14}}>Free at mapbox.com — grab a public access token (starts with "pk.") from your account's Tokens page.</div>
+        <div style={{display:"flex",gap:6,maxWidth:420,margin:"0 auto"}}>
+          <input type="password" value={tokenInput} onChange={e=>setTokenInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&saveMapboxToken()} placeholder="Paste Mapbox public token (pk....)" style={{flex:1,background:"#1e293b",border:"1px solid #334155",borderRadius:8,padding:"9px 12px",color:"#e2e8f0",fontSize:12,outline:"none"}}/>
+          <button onClick={saveMapboxToken} disabled={!tokenInput.trim()} style={{padding:"9px 16px",borderRadius:8,background:tokenInput.trim()?"rgba(6,182,212,0.15)":"#1e293b",border:"1px solid rgba(6,182,212,0.3)",color:tokenInput.trim()?"#06b6d4":"#64748b",fontSize:12,fontWeight:700,cursor:tokenInput.trim()?"pointer":"not-allowed"}}>Save</button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div style={{display:"flex",flexDirection:"column",gap:14}}>
-      <div style={{background:"linear-gradient(135deg,#1e3a5f,#1a3a2a)",border:"1px solid #1e293b",borderRadius:16,padding:16}}>
-        <div style={{fontSize:14,fontWeight:800,color:"#e2e8f0",marginBottom:4}}>🗺️ Yard & Landscape Planner</div>
-        <div style={{fontSize:12,color:"#94a3b8",lineHeight:1.6}}>Enter any address to load the real satellite view of that property from Google Maps. Then drag and drop design elements directly onto the aerial photo to plan the full outdoor space.</div>
+    <div style={{display:"flex",flexDirection:"column",gap:12}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,flexWrap:"wrap"}}>
+        <div style={{fontSize:12,color:"#64748b"}}>Search an address, then drag the ✛ handle to move the pool and the ↻ handle to rotate it.</div>
+        <button onClick={removeMapboxToken} style={{fontSize:11,color:"#64748b",background:"none",border:"none",cursor:"pointer",padding:"4px 2px"}}>Remove Mapbox token</button>
       </div>
 
-      <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
-        <div style={{fontSize:11,color:"#06b6d4",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:10}}>📍 Property Address - Loads Real Satellite View</div>
-        <div style={{display:"flex",gap:8}}>
-          <input type="text" placeholder="123 Main St, City, State" value={address} onChange={e => setAddress(e.target.value)} onKeyDown={e => e.key === "Enter" && handleSearch()} style={{flex:1,background:"#1e293b",border:"1px solid #334155",borderRadius:10,padding:"11px 14px",color:"#e2e8f0",fontSize:14,outline:"none"}} />
-          <button onClick={handleSearch} style={{padding:"11px 20px",borderRadius:10,background:"linear-gradient(135deg,#06b6d4,#0284c7)",border:"none",color:"white",fontWeight:800,fontSize:14,cursor:"pointer",flexShrink:0}}>Search</button>
+      {initError && (
+        <div style={{padding:"12px 14px",background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.25)",borderRadius:10}}>
+          <div style={{fontSize:12,color:"#ef4444",fontWeight:700,marginBottom:6}}>⚠️ {initError}</div>
+          <button onClick={removeMapboxToken} style={{padding:"7px 12px",borderRadius:8,background:"rgba(239,68,68,0.12)",border:"1px solid rgba(239,68,68,0.3)",color:"#ef4444",fontSize:12,fontWeight:700,cursor:"pointer"}}>Remove token & try again</button>
         </div>
-        {parcelData && <div style={{marginTop:8,fontSize:11,color:"#06b6d4"}}>✅ Loaded from Design tab: {parcelData.address} - APN {parcelData.parcel}</div>}
-        {!mapSrc && <div style={{marginTop:8,fontSize:11,color:"#64748b"}}>💡 Tip: Search the address on the Design tab first to also load parcel data and setback info</div>}
+      )}
+
+      <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+        {[
+          {label:"House / Front Setback (ft)", val:houseSetback, set:setHouseSetback},
+          {label:"Rear Setback (ft)", val:rearSetback, set:setRearSetback},
+          {label:"Side Setback (ft)", val:sideSetback, set:setSideSetback},
+        ].map(s=>(
+          <div key={s.label} style={{flex:"1 1 140px"}}>
+            <div style={{fontSize:10,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:4}}>{s.label}</div>
+            <input type="number" min="0" max="200" value={s.val} onChange={e=>s.set(Math.max(0, Number(e.target.value)||0))}
+              style={{width:"100%",background:"#1e293b",border:"1px solid #334155",borderRadius:8,padding:"8px 10px",color:"#e2e8f0",fontSize:13,outline:"none",boxSizing:"border-box"}}/>
+          </div>
+        ))}
       </div>
 
-      <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,overflow:"hidden"}}>
-        {!mapSrc ? (
-          <div style={{height:340,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:12,background:"#0f172a"}}>
-            <div style={{fontSize:48}}>🛰️</div>
-            <div style={{fontSize:14,fontWeight:700,color:"#94a3b8"}}>Enter an address above to load satellite view</div>
-            <div style={{fontSize:12,color:"#64748b"}}>Real Google Maps satellite imagery will appear here</div>
-          </div>
-        ) : (
-          <div>
-            <div style={{padding:"10px 14px",background:"#0f172a",display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,flexWrap:"wrap"}}>
-              <div style={{fontSize:12,fontWeight:700,color:"#22c55e",display:"flex",alignItems:"center",gap:6}}>🛰️ Google Maps Satellite - {address}</div>
-              <div style={{display:"flex",gap:8,alignItems:"center"}}>
-                <span style={{fontSize:11,color:"#64748b"}}>Zoom:</span>
-                <button onClick={()=>handleZoom(-1)} style={{width:36,height:36,borderRadius:8,border:"1px solid #334155",background:"#1e293b",color:"#e2e8f0",fontSize:18,fontWeight:700,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
-                <span style={{fontSize:12,fontWeight:700,color:"#06b6d4",minWidth:20,textAlign:"center"}}>{zoom}</span>
-                <button onClick={()=>handleZoom(1)} style={{width:36,height:36,borderRadius:8,border:"1px solid #334155",background:"#1e293b",color:"#e2e8f0",fontSize:18,fontWeight:700,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
-                <button onClick={()=>{ setMapSrc(null); setPlaced([]); setSelected(null); }} style={{padding:"8px 14px",minHeight:36,borderRadius:8,border:"1px solid rgba(239,68,68,0.25)",background:"rgba(239,68,68,0.08)",color:"#ef4444",fontSize:12,fontWeight:700,cursor:"pointer"}}>✕ Clear</button>
-              </div>
-            </div>
-            <div ref={mapContainerRef} style={{position:"relative",width:"100%",paddingBottom:"80%",background:"#0a0a0a"}}>
-              <img src={mapSrc} style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover"}} onLoad={()=>setMapLoading(false)} onError={()=>{setMapLoading(false);setMapError(true);}} alt="Satellite view" />
-              <YardOverlayCanvas placed={placed} setPlaced={setPlaced} selected={selected} setSelected={setSelected} showDims={showDims} />
-              {mapLoading && (<div style={{position:"absolute",inset:0,background:"rgba(11,17,32,0.7)",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:10}}><div style={{fontSize:32}}>🛰️</div><div style={{fontSize:13,color:"#06b6d4",fontWeight:600}}>Loading satellite imagery...</div></div>)}
-              {mapError && !mapLoading && (<div style={{position:"absolute",inset:0,background:"rgba(11,17,32,0.85)",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:6,textAlign:"center",padding:20}}><div style={{fontSize:32}}>⚠️</div><div style={{fontSize:13,color:"#ef4444",fontWeight:600}}>Couldn't load satellite imagery</div><div style={{fontSize:11,color:"#64748b"}}>Check the server's GOOGLE_MAPS_KEY, or try a different address</div></div>)}
-            </div>
-            <div style={{padding:"8px 14px",background:"#0f172a",fontSize:11,color:"#64748b",display:"flex",alignItems:"center",gap:6}}><span>📌</span> Drag elements from the palette below onto the map - Tap to select - Drag to reposition</div>
+      <div style={{position:"relative",borderRadius:14,overflow:"hidden",border:"2px solid #334155",boxShadow:"0 4px 24px rgba(0,0,0,0.5)"}}>
+        <div ref={mapContainerRef} style={{width:"100%",height:520}} />
+        {loadingParcel && (
+          <div style={{position:"absolute",bottom:10,left:10,background:"rgba(15,23,42,0.85)",borderRadius:8,padding:"6px 12px",fontSize:12,color:"#94a3b8",fontWeight:600}}>⏳ Loading parcel data...</div>
+        )}
+        {collision && parcelPolygon && (
+          <div style={{position:"absolute",top:10,left:10,right:10,background:"rgba(239,68,68,0.95)",borderRadius:8,padding:"8px 14px",fontSize:12,color:"white",fontWeight:700,textAlign:"center"}}>
+            ⚠️ Pool crosses the setback line or property boundary — drag or rotate it to clear
           </div>
         )}
       </div>
 
-      {mapSrc && (
-        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-          {[{label:`📏 Labels ${showDims?"On":"Off"}`, action:()=>setShowDims(p=>!p), active:showDims, color:"#22c55e"},{label:"🖨️ Print / Export", action:printMap, active:false, color:"#a78bfa"},{label:"🗑 Clear Elements", action:clearAll, active:false, color:"#ef4444"}].map(btn=>(
-            <button key={btn.label} onClick={btn.action} style={{padding:"7px 12px",borderRadius:8,border:`2px solid ${btn.active?btn.color+"88":"#334155"}`,background:btn.active?`${btn.color}18`:"#111827",color:btn.active?btn.color:"#64748b",fontSize:11,fontWeight:700,cursor:"pointer"}}>{btn.label}</button>
+      {parcelError && <div style={{padding:"10px 14px",background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.25)",borderRadius:10,fontSize:12,color:"#ef4444"}}>⚠️ {parcelError}</div>}
+
+      {parcelAttrs && (
+        <div style={{background:"rgba(6,182,212,0.08)",border:"1px solid rgba(6,182,212,0.2)",borderRadius:12,padding:14}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+            <div style={{fontSize:12,color:"#06b6d4",fontWeight:700}}>📍 Parcel Data</div>
+            <div style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:parcelSource==="regrid"?"rgba(34,197,94,0.15)":"rgba(245,158,11,0.15)",border:`1px solid ${parcelSource==="regrid"?"rgba(34,197,94,0.3)":"rgba(245,158,11,0.3)"}`,color:parcelSource==="regrid"?"#22c55e":"#f59e0b",fontWeight:700}}>{parcelSource==="regrid"?"🟢 Live Regrid Data":"🟡 Estimated"}</div>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+            {[{label:"Parcel / APN",val:parcelAttrs.parcel},{label:"Lot Size",val:parcelAttrs.lot_size},{label:"Lot Sq Ft",val:parcelAttrs.lot_sqft},{label:"Zoning",val:parcelAttrs.zoning}].map(r=>(
+              <div key={r.label} style={{background:"#1e293b",borderRadius:8,padding:"8px 10px"}}><div style={{fontSize:10,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em"}}>{r.label}</div><div style={{fontSize:13,fontWeight:700,color:"#e2e8f0",marginTop:2}}>{r.val}</div></div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div style={{fontSize:11,color:"#64748b"}}>{POOL_SHAPES.find(s=>s.id===poolShape)?.label || "Pool"} shown as its {poolLen}' x {poolWid}' bounding rectangle for setback/placement purposes. Setback data is for planning reference — always verify with your local building department before permit submission.</div>
+      <RegridKeyPanel />
+    </div>
+  );
+}
+
+// ─── ENGINEERING SCHEMATIC TAB ─────────────────────────────────────────────────
+// Adapter + config panel + export wiring around schematicEngine.js/SchematicView.
+// Real per-shape geometry now comes from poolShapes.js - Pool3D and
+// SitePlanMap still treat every shape as a plain rectangle (see their own
+// comments), but this tab no longer needs to.
+const SHALLOW_DEPTH_BY_PROFILE = { shallow: 3, standard: 3.5, deep: 3.5, diving: 4 };
+const DEEP_DEPTH_BY_PROFILE = { shallow: 4, standard: 5, deep: 6, diving: 8 };
+
+function poolStateToSchematicInput(shape, len, wid, depthId) {
+  const safeLen = Number.isFinite(len) && len > 0 ? len : 1;
+  const safeWid = Number.isFinite(wid) && wid > 0 ? wid : 1;
+  const polygon = buildPoolPolygon(shape, safeLen, safeWid);
+  const bounds = polygonBounds(polygon);
+
+  const shallowD = SHALLOW_DEPTH_BY_PROFILE[depthId] ?? 3.5;
+  const deepD = DEEP_DEPTH_BY_PROFILE[depthId] ?? 5;
+  // No stored shallow/deep zone boundary exists anywhere in the app (see
+  // schematicEngine.js's header) - assume the deep end occupies the back
+  // third of the pool's bounding length, a common simplification for a
+  // residential pool. This is just a rough rectangular slice, not clipped to
+  // the actual (possibly curved/concave) outline - computeMainDrainPosition
+  // already falls back to a point genuinely inside the real polygon if this
+  // naive slice's centroid lands outside it (e.g. past an oval's curved end).
+  const splitX = bounds.minX + (bounds.maxX - bounds.minX) * (2 / 3);
+  const depthZones = [
+    { id: "shallow", depthFt: shallowD, polygon: [{ x: bounds.minX, y: bounds.minY }, { x: splitX, y: bounds.minY }, { x: splitX, y: bounds.maxY }, { x: bounds.minX, y: bounds.maxY }] },
+    { id: "deep", depthFt: deepD, polygon: [{ x: splitX, y: bounds.minY }, { x: bounds.maxX, y: bounds.minY }, { x: bounds.maxX, y: bounds.maxY }, { x: splitX, y: bounds.maxY }] },
+  ];
+  // Auto-placed default (no manual placement UI yet) - to the side of the
+  // pool, centered along its bounding width, matching typical equipment pad
+  // placement.
+  const equipmentPad = { x: bounds.minX - 6, y: (bounds.minY + bounds.maxY) / 2 };
+  return { polygon, depthZones, equipmentPad };
+}
+
+function SchematicTab({ poolLen, poolWid, poolShape, depthId }) {
+  const [rebarSpacingIn, setRebarSpacingIn] = useState(12);
+  const [skimmerAreaSqFt, setSkimmerAreaSqFt] = useState(500);
+  const [returnMin, setReturnMin] = useState(8);
+  const [returnMax, setReturnMax] = useState(10);
+  const svgWrapRef = useRef(null);
+
+  const { polygon, depthZones, equipmentPad } = useMemo(
+    () => poolStateToSchematicInput(poolShape, poolLen, poolWid, depthId),
+    [poolShape, poolLen, poolWid, depthId]
+  );
+
+  const config = useMemo(() => ({
+    rebarSpacingFt: Math.max(0.1, (Number(rebarSpacingIn) || 12) / 12),
+    skimmerAreaSqFt: Math.max(50, Number(skimmerAreaSqFt) || 500),
+    minSkimmers: 1,
+    returnSpacing: { min: Math.min(returnMin, returnMax), max: Math.max(returnMin, returnMax) },
+    returnOffsetFt: 3,
+  }), [rebarSpacingIn, skimmerAreaSqFt, returnMin, returnMax]);
+
+  const schematic = useMemo(() => {
+    try { return generateSchematic({ polygon, depthZones, equipmentPad }, config); }
+    catch (err) { console.error("SchematicTab: generateSchematic failed", err); return null; }
+  }, [polygon, depthZones, equipmentPad, config]);
+
+  const totalRebarLinFt = useMemo(() => {
+    if (!schematic) return 0;
+    return Math.round(schematic.rebarGrid.lines.reduce((sum, l) => sum + Math.hypot(l.b.x - l.a.x, l.b.y - l.a.y) * l.count, 0));
+  }, [schematic]);
+
+  // Reuses the exact window.open + document.write + window.print() pattern
+  // generatePDF() already uses elsewhere in the app - no PDF library in this
+  // project, and the browser's own print-to-PDF handles it. The SVG is
+  // embedded as real vector markup (not rasterized to PNG) since this is a
+  // technical drawing people may need to zoom into.
+  const exportPdf = () => {
+    const svgEl = svgWrapRef.current?.querySelector("svg");
+    if (!svgEl) return;
+    const win = window.open("", "_blank");
+    if (!win) { alert("Please allow pop-ups for this site to export or print."); return; }
+    const date = new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+    win.document.write(`<!DOCTYPE html><html><head><title>Pool Craft Pro — Engineering Schematic</title>
+    <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:system-ui,sans-serif;background:#fff;color:#1e293b;padding:32px}
+    .header{margin-bottom:20px}.logo{font-size:18px;font-weight:800;color:#1a2f5e;font-family:Georgia,serif}
+    .meta{font-size:12px;color:#64748b;margin-top:4px}svg{width:100%;max-width:900px;border:1px solid #e2e8f0;border-radius:8px}
+    .config{display:flex;gap:20px;margin-top:16px;font-size:12px;color:#334155;flex-wrap:wrap}
+    .disclaimer{margin-top:20px;padding-top:14px;border-top:2px solid #e2e8f0;font-size:11px;color:#94a3b8;line-height:1.6}
+    @media print{body{padding:16px}}</style></head><body>
+    <div class="header"><div class="logo">POOL <span style="color:#c9a84c">CRAFT</span> PRO — Engineering Schematic</div><div class="meta">${poolLen}' x ${poolWid}' pool — generated ${date}</div></div>
+    ${svgEl.outerHTML}
+    <div class="config">
+      <div><strong>Rebar spacing:</strong> ${rebarSpacingIn}" o.c.</div>
+      <div><strong>Skimmer coverage:</strong> ${skimmerAreaSqFt} sq ft / skimmer</div>
+      <div><strong>Return spacing:</strong> ${config.returnSpacing.min}-${config.returnSpacing.max} ft</div>
+      <div><strong>Total rebar:</strong> ~${totalRebarLinFt.toLocaleString()} linear ft</div>
+    </div>
+    <div class="disclaimer">⚠️ Preliminary layout for planning purposes only. Verify rebar spacing, plumbing design, and equipment placement against local building code and a licensed engineer's stamped drawing before construction.</div>
+    <script>window.onload=()=>setTimeout(()=>window.print(),500);</script>
+    </body></html>`);
+    win.document.close();
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ background: "#111827", border: "1px solid #1e293b", borderRadius: 14, padding: 14 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: "#06b6d4", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 10 }}>⚙️ Schematic Settings</div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {[
+            { label: "Rebar Grid Spacing (in)", val: rebarSpacingIn, set: setRebarSpacingIn, min: 6, max: 24 },
+            { label: "Skimmer Coverage (sq ft)", val: skimmerAreaSqFt, set: setSkimmerAreaSqFt, min: 100, max: 1000 },
+            { label: "Return Spacing Min (ft)", val: returnMin, set: setReturnMin, min: 4, max: 20 },
+            { label: "Return Spacing Max (ft)", val: returnMax, set: setReturnMax, min: 4, max: 20 },
+          ].map((f) => (
+            <div key={f.label} style={{ flex: "1 1 150px" }}>
+              <div style={{ fontSize: 10, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>{f.label}</div>
+              <input type="number" min={f.min} max={f.max} value={f.val}
+                onChange={(e) => f.set(Math.max(f.min, Number(e.target.value) || f.min))}
+                style={{ width: "100%", background: "#1e293b", border: "1px solid #334155", borderRadius: 8, padding: "8px 10px", color: "#e2e8f0", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {schematic && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>
+          {[
+            { label: "Skimmers", val: schematic.skimmers.length },
+            { label: "Returns", val: schematic.returns.length },
+            { label: "Rebar (linear ft)", val: totalRebarLinFt.toLocaleString() },
+          ].map((s) => (
+            <div key={s.label} style={{ background: "#1e293b", borderRadius: 8, padding: "9px 10px", textAlign: "center" }}>
+              <div style={{ fontSize: 10, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>{s.label}</div>
+              <div style={{ fontSize: 17, fontWeight: 800, color: "#06b6d4" }}>{s.val}</div>
+            </div>
           ))}
         </div>
       )}
 
-      {selectedEl && (
-        <div style={{background:"#111827",border:`2px solid ${selectedEl.color}55`,borderRadius:12,padding:12}}>
-          <div style={{fontSize:11,color:"#94a3b8",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:10}}>{selectedEl.icon} {selectedEl.label} - Selected</div>
-          <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center"}}>
-            <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:11,color:"#64748b"}}>Width:</span>
-              <button onClick={()=>resizeSelected("w",-8)} style={{width:36,height:36,borderRadius:8,border:"1px solid #334155",background:"#1e293b",color:"#e2e8f0",fontSize:16,fontWeight:700,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
-              <span style={{fontSize:12,fontWeight:700,color:selectedEl.color,minWidth:30,textAlign:"center"}}>{selectedEl.w}px</span>
-              <button onClick={()=>resizeSelected("w",8)} style={{width:36,height:36,borderRadius:8,border:"1px solid #334155",background:"#1e293b",color:"#e2e8f0",fontSize:16,fontWeight:700,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
-            </div>
-            <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:11,color:"#64748b"}}>Height:</span>
-              <button onClick={()=>resizeSelected("h",-8)} style={{width:36,height:36,borderRadius:8,border:"1px solid #334155",background:"#1e293b",color:"#e2e8f0",fontSize:16,fontWeight:700,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
-              <span style={{fontSize:12,fontWeight:700,color:selectedEl.color,minWidth:30,textAlign:"center"}}>{selectedEl.h}px</span>
-              <button onClick={()=>resizeSelected("h",8)} style={{width:36,height:36,borderRadius:8,border:"1px solid #334155",background:"#1e293b",color:"#e2e8f0",fontSize:16,fontWeight:700,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
-            </div>
-            <button onClick={removeSelected} style={{padding:"8px 16px",minHeight:36,borderRadius:8,background:"rgba(239,68,68,0.12)",border:"1px solid rgba(239,68,68,0.25)",color:"#ef4444",fontSize:12,fontWeight:700,cursor:"pointer",marginLeft:"auto"}}>🗑 Remove</button>
-          </div>
-        </div>
-      )}
-
-      <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:16,overflow:"hidden"}}>
-        <div style={{display:"flex",overflowX:"auto",borderBottom:"1px solid #1e293b",background:"#0f172a"}}>
-          {YARD_CATS.map(cat => {
-            const catColor = YARD_ELEMENTS.find(e=>e.cat===cat)?.color || "#06b6d4";
-            const isActive = activeCat === cat;
-            return (<button key={cat} onClick={()=>setActiveCat(cat)} style={{flexShrink:0,padding:"10px 14px",border:"none",cursor:"pointer",background:"transparent",borderBottom:`3px solid ${isActive?catColor:"transparent"}`,color:isActive?catColor:"#64748b",fontSize:12,fontWeight:700,whiteSpace:"nowrap",transition:"all 0.15s"}}>{cat}</button>);
-          })}
-        </div>
-        <div style={{padding:12}}>
-          <div style={{fontSize:11,color:"#64748b",marginBottom:10}}>{mapSrc ? "Tap to add to the satellite map - Drag to position" : "Load a satellite map above first - Then tap to add elements"}</div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",gap:8}}>
-            {catItems.map(el => (
-              <button key={el.id} onClick={()=>addElement(el)} style={{padding:"10px 12px",borderRadius:10,border:`1.5px solid ${el.color}44`,background:`${el.color}11`,cursor:"pointer",textAlign:"left",transition:"all 0.15s",display:"flex",alignItems:"center",gap:10,opacity:mapSrc?1:0.5}}>
-                <span style={{fontSize:22,flexShrink:0}}>{el.icon}</span><div><div style={{fontSize:12,fontWeight:700,color:el.color,lineHeight:1.2}}>{el.label}</div></div>
-              </button>
-            ))}
-          </div>
-        </div>
+      <div ref={svgWrapRef}>
+        <SchematicView polygon={polygon} schematic={schematic} equipmentPad={equipmentPad} />
       </div>
 
-      {placed.length > 0 && (
-        <div style={{background:"rgba(6,182,212,0.06)",border:"1px solid rgba(6,182,212,0.2)",borderRadius:12,padding:12}}>
-          <div style={{fontSize:11,color:"#06b6d4",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:8}}>On Your Map ({placed.length} elements)</div>
-          <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-            {placed.map(el => (<button key={el.id} onClick={()=>setSelected(el.id)} style={{padding:"4px 10px",borderRadius:20,border:`1px solid ${selected===el.id?el.color+"99":"rgba(6,182,212,0.2)"}`,background:selected===el.id?`${el.color}22`:"rgba(6,182,212,0.08)",color:selected===el.id?el.color:"#64748b",fontSize:11,fontWeight:600,cursor:"pointer"}}>{el.icon} {el.label}</button>))}
+      <button onClick={exportPdf} disabled={!schematic}
+        style={{ padding: "12px", borderRadius: 10, background: schematic ? "linear-gradient(135deg,#06b6d4,#0284c7)" : "#1e293b", border: "none", color: schematic ? "white" : "#64748b", fontWeight: 700, fontSize: 13, cursor: schematic ? "pointer" : "not-allowed" }}>
+        🖨️ Export as PDF
+      </button>
+
+      <div style={{ fontSize: 11, color: "#64748b" }}>
+        {POOL_SHAPES.find((s) => s.id === poolShape)?.label || "Pool"} shape shown at {poolLen}' x {poolWid}'.{" "}
+        {poolShape === "freeform"
+          ? "Freeform pools are custom-designed in real life - this is a generic illustrative outline, not a trace of any specific design."
+          : "A standardized approximation of this shape family - actual curves/angles on your project may differ."}
+      </div>
+    </div>
+  );
+}
+
+// ─── HOW IT WORKS — plain-English tour, visible to everyone (paying or not) ────
+const HOW_IT_WORKS_SECTIONS = [
+  { icon:"🏊", title:"Design your pool in minutes", body:"Pick a shape, punch in the length and width, choose a finish and water color, and watch an instant 3D model appear. No CAD software, no drafting wait." },
+  { icon:"📸", title:"See it in your actual backyard", body:"Upload a photo of the real yard and FLUX AI renders a photorealistic pool right into it — correct lighting, shadows, and perspective. Homeowners stop having to imagine it." },
+  { icon:"🗺️", title:"Know it'll pass setback compliance before you dig", body:"Search the real address, pull the real parcel boundary, and drag the pool into place on a true-to-scale map. If it crosses a setback line, it turns red — before permits, not after." },
+  { icon:"📐", title:"Get a real engineering layout, not a guess", body:"Rebar grid spacing, skimmer and return placement, main drain location, plumbing runs — generated automatically from the pool's actual dimensions, not eyeballed." },
+  { icon:"📊", title:"Every material and cost, calculated for you", body:"Excavation, gunite, rebar, plumbing, tile, plaster bags — all computed from the pool's real geometry the moment you set its dimensions. No spreadsheets, no manual math." },
+  { icon:"💰", title:"A cost estimate and a client-ready quote, instantly", body:"See a full cost breakdown by category, adjust it to your local market, then generate a polished proposal or formal quote to send — the same numbers, no re-typing." },
+  { icon:"⚙️", title:"Equipment sized correctly, every time", body:"Pump, filter, heater, and automation recommendations sized to your pool's actual gallon count, across Pentair, Hayward, or Jandy." },
+  { icon:"🏗️", title:"A build timeline and post-sale tracker", body:"An 8-phase schedule estimate for planning conversations, then a build tracker to keep the client updated once the contract is signed." },
+];
+
+function HowItWorksTab({ onSubscribeClick }) {
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:14}}>
+      <div style={{background:"linear-gradient(135deg,rgba(124,58,237,0.18),rgba(6,182,212,0.1))",border:"1px solid rgba(124,58,237,0.3)",borderRadius:16,padding:20}}>
+        <div style={{fontSize:11,color:"#a78bfa",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>✨ What Pool Craft Pro Actually Does</div>
+        <div style={{fontSize:18,fontWeight:800,color:"#e2e8f0",lineHeight:1.4}}>Design, render, engineer, price, and quote a pool project — all in one place, with the calculations already done for you.</div>
+        <div style={{fontSize:13,color:"#94a3b8",marginTop:10,lineHeight:1.6}}>Most pool builders juggle a separate design tool, a separate estimating spreadsheet, and a separate way to send quotes. This app replaces all three — so a conversation with a customer can go from "what if we put a pool here?" to a real rendering, a real cost estimate, and a real quote, in one sitting.</div>
+      </div>
+
+      {HOW_IT_WORKS_SECTIONS.map((s,i)=>(
+        <div key={s.title} style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:16,display:"flex",gap:14,alignItems:"flex-start"}}>
+          <div style={{fontSize:28,flexShrink:0,width:36,textAlign:"center"}}>{s.icon}</div>
+          <div>
+            <div style={{fontSize:14,fontWeight:700,color:"#e2e8f0",marginBottom:4}}>{i+1}. {s.title}</div>
+            <div style={{fontSize:13,color:"#94a3b8",lineHeight:1.6}}>{s.body}</div>
           </div>
         </div>
-      )}
+      ))}
+
+      <div style={{background:"linear-gradient(135deg,rgba(34,197,94,0.12),rgba(6,182,212,0.08))",border:"1px solid rgba(34,197,94,0.3)",borderRadius:16,padding:20,textAlign:"center"}}>
+        <div style={{fontSize:15,fontWeight:800,color:"#22c55e",marginBottom:6}}>Try every tab above free right now — no card required</div>
+        <div style={{fontSize:12,color:"#94a3b8",marginBottom:14,lineHeight:1.6}}>Design, site planning, materials, cost estimating, quotes, and the engineering schematic are all open to explore. A subscription unlocks AI photorealistic rendering of your actual design.</div>
+        <button onClick={onSubscribeClick} style={{padding:"12px 24px",borderRadius:10,background:"linear-gradient(135deg,#7c3aed,#5b21b6)",border:"none",color:"white",fontWeight:700,fontSize:14,cursor:"pointer"}}>
+          See Plans & Pricing →
+        </button>
+      </div>
     </div>
   );
 }
@@ -2359,6 +2564,15 @@ function SplashScreen({ onDone }) {
 }
 
 // ─── COST ESTIMATOR ────────────────────────────────────────────────────────────
+// Sq ft of interior surface one bag of each finish material typically covers -
+// pre-fills the plaster calculator's coverage field, still user-editable.
+const PLASTER_COVERAGE_PRESETS = { plaster: 32, quartz: 22, pebble: 18 };
+const PLASTER_FINISH_OPTIONS = [
+  { id: "plaster", label: "White Plaster" },
+  { id: "quartz", label: "Quartz" },
+  { id: "pebble", label: "Pebble" },
+];
+
 const COST_RANGES = {
   plaster: { low:5, high:8, unit:"sq ft", label:"Plaster Finish" },
   pebble: { low:8, high:14, unit:"sq ft", label:"Pebble Tec Finish" },
@@ -2397,7 +2611,7 @@ const COST_RANGES = {
 };
 function fmt(n) { if (!Number.isFinite(n)) return "—"; if (n >= 1000) return `$${(n/1000).toFixed(n%1000===0?0:1)}k`; return `$${n.toLocaleString()}`; }
 
-function computeCostItems({ shape, len, wid, depthId, finishId, entries, hardscapes, extras, localRates }) {
+function computeCostItems({ shape, len, wid, depthId, finishId, entries, hardscapes, extras, localRates, plasterConfig }) {
   len = Number.isFinite(len) && len > 0 ? len : 1;
   wid = Number.isFinite(wid) && wid > 0 ? wid : 1;
   const sf = {rectangle:1,oval:0.79,lshape:0.75,freeform:0.85,lap:1,greek:1,figure8:0.78}[shape]||1;
@@ -2416,7 +2630,26 @@ function computeCostItems({ shape, len, wid, depthId, finishId, entries, hardsca
   const gunR = COST_RANGES.gunite;
   items.push({ cat:"Pool Structure", label:"Gunite / Shotcrete", qty:guniteCY, unit:"cu yd", low:gunR.low*guniteCY*mult, high:gunR.high*guniteCY*mult });
   const finR = COST_RANGES[finishId] || COST_RANGES.plaster;
-  items.push({ cat:"Pool Structure", label:finR.label, qty:finishSF, unit:"sq ft", low:finR.low*finishSF*mult, high:finR.high*finishSF*mult });
+  // If the plaster bag calculator (Materials tab) has a real cost/bag entered,
+  // use that precise bag-based total instead of the generic $/sqft range -
+  // same "Pool Structure" line item, just a more accurate source for its
+  // cost once the user has supplied real supplier pricing. Not applying the
+  // regional cost multiplier here: that multiplier scales generic baseline
+  // estimates to local rates, but a user-entered actual bag price is already
+  // the real local number, so re-multiplying it would double-adjust it.
+  const bagCost = Number(plasterConfig?.costPerBag);
+  let finishLabel = finR.label, finishLow, finishHigh;
+  if (bagCost > 0) {
+    const coverage = Number(plasterConfig.coveragePerBag) > 0 ? Number(plasterConfig.coveragePerBag) : 32;
+    const waste = Number(plasterConfig.wasteFactor) || 0;
+    const bagsNeeded = Math.ceil((finishSF * (1 + waste / 100)) / coverage);
+    const totalCost = bagsNeeded * bagCost;
+    finishLabel = `${finR.label} (${bagsNeeded} bags)`;
+    finishLow = totalCost; finishHigh = totalCost;
+  } else {
+    finishLow = finR.low*finishSF*mult; finishHigh = finR.high*finishSF*mult;
+  }
+  items.push({ cat:"Pool Structure", label:finishLabel, qty:finishSF, unit:"sq ft", low:finishLow, high:finishHigh });
   items.push({ cat:"Pool Structure", label:"Plumbing, Steel & Misc", qty:1, unit:"allowance", low:4000*mult, high:9000*mult });
 
   Object.keys(entries).forEach(id => { const r = COST_RANGES[id]; if (r) items.push({ cat:"Entry & Features", label:r.label, qty:1, unit:"unit", low:r.low*mult, high:r.high*mult }); });
@@ -2443,12 +2676,12 @@ function computeCostItems({ shape, len, wid, depthId, finishId, entries, hardsca
   return { items, totalLow, totalHigh };
 }
 
-function CostEstimator({ shape, len, wid, depthId, finishId, colorId, entries, hardscapes, extras, localRates, setLocalRates, projectName, clientName, materials }) {
+function CostEstimator({ shape, len, wid, depthId, finishId, colorId, entries, hardscapes, extras, localRates, setLocalRates, projectName, clientName, materials, plasterConfig, financingLinks=[] }) {
   const [expanded, setExpanded] = useState({});
   const [showLocalRates, setShowLocalRates] = useState(false);
   const toggleExp = (k) => setExpanded(p=>({...p,[k]:!p[k]}));
 
-  const { items, totalLow, totalHigh } = computeCostItems({ shape, len, wid, depthId, finishId, entries, hardscapes, extras, localRates });
+  const { items, totalLow, totalHigh } = computeCostItems({ shape, len, wid, depthId, finishId, entries, hardscapes, extras, localRates, plasterConfig });
   const sf = {rectangle:1,oval:0.79,lshape:0.75,freeform:0.85,lap:1,greek:1,figure8:0.78}[shape]||1;
   const mult = localRates?.multiplier || 1;
   const laborMult = localRates?.laborMultiplier || 1;
@@ -2495,6 +2728,20 @@ function CostEstimator({ shape, len, wid, depthId, finishId, colorId, entries, h
         <div style={{fontSize:36,fontWeight:900,color:"#06b6d4",letterSpacing:"-1px"}}>{fmt(totalLow)} – {fmt(totalHigh)}</div>
         <div style={{fontSize:12,color:"#64748b",marginTop:6}}>{len}'x{wid}' {POOL_SHAPES.find(s=>s.id===shape)?.label} - {POOL_FINISHES.find(f=>f.id===finishId)?.label} finish - {Object.keys(entries).length} features</div>
       </div>
+
+      {financingLinks.length > 0 && (
+        <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
+          <div style={{fontSize:12,fontWeight:700,color:"#22c55e",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:10}}>💳 Estimate Your Financing</div>
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            {financingLinks.map((f,i)=>(
+              <a key={i} href={f.url} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 14px",borderRadius:10,background:"rgba(34,197,94,0.08)",border:"1px solid rgba(34,197,94,0.25)",textDecoration:"none"}}>
+                <span style={{fontSize:13,fontWeight:700,color:"#22c55e"}}>{f.name}</span>
+                <span style={{fontSize:16,color:"#22c55e"}}>→</span>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
 
       <button onClick={()=>generateProposal({ projectName, clientName, shape, len, wid, depthId, finishId, colorId, entries, hardscapes, materials, items, totalLow, totalHigh })}
         style={{width:"100%",padding:"15px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#7c3aed,#5b21b6)",color:"white",fontWeight:800,fontSize:14,cursor:"pointer",boxShadow:"0 4px 20px rgba(124,58,237,0.3)",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
@@ -2647,7 +2894,7 @@ function OnboardingModal({ onComplete, userMode, setUserMode, setLen, setWid, se
           <div style={{fontSize:13,color:"#94a3b8",lineHeight:1.7}}>The most complete pool design tool ever built for contractors and homeowners. Design, estimate, render, and close — all in one place.</div>
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:4}}>
-          {[{icon:"⚡",label:"AI Renderings",sub:"Grok Aurora"},{icon:"📊",label:"Materials Calc",sub:"Real engineering math"},{icon:"🗺️",label:"Yard Planner",sub:"Drag & drop"},{icon:"💰",label:"Cost Estimator",sub:"Local market rates"},{icon:"📄",label:"Client Proposals",sub:"Close the deal"},{icon:"🏗️",label:"Build Tracker",sub:"Post-sale tool"}].map(f=>(
+          {[{icon:"⚡",label:"AI Renderings",sub:"FLUX (fal.ai)"},{icon:"📊",label:"Materials Calc",sub:"Real engineering math"},{icon:"🗺️",label:"Site Plan",sub:"Scale-accurate map"},{icon:"💰",label:"Cost Estimator",sub:"Local market rates"},{icon:"📄",label:"Client Proposals",sub:"Close the deal"},{icon:"🏗️",label:"Build Tracker",sub:"Post-sale tool"}].map(f=>(
             <div key={f.label} style={{background:"rgba(201,168,76,0.08)",border:"1px solid rgba(201,168,76,0.18)",borderRadius:10,padding:"10px 12px"}}>
               <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}><span style={{fontSize:18}}>{f.icon}</span><span style={{fontSize:12,fontWeight:700,color:"#e2e8f0"}}>{f.label}</span></div>
               <div style={{fontSize:10,color:"#64748b",paddingLeft:26}}>{f.sub}</div>
@@ -2736,7 +2983,7 @@ function OnboardingModal({ onComplete, userMode, setUserMode, setLen, setWid, se
         </div>
         <div style={{background:"#0f172a",border:"1px solid #1e293b",borderRadius:12,padding:14,width:"100%"}}>
           <div style={{fontSize:12,fontWeight:700,color:"#94a3b8",marginBottom:10}}>Quick tips to get started:</div>
-          {[{icon:"🏊",tip:"Use the 3D preview on the Design tab — drag to rotate it"},{icon:"⚡",tip:"Try Quick Render — stand in a backyard and render your pool live"},{icon:"💰",tip:"Cost Est. tab builds a client proposal with one tap"},{icon:"📂",tip:"Save projects with client names using the 💾 button above"},{icon:"🔧",tip:"Add your xAI key in Settings to unlock AI photo rendering"}].map((t,i)=>(
+          {[{icon:"🏊",tip:"Use the 3D preview on the Design tab — drag to rotate it"},{icon:"⚡",tip:"Try Quick Render — stand in a backyard and render your pool live"},{icon:"💰",tip:"Cost Est. tab builds a client proposal with one tap"},{icon:"📂",tip:"Save projects with client names using the 💾 button above"},{icon:"🔧",tip:"Subscribe to a Basic or Pro plan in Settings to unlock AI photo rendering"}].map((t,i)=>(
             <div key={i} style={{display:"flex",gap:10,marginBottom:8,alignItems:"flex-start"}}>
               <span style={{fontSize:16,flexShrink:0}}>{t.icon}</span>
               <span style={{fontSize:12,color:"#64748b",lineHeight:1.5}}>{t.tip}</span>
@@ -3188,21 +3435,168 @@ function generateProposal({ projectName, clientName, shape, len, wid, depthId, f
   win.document.close();
 }
 
+// ─── TEAM MANAGEMENT ────────────────────────────────────────────────────────
+// Real multi-login Team access (not just a bigger cap on one account): the
+// Team plan owner invites teammates by email; each teammate gets their own
+// normal login, and useAuth's teamMembership check (in PoolCraftPro) is what
+// actually grants them access once they sign in with a matching invite.
+// Requires TEAM_SETUP_SQL to have been run in the user's own Supabase project
+// - untested against a live database from this environment, so it fails soft
+// (dbError banner + the SQL to paste in) rather than crashing if the tables
+// don't exist yet.
+async function ensureTeamRow(sb, ownerId, seats) {
+  const { data: existing, error: selErr } = await sb.from("teams").select("id, seats").eq("owner_id", ownerId).maybeSingle();
+  if (selErr) throw selErr;
+  if (existing) {
+    if (existing.seats !== seats) await sb.from("teams").update({ seats }).eq("id", existing.id);
+    return existing;
+  }
+  const { data: created, error: createErr } = await sb.from("teams").insert({ owner_id: ownerId, seats }).select("id, seats").single();
+  if (createErr) throw createErr;
+  return created;
+}
+
+function TeamManagementPanel({ user, ownPlan, seats, teamMembership }) {
+  const isOwner = ownPlan === "team";
+  const [members, setMembers] = useState([]);
+  const [teamId, setTeamId] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [dbError, setDbError] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteError, setInviteError] = useState(null);
+  const [showSql, setShowSql] = useState(false);
+
+  const loadTeam = useCallback(async () => {
+    const sb = await loadSupabase();
+    if (!sb) { setLoading(false); return; }
+    try {
+      const team = await ensureTeamRow(sb, user.id, seats);
+      setTeamId(team.id);
+      const { data: memberRows, error: memErr } = await sb.from("team_members").select("*").eq("team_id", team.id).order("invited_at");
+      if (memErr) throw memErr;
+      setMembers(memberRows || []);
+      setDbError(false);
+    } catch (e) {
+      console.error("TeamManagementPanel: failed to load team", e);
+      setDbError(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id, seats]);
+
+  useEffect(() => {
+    (async () => {
+      if (!isOwner || !user) { setLoading(false); return; }
+      await loadTeam();
+    })();
+  }, [isOwner, user, loadTeam]);
+
+  const invite = async () => {
+    const email = inviteEmail.trim().toLowerCase();
+    if (!email || !teamId) return;
+    if (members.length >= seats) { setInviteError(`You've reached your ${seats}-seat limit. Add more seats in the plan above.`); return; }
+    setInviteError(null);
+    const sb = await loadSupabase();
+    const { error } = await sb.from("team_members").insert({ team_id: teamId, email, status: "pending" });
+    if (error) { setInviteError(error.message.includes("duplicate") ? "Already invited." : error.message); return; }
+    setInviteEmail("");
+    loadTeam();
+  };
+
+  const removeMember = async (id) => {
+    const sb = await loadSupabase();
+    await sb.from("team_members").delete().eq("id", id);
+    setMembers((prev) => prev.filter((m) => m.id !== id));
+  };
+
+  const copySql = () => { try { navigator.clipboard.writeText(TEAM_SETUP_SQL); } catch {} };
+
+  if (!isOwner && teamMembership) {
+    return (
+      <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
+        <div style={{fontSize:12,fontWeight:700,color:"#22c55e",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:6}}>👥 Team Membership</div>
+        <div style={{fontSize:12,color:"#94a3b8",lineHeight:1.6}}>✅ You're an active member of a Team plan — you get {PLANS.team.dailyLimitPerSeat} renders/day under your own account.</div>
+      </div>
+    );
+  }
+
+  if (!isOwner) return null;
+
+  const activeCount = members.filter((m) => m.status === "active").length;
+  const pendingCount = members.filter((m) => m.status === "pending").length;
+
+  return (
+    <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
+      <div style={{fontSize:12,fontWeight:700,color:"#22c55e",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4}}>👥 Team Management</div>
+      <div style={{fontSize:11,color:"#64748b",marginBottom:12}}>{seats}-seat plan · {activeCount} active{pendingCount>0?`, ${pendingCount} pending`:""}. Invited teammates sign up (or log in) normally with the email you invite — they don't need their own subscription.</div>
+
+      {dbError && (
+        <div style={{marginBottom:12}}>
+          <div style={{padding:"10px 12px",background:"rgba(245,158,11,0.08)",border:"1px solid rgba(245,158,11,0.25)",borderRadius:8,fontSize:12,color:"#f59e0b",marginBottom:8}}>⚠️ Team tables aren't set up in your Supabase project yet. Paste this into the same SQL editor you used for Cloud Sync, then reopen this tab.</div>
+          <button onClick={()=>setShowSql(p=>!p)} style={{fontSize:11,color:"#22c55e",background:"none",border:"none",cursor:"pointer",padding:0,marginBottom:showSql?8:0}}>{showSql?"▲ Hide setup code":"▼ Show setup SQL code"}</button>
+          {showSql && (
+            <div>
+              <pre style={{background:"#0a0e1a",border:"1px solid #1e293b",borderRadius:8,padding:10,fontSize:10,color:"#86efac",overflowX:"auto",whiteSpace:"pre-wrap",margin:0}}>{TEAM_SETUP_SQL}</pre>
+              <button onClick={copySql} style={{marginTop:6,padding:"5px 10px",borderRadius:6,background:"rgba(34,197,94,0.1)",border:"1px solid rgba(34,197,94,0.25)",color:"#22c55e",fontSize:11,fontWeight:700,cursor:"pointer"}}>📋 Copy SQL</button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {!dbError && !loading && (
+        <>
+          {members.length > 0 && (
+            <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:10}}>
+              {members.map((m) => (
+                <div key={m.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,padding:"8px 12px",background:"#1e293b",borderRadius:8}}>
+                  <div style={{minWidth:0}}>
+                    <div style={{fontSize:12,fontWeight:700,color:"#e2e8f0",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.email}</div>
+                    <div style={{fontSize:10,color:m.status==="active"?"#22c55e":"#f59e0b"}}>{m.status==="active"?"✅ Active":"⏳ Pending — waiting for them to log in"}</div>
+                  </div>
+                  <button onClick={()=>removeMember(m.id)} style={{padding:"6px 10px",borderRadius:6,background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",fontSize:11,fontWeight:700,cursor:"pointer",flexShrink:0}}>✕</button>
+                </div>
+              ))}
+            </div>
+          )}
+          <div style={{display:"flex",gap:6}}>
+            <input type="email" value={inviteEmail} onChange={e=>setInviteEmail(e.target.value)} onKeyDown={e=>e.key==="Enter"&&invite()} placeholder="teammate@email.com"
+              style={{flex:1,background:"#1e293b",border:"1px solid #334155",borderRadius:8,padding:"9px 10px",color:"#e2e8f0",fontSize:12,outline:"none"}}/>
+            <button onClick={invite} disabled={!inviteEmail.trim()||members.length>=seats}
+              style={{padding:"9px 14px",borderRadius:8,background:inviteEmail.trim()&&members.length<seats?"rgba(34,197,94,0.15)":"#1e293b",border:"1px solid rgba(34,197,94,0.3)",color:inviteEmail.trim()&&members.length<seats?"#22c55e":"#64748b",fontSize:12,fontWeight:700,cursor:inviteEmail.trim()&&members.length<seats?"pointer":"not-allowed",flexShrink:0}}>Invite</button>
+          </div>
+          {inviteError && <div style={{marginTop:6,fontSize:11,color:"#ef4444"}}>{inviteError}</div>}
+        </>
+      )}
+    </div>
+  );
+}
+
 // ─── SETTINGS SCREEN ─────────────────────────────────────────────────────────
 // One place for all API keys, affiliate tags, and app preferences.
 // Replaces the scattered key panels across tabs.
-function SettingsScreen({ userMode, setUserMode, onSwitchMode, plan, user }) {
+function SettingsScreen({ userMode, setUserMode, onSwitchMode, plan, ownPlan, seats, teamMembership, user, financingLinks, setFinancingLinks, reviewLinks, setReviewLinks }) {
+  const [newFinancingName, setNewFinancingName] = useState("");
+  const [newFinancingUrl, setNewFinancingUrl] = useState("");
+  const addFinancingLink = () => {
+    const name = newFinancingName.trim(), url = newFinancingUrl.trim();
+    if (!name || !url) return;
+    const withProtocol = /^https?:\/\//i.test(url) ? url : `https://${url}`;
+    setFinancingLinks(prev => [...prev, { name, url: withProtocol }]);
+    setNewFinancingName(""); setNewFinancingUrl("");
+  };
+  const removeFinancingLink = (i) => setFinancingLinks(prev => prev.filter((_, idx) => idx !== i));
   const [billingInterval, setBillingInterval] = useState("month");
   const [billingLoading, setBillingLoading] = useState(false);
   const [billingError, setBillingError] = useState(null);
+  const [teamSeats, setTeamSeats] = useState(PLANS.team.minSeats);
 
-  const startCheckout = async (planId) => {
+  const startCheckout = async (planId, seats) => {
     if (!user) return;
     setBillingLoading(true); setBillingError(null);
     try {
       const resp = await fetch("/api/create-checkout-session", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: planId, interval: billingInterval, userId: user.id, email: user.email, customerId: user.user_metadata?.stripe_customer_id }),
+        body: JSON.stringify({ plan: planId, interval: billingInterval, userId: user.id, email: user.email, customerId: user.user_metadata?.stripe_customer_id, seats }),
       });
       const data = await resp.json();
       if (!resp.ok) throw new Error(data?.error || `Error ${resp.status}`);
@@ -3229,6 +3623,7 @@ function SettingsScreen({ userMode, setUserMode, onSwitchMode, plan, user }) {
   };
 
   const [regridKey, setRegridKey] = useState(()=>{ try{return localStorage.getItem("pc_regrid_key")||"";}catch{return "";} });
+  const [mapboxToken, setMapboxToken] = useState(()=>{ try{return localStorage.getItem("pc_mapbox_token")||"";}catch{return "";} });
   const supabaseCfg = getSupabaseConfig();
   const [sbUrl, setSbUrl] = useState(supabaseCfg.url);
   const [sbKey, setSbKey] = useState(supabaseCfg.key?"●●●●●●●●":"");
@@ -3286,8 +3681,8 @@ function SettingsScreen({ userMode, setUserMode, onSwitchMode, plan, user }) {
 
       {/* AI Rendering / Billing */}
       <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
-        <div style={{fontSize:12,fontWeight:700,color:"#a78bfa",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4}}>🚀 Grok Aurora — AI Pool Rendering</div>
-        <div style={{fontSize:11,color:"#64748b",marginBottom:12}}>Every plan runs on a shared Grok Aurora key configured on the server — just choose a plan below.</div>
+        <div style={{fontSize:12,fontWeight:700,color:"#a78bfa",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4}}>🚀 FLUX — AI Pool Rendering</div>
+        <div style={{fontSize:11,color:"#64748b",marginBottom:12}}>Every plan runs on a shared fal.ai key configured on the server — just choose a plan below.</div>
 
         {!user ? (
           <div style={{padding:"14px",borderRadius:10,background:"rgba(6,182,212,0.06)",border:"1px solid rgba(6,182,212,0.2)",fontSize:12,color:"#94a3b8"}}>
@@ -3298,8 +3693,8 @@ function SettingsScreen({ userMode, setUserMode, onSwitchMode, plan, user }) {
             {plan !== "none" && (
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,padding:"12px 14px",borderRadius:10,background:"rgba(34,197,94,0.08)",border:"1px solid rgba(34,197,94,0.25)",marginBottom:14}}>
                 <div>
-                  <div style={{fontSize:13,fontWeight:800,color:"#22c55e"}}>✅ {plan==="pro"?"Pro":"Basic"} plan active</div>
-                  <div style={{fontSize:11,color:"#64748b",marginTop:2}}>{plan==="pro"?25:10} renders / day</div>
+                  <div style={{fontSize:13,fontWeight:800,color:"#22c55e"}}>✅ {PLANS[plan]?.name} plan active{plan==="team"?` · ${seats} seats`:""}</div>
+                  <div style={{fontSize:11,color:"#64748b",marginTop:2}}>{plan==="team"?PLANS.team.dailyLimitPerSeat*seats:PLANS[plan]?.dailyLimit} renders / day</div>
                 </div>
                 <button onClick={openBillingPortal} disabled={billingLoading} style={{padding:"9px 14px",borderRadius:8,background:"rgba(6,182,212,0.12)",border:"1px solid rgba(6,182,212,0.3)",color:"#06b6d4",fontWeight:700,fontSize:12,cursor:billingLoading?"not-allowed":"pointer",flexShrink:0}}>
                   {billingLoading?"...":"Manage Billing"}
@@ -3313,16 +3708,16 @@ function SettingsScreen({ userMode, setUserMode, onSwitchMode, plan, user }) {
               ))}
             </div>
 
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-              {[{id:"basic",label:"Basic",renders:10,month:29.99,year:299},{id:"pro",label:"Pro",renders:25,month:49.99,year:499}].map(p=>{
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
+              {[{id:"basic",renders:PLANS.basic.dailyLimit},{id:"pro",renders:PLANS.pro.dailyLimit}].map(p=>{
                 const isCurrent = plan === p.id;
-                const price = billingInterval === "year" ? p.year : p.month;
+                const price = billingInterval === "year" ? PLANS[p.id].year : PLANS[p.id].month;
                 return (
                   <div key={p.id} style={{padding:"14px",borderRadius:10,border:`2px solid ${isCurrent?"#22c55e":"#1e293b"}`,background:isCurrent?"rgba(34,197,94,0.06)":"#0f172a"}}>
-                    <div style={{fontSize:13,fontWeight:800,color:isCurrent?"#22c55e":"#e2e8f0"}}>{p.label}{isCurrent?" ✓":""}</div>
+                    <div style={{fontSize:13,fontWeight:800,color:isCurrent?"#22c55e":"#e2e8f0"}}>{PLANS[p.id].name}{isCurrent?" ✓":""}</div>
                     <div style={{fontSize:20,fontWeight:800,color:"#e2e8f0",marginTop:4}}>${price}<span style={{fontSize:11,color:"#64748b",fontWeight:400}}>/{billingInterval==="year"?"yr":"mo"}</span></div>
                     <div style={{fontSize:11,color:"#64748b",marginTop:2,marginBottom:10}}>{p.renders} renders / day</div>
-                    <button onClick={()=>startCheckout(p.id)} disabled={isCurrent||billingLoading}
+                    <button onClick={()=>startCheckout(p.id, 1)} disabled={isCurrent||billingLoading}
                       style={{width:"100%",padding:"9px",borderRadius:8,background:isCurrent?"#1e293b":"linear-gradient(135deg,#7c3aed,#5b21b6)",border:"none",color:isCurrent?"#64748b":"white",fontWeight:700,fontSize:12,cursor:isCurrent||billingLoading?"not-allowed":"pointer"}}>
                       {isCurrent?"Current Plan":billingLoading?"...":"Subscribe"}
                     </button>
@@ -3331,17 +3726,50 @@ function SettingsScreen({ userMode, setUserMode, onSwitchMode, plan, user }) {
               })}
             </div>
 
+            {/* Team - seat-based, for multi-person contractor shops. Billing only for
+                now: this purchases a bigger daily render cap on the one account that
+                subscribes, not separate logins for each teammate - there's no
+                multi-user/team-account system in the app yet. */}
+            <div style={{padding:"14px",borderRadius:10,border:`2px solid ${plan==="team"?"#22c55e":"#1e293b"}`,background:plan==="team"?"rgba(34,197,94,0.06)":"#0f172a"}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,flexWrap:"wrap"}}>
+                <div>
+                  <div style={{fontSize:13,fontWeight:800,color:plan==="team"?"#22c55e":"#e2e8f0"}}>👥 {PLANS.team.name} — for contractor shops{plan==="team"?" ✓":""}</div>
+                  <div style={{fontSize:11,color:"#64748b",marginTop:2}}>${billingInterval==="year"?PLANS.team.year:PLANS.team.month}/seat/{billingInterval==="year"?"yr":"mo"} · {PLANS.team.dailyLimitPerSeat} renders/day per seat</div>
+                </div>
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <span style={{fontSize:11,color:"#64748b"}}>Seats</span>
+                  <input type="number" min={PLANS.team.minSeats} max={PLANS.team.maxSeats} value={teamSeats}
+                    onChange={e=>setTeamSeats(Math.min(PLANS.team.maxSeats,Math.max(PLANS.team.minSeats,Number(e.target.value)||PLANS.team.minSeats)))}
+                    style={{width:56,background:"#1e293b",border:"1px solid #334155",borderRadius:8,padding:"6px 8px",color:"#e2e8f0",fontSize:13,outline:"none",textAlign:"center"}}/>
+                </div>
+              </div>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:10,gap:10}}>
+                <div style={{fontSize:16,fontWeight:800,color:"#e2e8f0"}}>
+                  ${((billingInterval==="year"?PLANS.team.year:PLANS.team.month)*teamSeats).toLocaleString()}
+                  <span style={{fontSize:11,color:"#64748b",fontWeight:400}}>/{billingInterval==="year"?"yr":"mo"} total ({teamSeats} × ${billingInterval==="year"?PLANS.team.year:PLANS.team.month})</span>
+                </div>
+                <button onClick={()=>startCheckout("team", teamSeats)} disabled={plan==="team"||billingLoading}
+                  style={{padding:"9px 16px",borderRadius:8,background:plan==="team"?"#1e293b":"linear-gradient(135deg,#7c3aed,#5b21b6)",border:"none",color:plan==="team"?"#64748b":"white",fontWeight:700,fontSize:12,cursor:plan==="team"||billingLoading?"not-allowed":"pointer",flexShrink:0}}>
+                  {plan==="team"?"Current Plan":billingLoading?"...":"Subscribe"}
+                </button>
+              </div>
+            </div>
+
             {billingError && <div style={{marginTop:10,padding:"10px 12px",borderRadius:8,background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",fontSize:12}}>⚠️ {billingError}</div>}
           </>
         )}
       </div>
 
+      {(ownPlan==="team" || teamMembership) && <TeamManagementPanel user={user} ownPlan={ownPlan} seats={seats} teamMembership={teamMembership} />}
+
       {/* Maps & Parcel */}
       <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
-        <div style={{fontSize:12,fontWeight:700,color:"#06b6d4",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4}}>🛰️ Property Lookup & Maps</div>
-        <div style={{fontSize:11,color:"#64748b",marginBottom:10}}>Satellite imagery is powered by a shared Google Maps key configured on the server — nothing to set up here.</div>
+        <div style={{fontSize:12,fontWeight:700,color:"#06b6d4",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4}}>🛰️ Site Plan Map</div>
+        <div style={{fontSize:11,color:"#64748b",marginBottom:10}}>The Site Plan tab's interactive map runs on your own free Mapbox account.</div>
+        <KeyRow label="Mapbox Access Token" value={mapboxToken} setValue={setMapboxToken} storageKey="pc_mapbox_token" placeholder="Paste Mapbox public token (pk....)" isSet={!!mapboxToken}
+          hint="Required to show the interactive Site Plan map. Free at mapbox.com — grab a public token from your account's Tokens page."/>
         <KeyRow label="Regrid API Key (Parcel Data)" value={regridKey} setValue={setRegridKey} storageKey="pc_regrid_key" placeholder="Paste Regrid key..." isSet={!!regridKey}
-          hint="Optional — enables real lot size, zoning & setback data. Sign up at regrid.com. App works with estimated data until this is set."/>
+          hint="Optional — enables real parcel boundary geometry, lot size, zoning & setback data. Sign up at regrid.com. App works with an estimated rectangular parcel until this is set."/>
       </div>
 
       {/* Cloud Sync */}
@@ -3359,13 +3787,64 @@ function SettingsScreen({ userMode, setUserMode, onSwitchMode, plan, user }) {
         <KeyRow label="Home Depot Affiliate Tag" value={hdTag} setValue={setHdTag} storageKey="pc_tag_hd" placeholder="Your HD tag" isSet={!hdTag.includes("YOUR_HD")} hint="Sign up at homedepot.com/affiliate"/>
       </div>
 
+      {/* Financing Partners */}
+      <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
+        <div style={{fontSize:12,fontWeight:700,color:"#22c55e",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4}}>💳 Financing Partners</div>
+        <div style={{fontSize:11,color:"#64748b",marginBottom:12}}>Paste your own financing company's application/referral link (Wisetack, Hearth, Synchrony, GreenSky, or any lender you already work with). These show up as "Estimate Your Financing" buttons for your clients in the Cost Estimator and Quote Builder.</div>
+
+        {financingLinks.length > 0 && (
+          <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:10}}>
+            {financingLinks.map((f,i)=>(
+              <div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,padding:"8px 12px",background:"#1e293b",borderRadius:8}}>
+                <div style={{minWidth:0}}>
+                  <div style={{fontSize:12,fontWeight:700,color:"#e2e8f0"}}>{f.name}</div>
+                  <div style={{fontSize:10,color:"#64748b",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.url}</div>
+                </div>
+                <button onClick={()=>removeFinancingLink(i)} style={{padding:"6px 10px",borderRadius:6,background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",fontSize:11,fontWeight:700,cursor:"pointer",flexShrink:0}}>✕</button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div style={{display:"flex",gap:6}}>
+          <input type="text" value={newFinancingName} onChange={e=>setNewFinancingName(e.target.value)} placeholder="Name (e.g. Wisetack)"
+            style={{flex:"0 0 150px",background:"#1e293b",border:"1px solid #334155",borderRadius:8,padding:"9px 10px",color:"#e2e8f0",fontSize:12,outline:"none"}}/>
+          <input type="text" value={newFinancingUrl} onChange={e=>setNewFinancingUrl(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addFinancingLink()} placeholder="Your referral link URL"
+            style={{flex:1,background:"#1e293b",border:"1px solid #334155",borderRadius:8,padding:"9px 10px",color:"#e2e8f0",fontSize:12,outline:"none"}}/>
+          <button onClick={addFinancingLink} disabled={!newFinancingName.trim()||!newFinancingUrl.trim()}
+            style={{padding:"9px 14px",borderRadius:8,background:newFinancingName.trim()&&newFinancingUrl.trim()?"rgba(34,197,94,0.15)":"#1e293b",border:"1px solid rgba(34,197,94,0.3)",color:newFinancingName.trim()&&newFinancingUrl.trim()?"#22c55e":"#64748b",fontSize:12,fontWeight:700,cursor:newFinancingName.trim()&&newFinancingUrl.trim()?"pointer":"not-allowed",flexShrink:0}}>Add</button>
+        </div>
+      </div>
+
+      {/* Review / Referral Links */}
+      <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
+        <div style={{fontSize:12,fontWeight:700,color:"#a78bfa",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4}}>⭐ Review & Referral Links</div>
+        <div style={{fontSize:11,color:"#64748b",marginBottom:10}}>Shown to the client on the Build Tracker's final phase, right when satisfaction is highest. Saved automatically as you type.</div>
+        {[
+          { key:"google", label:"Google Business Review Link", placeholder:"https://g.page/r/.../review", hint:"Find yours in your Google Business Profile → Ask for reviews" },
+          { key:"yelp", label:"Yelp Page Link", placeholder:"https://www.yelp.com/biz/...", hint:"Your business's Yelp page URL" },
+          { key:"referral", label:"Referral Link", placeholder:"Your website's referral/promo page", hint:"Where a referred friend should land" },
+        ].map(f=>(
+          <div key={f.key} style={{background:"#0f172a",border:`1px solid ${reviewLinks[f.key]?"rgba(34,197,94,0.3)":"#1e293b"}`,borderRadius:12,padding:14,marginBottom:10}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
+              <div style={{fontSize:13,fontWeight:700,color:"#e2e8f0"}}>{f.label}</div>
+              {reviewLinks[f.key] ? <span style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:"rgba(34,197,94,0.15)",border:"1px solid rgba(34,197,94,0.3)",color:"#22c55e",fontWeight:700}}>✅ Set</span>
+                                   : <span style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:"rgba(245,158,11,0.1)",border:"1px solid rgba(245,158,11,0.3)",color:"#f59e0b",fontWeight:700}}>⚠️ Not set</span>}
+            </div>
+            <div style={{fontSize:11,color:"#64748b",marginBottom:8,lineHeight:1.5}}>{f.hint}</div>
+            <input type="text" value={reviewLinks[f.key]||""} onChange={e=>setReviewLinks(p=>({...p,[f.key]:e.target.value}))} placeholder={f.placeholder}
+              style={{width:"100%",background:"#1e293b",border:"1px solid #334155",borderRadius:8,padding:"9px 12px",color:"#e2e8f0",fontSize:13,outline:"none",boxSizing:"border-box"}}/>
+          </div>
+        ))}
+      </div>
+
       {/* Version / About */}
       <div style={{background:"#0f172a",border:"1px solid #1e293b",borderRadius:12,padding:14,textAlign:"center"}}>
         <div style={{fontSize:13,fontWeight:800,color:"#e2e8f0",marginBottom:4,fontFamily:"Georgia,serif",letterSpacing:"2px"}}>
           <span style={{color:"#dde6f0"}}>POOL </span><span style={{color:"#c9a84c"}}>CRAFT </span><span style={{color:"#dde6f0"}}>PRO</span>
         </div>
         <div style={{fontSize:10,color:"#8a9ab5",letterSpacing:"2px",textTransform:"uppercase",marginBottom:8}}>Design Pools. Craft Outdoor Living.</div>
-        <div style={{fontSize:11,color:"#64748b",lineHeight:1.7}}>Version 1.0 · poolcraftpro.ai · Built with React<br/>AI rendering by xAI Grok Aurora · Maps by Google<br/>Parcel data by Regrid · Cloud sync by Supabase</div>
+        <div style={{fontSize:11,color:"#64748b",lineHeight:1.7}}>Version 1.0 · poolcraftpro.ai · Built with React<br/>AI rendering by fal.ai FLUX · Maps by Mapbox<br/>Parcel data by Regrid · Cloud sync by Supabase</div>
       </div>
     </div>
   );
@@ -3374,8 +3853,8 @@ function SettingsScreen({ userMode, setUserMode, onSwitchMode, plan, user }) {
 // ─── QUOTE BUILDER ────────────────────────────────────────────────────────────
 // Contractor-facing tool: take the cost estimate, apply a markup, add custom
 // line items, and produce a formal quote with a bottom-line number.
-function QuoteBuilder({ shape, len, wid, depthId, finishId, entries, hardscapes, extras, localRates, projectName, clientName }) {
-  const { items, totalLow, totalHigh } = computeCostItems({ shape, len, wid, depthId, finishId, entries, hardscapes, extras, localRates });
+function QuoteBuilder({ shape, len, wid, depthId, finishId, entries, hardscapes, extras, localRates, projectName, clientName, plasterConfig, financingLinks=[] }) {
+  const { items, totalLow, totalHigh } = computeCostItems({ shape, len, wid, depthId, finishId, entries, hardscapes, extras, localRates, plasterConfig });
   const [markup, setMarkup] = useState(15); // % contractor markup
   const [useHigh, setUseHigh] = useState(false); // use high or midpoint estimate as base
   const [customLines, setCustomLines] = useState([]);
@@ -3383,6 +3862,11 @@ function QuoteBuilder({ shape, len, wid, depthId, finishId, entries, hardscapes,
   const [newAmount, setNewAmount] = useState("");
   const [contingency, setContingency] = useState(10);
   const [showBreakdown, setShowBreakdown] = useState(false);
+  const [signerName, setSignerName] = useState("");
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [signedRecord, setSignedRecord] = useState(null); // { name, date } - basic acknowledgment capture, not a certified e-signature service
+  const signQuote = () => { if (!signerName.trim() || !agreedToTerms) return; setSignedRecord({ name: signerName.trim(), date: new Date().toLocaleString() }); };
+  const clearSignature = () => { setSignedRecord(null); setSignerName(""); setAgreedToTerms(false); };
 
   const base = useHigh ? totalHigh : Math.round((totalLow+totalHigh)/2);
   const markupAmt = Math.round(base * markup / 100);
@@ -3426,6 +3910,7 @@ function QuoteBuilder({ shape, len, wid, depthId, finishId, entries, hardscapes,
     <div style="margin-top:12px;padding:10px 14px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;font-size:12px;color:#92400e">
       ⏰ This quote is valid through <strong>${validUntil}</strong>. Pricing is subject to site verification.
     </div>
+    ${signedRecord ? `<div style="margin-top:16px;padding:14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:13px;color:#166534">✅ Signed by <strong>${escapeHtml(signedRecord.name)}</strong> on ${escapeHtml(signedRecord.date)}<br/><span style="font-size:11px;color:#4d7c5f">Typed-name acknowledgment, not a certified digital signature.</span></div>` : ""}
     <div class="footer">Quote prepared by Pool Craft Pro · poolcraftpro.ai. This quote is based on a visual design review and estimated material costs. Final pricing is confirmed after a physical site inspection. Excludes engineering fees, utility relocation, and unforeseen site conditions. All work subject to local permit approval.</div>
     <script>window.onload=()=>setTimeout(()=>window.print(),600);</script></body></html>`);
     win.document.close();
@@ -3509,6 +3994,45 @@ function QuoteBuilder({ shape, len, wid, depthId, finishId, entries, hardscapes,
           {contingency>0&&<div style={{display:"flex",justifyContent:"space-between",padding:"10px 14px",borderBottom:"1px solid #0f172a"}}><span style={{fontSize:13,color:"#64748b"}}>Contingency ({contingency}%)</span><span style={{fontSize:13,fontWeight:700,color:"#64748b"}}>{fmt(contingencyAmt)}</span></div>}
         </div>
       )}
+
+      {financingLinks.length > 0 && (
+        <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
+          <div style={{fontSize:12,fontWeight:700,color:"#22c55e",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:10}}>💳 Estimate Your Financing</div>
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            {financingLinks.map((f,i)=>(
+              <a key={i} href={f.url} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 14px",borderRadius:10,background:"rgba(34,197,94,0.08)",border:"1px solid rgba(34,197,94,0.25)",textDecoration:"none"}}>
+                <span style={{fontSize:13,fontWeight:700,color:"#22c55e"}}>{f.name}</span>
+                <span style={{fontSize:16,color:"#22c55e"}}>→</span>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div style={{background:"#111827",border:`1px solid ${signedRecord?"rgba(34,197,94,0.4)":"#1e293b"}`,borderRadius:14,padding:14}}>
+        <div style={{fontSize:12,fontWeight:700,color:signedRecord?"#22c55e":"#a78bfa",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:10}}>✍️ Client Sign-Off</div>
+        {signedRecord ? (
+          <div>
+            <div style={{fontSize:13,fontWeight:700,color:"#22c55e"}}>✅ Signed by {signedRecord.name}</div>
+            <div style={{fontSize:11,color:"#64748b",marginTop:2,marginBottom:10}}>{signedRecord.date}</div>
+            <button onClick={clearSignature} style={{padding:"7px 14px",borderRadius:8,background:"rgba(100,116,139,0.1)",border:"1px solid #334155",color:"#94a3b8",fontSize:11,fontWeight:700,cursor:"pointer"}}>Clear signature</button>
+          </div>
+        ) : (
+          <>
+            <input type="text" value={signerName} onChange={e=>setSignerName(e.target.value)} placeholder="Type full legal name to sign"
+              style={{width:"100%",background:"#1e293b",border:"1px solid #334155",borderRadius:8,padding:"9px 12px",color:"#e2e8f0",fontSize:13,outline:"none",boxSizing:"border-box",marginBottom:10}}/>
+            <label style={{display:"flex",alignItems:"center",gap:8,marginBottom:10,cursor:"pointer"}}>
+              <input type="checkbox" checked={agreedToTerms} onChange={e=>setAgreedToTerms(e.target.checked)} style={{width:16,height:16}}/>
+              <span style={{fontSize:12,color:"#94a3b8"}}>I have reviewed this quote and agree to its terms.</span>
+            </label>
+            <button onClick={signQuote} disabled={!signerName.trim()||!agreedToTerms}
+              style={{width:"100%",padding:"10px",borderRadius:8,background:signerName.trim()&&agreedToTerms?"linear-gradient(135deg,#7c3aed,#5b21b6)":"#1e293b",border:"none",color:signerName.trim()&&agreedToTerms?"white":"#64748b",fontWeight:700,fontSize:12,cursor:signerName.trim()&&agreedToTerms?"pointer":"not-allowed"}}>
+              Sign Quote
+            </button>
+          </>
+        )}
+        <div style={{fontSize:10,color:"#64748b",marginTop:10,lineHeight:1.5}}>Basic typed-name acknowledgment with a timestamp — not a certified e-signature service (DocuSign, HelloSign, etc). For agreements needing stronger legal enforceability, use a dedicated e-signature provider.</div>
+      </div>
 
       <button onClick={printQuote} style={{width:"100%",padding:"16px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#f59e0b,#d97706)",color:"white",fontWeight:800,fontSize:15,cursor:"pointer",boxShadow:"0 4px 20px rgba(245,158,11,0.3)"}}>
         📄 Print / Export Formal Quote {clientName?`for ${clientName}`:""}
@@ -3655,7 +4179,7 @@ function QuickRender({ len, wid, shape, finishId, colorId, entries, hardscapes, 
     if (dailyLimit <= 0) { setError("AI rendering needs an active Basic or Pro plan - subscribe in Settings to unlock it."); return; }
     if (dailyRenders >= dailyLimit) { setError(`You've used all ${dailyLimit} renders for today - pool and hardscape renders share this limit.`); return; }
     setRendering(true); setError(null); setProgress(5); setRendered(null); setAiNote(null);
-    const steps = [[10,"Sending to Grok Aurora..."],[25,"Analyzing the space..."],[42,"Placing your pool..."],[58,"Rendering water & light..."],[74,"Matching shadows..."],[88,"Final polish..."]];
+    const steps = [[10,"Sending to FLUX..."],[25,"Analyzing the space..."],[42,"Placing your pool..."],[58,"Rendering water & light..."],[74,"Matching shadows..."],[88,"Final polish..."]];
     let si = 0;
     const iv = setInterval(() => { if (si < steps.length) { setProgress(steps[si][0]); si++; } }, 3500);
     try {
@@ -3674,7 +4198,7 @@ function QuickRender({ len, wid, shape, finishId, colorId, entries, hardscapes, 
 
       const b64 = photo.split(",")[1];
       const mediaType = photo.startsWith("data:image/png") ? "image/png" : "image/jpeg";
-      const resp = await fetch("/api/render", {
+      const resp = await fetch(`${RENDER_SERVICE_URL}/api/generate-pool-render`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt, image: { b64_json: b64, media_type: mediaType } }),
@@ -3781,7 +4305,7 @@ function QuickRender({ len, wid, shape, finishId, colorId, entries, hardscapes, 
       {rendering && (
         <div style={{ background: "#111827", border: "1px solid #1e293b", borderRadius: 14, padding: 20, textAlign: "center" }}>
           <div style={{ fontSize: 40, marginBottom: 12 }}>🚀</div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: "#a78bfa", marginBottom: 10 }}>Grok Aurora is rendering your pool...</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "#a78bfa", marginBottom: 10 }}>FLUX is rendering your pool...</div>
           <div style={{ height: 6, background: "#1e293b", borderRadius: 3, overflow: "hidden", marginBottom: 8 }}>
             <div style={{ height: "100%", width: `${progress}%`, background: "linear-gradient(90deg,#7c3aed,#a78bfa,#c9a84c)", borderRadius: 3, transition: "width 3s ease" }} />
           </div>
@@ -3817,6 +4341,10 @@ function QuickRender({ len, wid, shape, finishId, colorId, entries, hardscapes, 
           </div>
         </div>
       )}
+
+      {rendered && !rendering && (
+        <MaskTweakPanel imageUrl={rendered} onTweaked={setRendered} dailyRenders={dailyRenders} dailyLimit={dailyLimit} bumpDailyRender={bumpDailyRender} />
+      )}
     </div>
   );
 }
@@ -3845,7 +4373,7 @@ const BUILD_PHASES = [
   { id: "complete",    label: "Project Complete",           icon: "🎉", days: "",            detail: "Homeowner orientation complete. Enjoy your pool!" },
 ];
 
-function BuildTracker({ projectName, clientName, clientEmail }) {
+function BuildTracker({ projectName, clientName, clientEmail, clientPhone, reviewLinks={} }) {
   const storageKey = `pc_build_${encodeURIComponent(projectName || "default").slice(0, 40)}`;
   const [phases, setPhases] = useState(() => {
     try { return JSON.parse(localStorage.getItem(storageKey) || "{}"); } catch { return {}; }
@@ -3856,11 +4384,42 @@ function BuildTracker({ projectName, clientName, clientEmail }) {
   const [editingNote, setEditingNote] = useState(null);
   const [noteInput, setNoteInput] = useState("");
   const [showClientView, setShowClientView] = useState(false);
+  const [smsEnabled, setSmsEnabled] = useState(() => { try { return localStorage.getItem(storageKey + "_sms") === "1"; } catch { return false; } });
+  const [smsStatus, setSmsStatus] = useState(null);
+
+  const toggleSms = () => {
+    const next = !smsEnabled;
+    setSmsEnabled(next);
+    try { localStorage.setItem(storageKey + "_sms", next ? "1" : "0"); } catch {}
+  };
+
+  // Requires a real Twilio account (TWILIO_ACCOUNT_SID/AUTH_TOKEN/PHONE_NUMBER
+  // in Vercel) - api/send-sms.js returns a clear 503 until then, surfaced
+  // here rather than failing silently. Never blocks marking a phase done.
+  const sendPhaseText = async (phaseLabel) => {
+    if (!smsEnabled || !clientPhone) return;
+    try {
+      const resp = await fetch("/api/send-sms", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ to: clientPhone, body: `Update on your pool at ${projectName}: "${phaseLabel}" is complete! - Pool Craft Pro` }),
+      });
+      const data = await resp.json();
+      setSmsStatus(resp.ok ? { ok: true, msg: `Texted ${clientName || "client"} at ${clientPhone}` } : { ok: false, msg: data?.error || "Text failed to send" });
+    } catch {
+      setSmsStatus({ ok: false, msg: "Could not reach the SMS service" });
+    }
+    setTimeout(() => setSmsStatus(null), 6000);
+  };
 
   const togglePhase = (id) => {
+    const wasComplete = !!phases[id];
     const updated = { ...phases, [id]: phases[id] ? null : { completedAt: new Date().toISOString(), by: "contractor" } };
     setPhases(updated);
     try { localStorage.setItem(storageKey, JSON.stringify(updated)); } catch {}
+    if (!wasComplete) {
+      const phase = BUILD_PHASES.find((p) => p.id === id);
+      if (phase) sendPhaseText(phase.label);
+    }
   };
 
   const saveNote = (id) => {
@@ -3909,6 +4468,19 @@ function BuildTracker({ projectName, clientName, clientEmail }) {
           </div>
         );
       })}
+
+      {pct === 100 && (reviewLinks.google || reviewLinks.yelp || reviewLinks.referral) && (
+        <div style={{ marginTop: 8, background: "linear-gradient(135deg,rgba(201,168,76,0.15),rgba(168,135,58,0.08))", border: "1px solid rgba(201,168,76,0.3)", borderRadius: 16, padding: 18, textAlign: "center" }}>
+          <div style={{ fontSize: 28, marginBottom: 8 }}>🎉</div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: "#c9a84c", marginBottom: 6 }}>Your pool is complete!</div>
+          <div style={{ fontSize: 12, color: "#94a3b8", marginBottom: 14, lineHeight: 1.6 }}>If you loved working with us, a quick review means the world — and helps other families find us too.</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {reviewLinks.google && <a href={reviewLinks.google} target="_blank" rel="noopener noreferrer" style={{ padding: "12px", borderRadius: 10, background: "rgba(201,168,76,0.15)", border: "1px solid rgba(201,168,76,0.35)", color: "#c9a84c", fontWeight: 700, fontSize: 13, textDecoration: "none" }}>⭐ Leave a Google Review</a>}
+            {reviewLinks.yelp && <a href={reviewLinks.yelp} target="_blank" rel="noopener noreferrer" style={{ padding: "12px", borderRadius: 10, background: "rgba(201,168,76,0.15)", border: "1px solid rgba(201,168,76,0.35)", color: "#c9a84c", fontWeight: 700, fontSize: 13, textDecoration: "none" }}>⭐ Leave a Yelp Review</a>}
+            {reviewLinks.referral && <a href={reviewLinks.referral} target="_blank" rel="noopener noreferrer" style={{ padding: "12px", borderRadius: 10, background: "rgba(201,168,76,0.1)", border: "1px solid rgba(201,168,76,0.25)", color: "#94a3b8", fontWeight: 700, fontSize: 13, textDecoration: "none" }}>👋 Know someone who wants a pool? Refer them here</a>}
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -3931,6 +4503,21 @@ function BuildTracker({ projectName, clientName, clientEmail }) {
           <button onClick={() => setShowClientView(true)} style={{ padding: "8px 14px", borderRadius: 10, border: "1px solid rgba(201,168,76,0.35)", background: "rgba(201,168,76,0.1)", color: "#c9a84c", fontSize: 12, fontWeight: 700, cursor: "pointer", flexShrink: 0 }}>👤 Client View</button>
         </div>
         {clientEmail && <div style={{ marginTop: 10, fontSize: 11, color: "#64748b" }}>💡 Share the Client View link with {clientName || clientEmail} so they can check progress anytime</div>}
+        {pct === 100 && (
+          (reviewLinks.google || reviewLinks.yelp || reviewLinks.referral)
+            ? <div style={{ marginTop: 10, fontSize: 11, color: "#22c55e" }}>🎉 Project complete — the Client View now shows your review & referral links.</div>
+            : <div style={{ marginTop: 10, fontSize: 11, color: "#f59e0b" }}>🎉 Project complete — add your Google/Yelp/referral links in Settings to prompt the client for a review right here.</div>
+        )}
+        <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid rgba(74,122,181,0.2)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+          <div>
+            <div style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 600 }}>📱 Text client on each phase update</div>
+            <div style={{ fontSize: 10, color: "#64748b", marginTop: 2 }}>{clientPhone ? `Sends to ${clientPhone}` : "Add a client phone number to enable this"}</div>
+          </div>
+          <button onClick={toggleSms} disabled={!clientPhone} style={{ width: 44, height: 24, borderRadius: 12, border: "none", cursor: clientPhone ? "pointer" : "not-allowed", background: smsEnabled && clientPhone ? "#06b6d4" : "#334155", position: "relative", transition: "background 0.2s", flexShrink: 0, opacity: clientPhone ? 1 : 0.5 }}>
+            <span style={{ position: "absolute", top: 3, left: smsEnabled && clientPhone ? 22 : 3, width: 18, height: 18, borderRadius: "50%", background: "white", transition: "left 0.2s" }} />
+          </button>
+        </div>
+        {smsStatus && <div style={{ marginTop: 8, fontSize: 11, color: smsStatus.ok ? "#22c55e" : "#ef4444" }}>{smsStatus.ok ? "✅" : "⚠️"} {smsStatus.msg}</div>}
       </div>
 
       {/* Phase list */}
@@ -4163,20 +4750,62 @@ export default function PoolCraftPro() {
   const [parcelData, setParcelData] = useState(null);
   const [showMap, setShowMap] = useState(false);
   const [localRates, setLocalRates] = useState({ multiplier:1, laborMultiplier:1 });
+  const [plasterFinishType, setPlasterFinishType] = useState("plaster");
+  const [plasterCoveragePerBag, setPlasterCoveragePerBag] = useState(PLASTER_COVERAGE_PRESETS.plaster);
+  const [plasterCostPerBag, setPlasterCostPerBag] = useState("");
+  const [plasterWasteFactor, setPlasterWasteFactor] = useState(10);
+  // Contractor's own financing partner links (e.g. Wisetack, Hearth, Synchrony,
+  // GreenSky) - just referral URLs the contractor already has, not a live
+  // financing API integration (that'd need its own vendor account/approval).
+  // Shared across Settings (editing) and Cost Estimator/Quote Builder (display).
+  const [financingLinks, setFinancingLinks] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("pc_financing_links") || "[]"); } catch { return []; }
+  });
+  useEffect(() => { try { localStorage.setItem("pc_financing_links", JSON.stringify(financingLinks)); } catch {} }, [financingLinks]);
+  const [reviewLinks, setReviewLinks] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("pc_review_links") || "{}"); } catch { return {}; }
+  });
+  useEffect(() => { try { localStorage.setItem("pc_review_links", JSON.stringify(reviewLinks)); } catch {} }, [reviewLinks]);
 
   const [dailyRenders, setDailyRenders] = useState(() => {
     try { const saved = JSON.parse(localStorage.getItem("pc_daily")||"{}"); const today = new Date().toDateString(); return saved.date === today ? (saved.count||0) : 0; } catch { return 0; }
   });
 
-  // Render plan: Basic ($29.99/mo or $299/yr, 10/day) or Pro ($49.99/mo or
-  // $499/yr, 25/day). Both require an active Stripe subscription now - there's
-  // no free tier. Plan lives on the Supabase user's own account metadata and
-  // is set only by the Stripe webhook (server-side, via the service role key),
-  // never by the client. No Supabase account = no subscription = "none".
+  // Render plan: Basic ($99/mo, 10/day), Pro ($149/mo, 25/day), or Team
+  // ($149/seat/mo, 25/day PER seat). All require an active Stripe
+  // subscription - there's no free tier. The subscriber's own plan lives on
+  // their Supabase account metadata, set only by the Stripe webhook. An
+  // invited teammate has no subscription of their own - their access instead
+  // comes from being an active row in team_members (see TEAM_SETUP_SQL and
+  // teamMembership below), which is why this app-wide "is this account on a
+  // paid tier" check now needs a live Supabase read, not just a metadata read.
   const rawPlan = user?.user_metadata?.plan;
-  const plan = rawPlan === "pro" ? "pro" : rawPlan === "basic" ? "basic" : "none";
-  const PLAN_LIMITS = { none: 0, basic: 10, pro: 25 };
-  const DAILY_RENDER_LIMIT = PLAN_LIMITS[plan];
+  const ownPlan = rawPlan === "pro" ? "pro" : rawPlan === "team" ? "team" : rawPlan === "basic" ? "basic" : "none";
+  const [teamMembership, setTeamMembership] = useState(null); // { teamId, seats } if I'm an active member of a team plan (my own or someone else's)
+
+  useEffect(() => {
+    if (!user) { setTeamMembership(null); return; }
+    let ignore = false;
+    (async () => {
+      const sb = await loadSupabase();
+      if (!sb || ignore) return;
+      try {
+        // Auto-activate a pending invite that matches my email, if one exists.
+        await sb.from("team_members")
+          .update({ user_id: user.id, status: "active", joined_at: new Date().toISOString() })
+          .is("user_id", null).ilike("email", user.email).eq("status", "pending");
+        const { data } = await sb.from("team_members")
+          .select("team_id, teams(seats)").eq("user_id", user.id).eq("status", "active").limit(1).maybeSingle();
+        if (!ignore && data) setTeamMembership({ teamId: data.team_id, seats: data.teams?.seats || 1 });
+        else if (!ignore) setTeamMembership(null);
+      } catch { if (!ignore) setTeamMembership(null); } // team tables not set up yet - fine, just no team access via invite
+    })();
+    return () => { ignore = true; };
+  }, [user?.id, user?.email]);
+
+  const plan = ownPlan !== "none" ? ownPlan : (teamMembership ? "team" : "none");
+  const seats = Math.max(1, Number(user?.user_metadata?.seats) || 1);
+  const DAILY_RENDER_LIMIT = plan === "team" ? PLANS.team.dailyLimitPerSeat : (PLANS[plan]?.dailyLimit || 0);
 
   const bumpDailyRender = () => {
     const newCount = dailyRenders + 1; setDailyRenders(newCount);
@@ -4244,6 +4873,22 @@ export default function PoolCraftPro() {
     return () => window.removeEventListener("beforeunload", handler);
   }, [isDirty]);
   const materials = useMemo(()=>calcMaterials(shape,len,wid,depthId,finishId),[shape,len,wid,depthId,finishId]);
+  const plasterConfig = useMemo(() => ({
+    finishType: plasterFinishType, coveragePerBag: plasterCoveragePerBag, costPerBag: plasterCostPerBag, wasteFactor: plasterWasteFactor,
+  }), [plasterFinishType, plasterCoveragePerBag, plasterCostPerBag, plasterWasteFactor]);
+  // Reuses materials.finishSqFt - the same floor+walls surface area (calcMaterials'
+  // "shell") already shown as "Interior Finish Area" elsewhere in this tab and
+  // fed into the cost estimator/quote builder's finish line item.
+  const plasterCalc = useMemo(() => {
+    const surfaceAreaSqFt = materials.finishSqFt;
+    const coverage = Number(plasterCoveragePerBag) > 0 ? Number(plasterCoveragePerBag) : 32;
+    const waste = Number(plasterWasteFactor) || 0;
+    const bagsNeeded = Math.ceil((surfaceAreaSqFt * (1 + waste / 100)) / coverage);
+    const costPerBagNum = Number(plasterCostPerBag);
+    const hasCost = plasterCostPerBag !== "" && costPerBagNum > 0;
+    const totalMaterialCost = hasCost ? bagsNeeded * costPerBagNum : null;
+    return { surfaceAreaSqFt, coverage, waste, bagsNeeded, hasCost, totalMaterialCost };
+  }, [materials.finishSqFt, plasterCoveragePerBag, plasterWasteFactor, plasterCostPerBag]);
   const equipment = useMemo(() => {
     const brand = EQUIPMENT_BRANDS.find(b => b.id === equipmentBrand) || EQUIPMENT_BRANDS[0];
     return brand.getEquipment(materials.gallons, extras);
@@ -4565,11 +5210,7 @@ export default function PoolCraftPro() {
                   ))}
                 </div>
               </div>
-              {showMap&&<div style={{marginTop:14}}>
-                <div style={{fontSize:11,color:"#06b6d4",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:10}}>🗺️ Interactive Property Map - Drag Pool to Place</div>
-                <PropertyMap poolLen={len} poolWid={wid} poolShape={shape} poolColor={poolColor.hex} parcelData={parcelData}/>
-                <div style={{marginTop:10,padding:"8px 12px",background:"rgba(245,158,11,0.1)",border:"1px solid rgba(245,158,11,0.25)",borderRadius:8,fontSize:12,color:"#f59e0b"}}>⚠️ Setback data shown is for planning reference. Always verify with your local building department before permit submission.</div>
-              </div>}
+              {showMap&&<button onClick={()=>setTab(3)} style={{marginTop:12,width:"100%",padding:"12px",borderRadius:10,background:"linear-gradient(135deg,#06b6d4,#0284c7)",border:"none",color:"white",fontWeight:700,fontSize:13,cursor:"pointer"}}>🗺️ Open Site Plan Tab to Place Your Pool</button>}
             </>}
           </div>
 
@@ -4578,6 +5219,8 @@ export default function PoolCraftPro() {
             <CloudSyncPanel />
           </div>
         </>}
+
+        {tab===13&&<HowItWorksTab onSubscribeClick={()=>setTab(11)} />}
 
         {tab===1&&<>
           <div style={{fontSize:13,color:"#94a3b8",padding:"4px 0 8px"}}>Tap any feature to learn more and add it to your pool design.</div>
@@ -4592,7 +5235,7 @@ export default function PoolCraftPro() {
 
         {tab===2&&<HardscapeDesigner hardscapes={hardscapes} toggleHardscape={toggleHardscape} setHSQty={setHSQty} dailyRenders={dailyRenders} dailyLimit={DAILY_RENDER_LIMIT} bumpDailyRender={bumpDailyRender} />}
 
-        {tab===3&&<YardPlanner poolLen={len} poolWid={wid} poolShape={shape} poolColor={poolColor.hex} entries={entries} hardscapes={hardscapes} parcelData={parcelData} />}
+        {tab===3&&<SitePlanMap poolLen={len} poolWid={wid} poolShape={shape} poolColor={poolColor.hex} initialAddress={address} />}
 
         {tab===4&&<>
           <div style={{background:"linear-gradient(135deg,rgba(6,182,212,0.15),rgba(2,132,199,0.1))",border:"1px solid rgba(6,182,212,0.3)",borderRadius:14,padding:16}}>
@@ -4606,9 +5249,63 @@ export default function PoolCraftPro() {
               <div style={{fontWeight:800,fontSize:16,color:"#06b6d4"}}>{row.val}</div>
             </div>
           ))}
+
+          <div style={card}>
+            <div style={sectionTitle}>🧴 Plaster Bag Calculator</div>
+            <div style={{fontSize:12,color:"#64748b",marginBottom:14}}>Uses the same {Math.round(plasterCalc.surfaceAreaSqFt).toLocaleString()} sq ft interior surface area shown above as "Interior Finish Area" - floor + walls, from calcMaterials().</div>
+
+            <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
+              <div style={{flex:"1 1 160px"}}>
+                <div style={{fontSize:10,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:4}}>Finish Type</div>
+                <select value={plasterFinishType} onChange={(e)=>{ const id=e.target.value; setPlasterFinishType(id); setPlasterCoveragePerBag(PLASTER_COVERAGE_PRESETS[id]); }}
+                  style={{width:"100%",background:"#1e293b",border:"1px solid #334155",borderRadius:8,padding:"9px 10px",color:"#e2e8f0",fontSize:13,outline:"none",boxSizing:"border-box"}}>
+                  {PLASTER_FINISH_OPTIONS.map(o=>(<option key={o.id} value={o.id}>{o.label}</option>))}
+                </select>
+              </div>
+              <div style={{flex:"1 1 160px"}}>
+                <div style={{fontSize:10,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:4}}>Coverage per Bag (sq ft)</div>
+                <input type="number" min="1" value={plasterCoveragePerBag} onChange={(e)=>setPlasterCoveragePerBag(Math.max(1,Number(e.target.value)||1))}
+                  style={{width:"100%",background:"#1e293b",border:"1px solid #334155",borderRadius:8,padding:"9px 10px",color:"#e2e8f0",fontSize:13,outline:"none",boxSizing:"border-box"}}/>
+              </div>
+              <div style={{flex:"1 1 160px"}}>
+                <div style={{fontSize:10,color:"#f59e0b",textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:4,fontWeight:700}}>Cost per Bag ($) - Required</div>
+                <input type="number" min="0" step="0.01" value={plasterCostPerBag} onChange={(e)=>setPlasterCostPerBag(e.target.value)} placeholder="Enter your supplier's price"
+                  style={{width:"100%",background:"#1e293b",border:`1px solid ${plasterCalc.hasCost?"#334155":"rgba(245,158,11,0.5)"}`,borderRadius:8,padding:"9px 10px",color:"#e2e8f0",fontSize:13,outline:"none",boxSizing:"border-box"}}/>
+              </div>
+              <div style={{flex:"1 1 160px"}}>
+                <div style={{fontSize:10,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:4}}>Waste Factor (%)</div>
+                <input type="number" min="0" max="100" value={plasterWasteFactor} onChange={(e)=>setPlasterWasteFactor(Math.max(0,Number(e.target.value)||0))}
+                  style={{width:"100%",background:"#1e293b",border:"1px solid #334155",borderRadius:8,padding:"9px 10px",color:"#e2e8f0",fontSize:13,outline:"none",boxSizing:"border-box"}}/>
+              </div>
+            </div>
+
+            <div style={{display:"grid",gridTemplateColumns:plasterCalc.hasCost?"1fr 1fr 1fr":"1fr 1fr",gap:8,marginBottom:10}}>
+              <div style={{background:"#1e293b",borderRadius:8,padding:"9px 10px",textAlign:"center"}}>
+                <div style={{fontSize:10,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:4}}>Surface Area</div>
+                <div style={{fontSize:16,fontWeight:800,color:"#e2e8f0"}}>{Math.round(plasterCalc.surfaceAreaSqFt).toLocaleString()} sq ft</div>
+              </div>
+              <div style={{background:"#1e293b",borderRadius:8,padding:"9px 10px",textAlign:"center"}}>
+                <div style={{fontSize:10,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:4}}>Bags Needed</div>
+                <div style={{fontSize:16,fontWeight:800,color:"#06b6d4"}}>{plasterCalc.bagsNeeded.toLocaleString()}</div>
+              </div>
+              {plasterCalc.hasCost && (
+                <div style={{background:"#1e293b",borderRadius:8,padding:"9px 10px",textAlign:"center"}}>
+                  <div style={{fontSize:10,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:4}}>Total Material Cost</div>
+                  <div style={{fontSize:16,fontWeight:800,color:"#22c55e"}}>${plasterCalc.totalMaterialCost.toLocaleString(undefined,{maximumFractionDigits:2})}</div>
+                </div>
+              )}
+            </div>
+
+            <div style={{fontSize:12,color:"#64748b",fontFamily:"monospace",background:"#0f172a",border:"1px solid #1e293b",borderRadius:8,padding:"8px 12px"}}>
+              {Math.round(plasterCalc.surfaceAreaSqFt).toLocaleString()} sq ft × {(1+plasterCalc.waste/100).toFixed(2)} waste factor ÷ {plasterCalc.coverage} sq ft/bag = {plasterCalc.bagsNeeded} bags
+            </div>
+            {!plasterCalc.hasCost && (
+              <div style={{marginTop:8,fontSize:11,color:"#f59e0b"}}>Enter a cost per bag above to calculate total material cost - it'll automatically feed into the Cost Estimator and Quote Builder's Interior Finish line item.</div>
+            )}
+          </div>
         </>}
 
-        {tab===5&&<CostEstimator shape={shape} len={len} wid={wid} depthId={depthId} finishId={finishId} colorId={colorId} entries={entries} hardscapes={hardscapes} extras={extras} localRates={localRates} setLocalRates={setLocalRates} projectName={projectName} clientName={clientName} materials={materials} />}
+        {tab===5&&<CostEstimator shape={shape} len={len} wid={wid} depthId={depthId} finishId={finishId} colorId={colorId} entries={entries} hardscapes={hardscapes} extras={extras} localRates={localRates} setLocalRates={setLocalRates} projectName={projectName} clientName={clientName} materials={materials} plasterConfig={plasterConfig} financingLinks={financingLinks} />}
 
         {tab===6&&<>
           <div style={card}>
@@ -4654,6 +5351,8 @@ export default function PoolCraftPro() {
             <div style={{fontSize:11,color:"#64748b"}}>All equipment links are pre-tagged with your Amazon affiliate ID.</div>
           </div>
         </>}
+
+        {tab===12&&<SchematicTab poolLen={len} poolWid={wid} poolShape={shape} depthId={depthId} />}
 
         {tab===7&&<>
           <div style={card}>
@@ -4704,13 +5403,13 @@ export default function PoolCraftPro() {
         </>}
 
         {tab===9&&<QuickRender len={len} wid={wid} shape={shape} finishId={finishId} colorId={colorId} entries={entries} hardscapes={hardscapes} dailyRenders={dailyRenders} dailyLimit={DAILY_RENDER_LIMIT} bumpDailyRender={bumpDailyRender} />}
-        {tab===10&&<BuildTracker projectName={projectName} clientName={clientName} clientEmail={clientEmail} />}
-        {tab===11&&<SettingsScreen userMode={userMode} setUserMode={setUserMode} plan={plan} user={user} />}
+        {tab===10&&<BuildTracker projectName={projectName} clientName={clientName} clientEmail={clientEmail} clientPhone={clientPhone} reviewLinks={reviewLinks} />}
+        {tab===11&&<SettingsScreen userMode={userMode} setUserMode={setUserMode} plan={plan} ownPlan={ownPlan} seats={seats} teamMembership={teamMembership} user={user} financingLinks={financingLinks} setFinancingLinks={setFinancingLinks} reviewLinks={reviewLinks} setReviewLinks={setReviewLinks} />}
       </div>
 
       {/* Quote Builder + Timeline slide up from Cost Estimator tab */}
       {tab===5&&<div style={{padding:"0 14px 14px",maxWidth:820,margin:"0 auto",display:"flex",flexDirection:"column",gap:14}}>
-        <QuoteBuilder shape={shape} len={len} wid={wid} depthId={depthId} finishId={finishId} entries={entries} hardscapes={hardscapes} extras={extras} localRates={localRates} projectName={projectName} clientName={clientName} />
+        <QuoteBuilder shape={shape} len={len} wid={wid} depthId={depthId} finishId={finishId} entries={entries} hardscapes={hardscapes} extras={extras} localRates={localRates} projectName={projectName} clientName={clientName} plasterConfig={plasterConfig} financingLinks={financingLinks} />
         <BuildTimeline shape={shape} len={len} wid={wid} depthId={depthId} entries={entries} hardscapes={hardscapes} />
       </div>}
     </div>

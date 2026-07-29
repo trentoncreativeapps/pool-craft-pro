@@ -10,10 +10,21 @@ export default async function handler(req, res) {
     return res.status(503).json({ error: "Billing isn't configured yet - check back soon." });
   }
 
-  const { plan, interval, userId, email, customerId } = req.body || {};
+  const { plan, interval, userId, email, customerId, seats } = req.body || {};
   if (!PLANS[plan]) return res.status(400).json({ error: "Invalid plan" });
   if (interval !== "month" && interval !== "year") return res.status(400).json({ error: "Invalid interval" });
   if (!userId || typeof userId !== "string") return res.status(400).json({ error: "You must be signed in to subscribe" });
+
+  // Only the team plan is quantity-based - everyone else always buys exactly
+  // one seat, regardless of what the client sends.
+  let quantity = 1;
+  if (plan === "team") {
+    const { minSeats, maxSeats } = PLANS.team;
+    quantity = Number.isInteger(seats) ? seats : parseInt(seats, 10);
+    if (!Number.isInteger(quantity) || quantity < minSeats || quantity > maxSeats) {
+      return res.status(400).json({ error: `Team plan requires between ${minSeats} and ${maxSeats} seats` });
+    }
+  }
 
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
   const amount = planAmount(plan, interval);
@@ -36,18 +47,18 @@ export default async function handler(req, res) {
       mode: "subscription",
       client_reference_id: userId,
       customer_email: email || undefined,
-      metadata: { supabase_user_id: userId, plan },
+      metadata: { supabase_user_id: userId, plan, seats: String(quantity) },
       line_items: [{
         price_data: {
           currency: "usd",
           unit_amount: amount,
           recurring: { interval },
-          product_data: { name: `Pool Craft Pro - ${PLANS[plan].name} (${interval === "year" ? "Annual" : "Monthly"})` },
+          product_data: { name: `Pool Craft Pro - ${PLANS[plan].name} (${interval === "year" ? "Annual" : "Monthly"}${plan === "team" ? ` - ${quantity} seats` : ""})` },
         },
-        quantity: 1,
+        quantity,
       }],
       subscription_data: {
-        metadata: { supabase_user_id: userId, plan },
+        metadata: { supabase_user_id: userId, plan, seats: String(quantity) },
       },
       success_url: `${origin}/?checkout=success&plan=${plan}`,
       cancel_url: `${origin}/?checkout=cancelled`,
