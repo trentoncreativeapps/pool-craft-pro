@@ -20,6 +20,30 @@ const escapeHtml = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&am
 // app - not a relative /api path, so it needs its own origin.
 const RENDER_SERVICE_URL = import.meta.env.VITE_RENDER_SERVICE_URL || "http://localhost:3001";
 
+// fal.ai bills FLUX by megapixel, rounded UP to the next whole megapixel - so an
+// unresized phone photo (often 10-12+ MP) can cost 10x a properly capped one.
+// Capping the longest edge to 1024px keeps virtually every backyard photo under
+// 1 true megapixel, landing in the cheapest $0.03/render tier instead of $0.06+.
+const RENDER_MAX_DIMENSION = 1024;
+function resizeImageFile(file, maxDim = RENDER_MAX_DIMENSION) {
+  return new Promise((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+      const canvas = document.createElement("canvas");
+      canvas.width = w; canvas.height = h;
+      canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL("image/jpeg", 0.88));
+    };
+    img.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error("Could not read that image")); };
+    img.src = objectUrl;
+  });
+}
+
 // ─── AFFILIATE LINKS ──────────────────────────────────────────────────────────
 const AFFILIATE_TAGS = { amazon: "YOURTAG-20", homedepot: "YOUR_HD_TAG", lowes: "YOUR_LOWES_TAG", wayfair: "YOUR_WAYFAIR_TAG" };
 const hdLink = (q) => `https://www.homedepot.com/s/${encodeURIComponent(q)}?cm_mmc=afl-ir-${AFFILIATE_TAGS.homedepot}`;
@@ -1336,13 +1360,14 @@ function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, fin
     return p;
   };
 
-  const handlePhotoUpload = (e) => {
+  const handlePhotoUpload = async (e) => {
     const file = e.target.files[0]; if (!file) return;
     if (!file.type.startsWith("image/")) { setError("Please choose an image file (JPG, PNG, etc)."); return; }
     if (file.size > 8 * 1024 * 1024) { setError("Photo is too large (over 8MB). Please use a smaller photo or compress it first."); return; }
-    const reader = new FileReader();
-    reader.onload = ev => { setBgPhoto(ev.target.result); setRenderedImage(null); setAiDescription(null); setError(null); };
-    reader.readAsDataURL(file);
+    try {
+      const resized = await resizeImageFile(file);
+      setBgPhoto(resized); setRenderedImage(null); setAiDescription(null); setError(null);
+    } catch { setError("Could not read that photo - please try a different file."); }
   };
 
   const getAIDescription = async (prompt) => {
@@ -1794,13 +1819,14 @@ function HardscapeDesigner({ hardscapes, toggleHardscape, setHSQty, dailyRenders
   const rendersLeft = dailyLimit - dailyRenders;
   const limitHit = dailyRenders >= dailyLimit;
 
-  const handlePhotoUpload = (e) => {
+  const handlePhotoUpload = async (e) => {
     const file = e.target.files[0]; if(!file) return;
     if(!file.type.startsWith("image/")){ setError("Please choose an image file (JPG, PNG, etc)."); return; }
     if(file.size > 8*1024*1024){ setError("Photo too large - keep under 8MB"); return; }
-    const reader = new FileReader();
-    reader.onload = ev => { setPhoto(ev.target.result); setRendered(null); setError(null); };
-    reader.readAsDataURL(file);
+    try {
+      const resized = await resizeImageFile(file);
+      setPhoto(resized); setRendered(null); setError(null);
+    } catch { setError("Could not read that photo - please try a different file."); }
   };
 
   const handleRender = async () => {
@@ -4160,21 +4186,24 @@ function QuickRender({ len, wid, shape, finishId, colorId, entries, hardscapes, 
 
   const capturePhoto = () => {
     if (!videoRef.current) return;
+    const vw = videoRef.current.videoWidth, vh = videoRef.current.videoHeight;
+    const scale = Math.min(1, RENDER_MAX_DIMENSION / Math.max(vw, vh));
     const canvas = document.createElement("canvas");
-    canvas.width = videoRef.current.videoWidth;
-    canvas.height = videoRef.current.videoHeight;
-    canvas.getContext("2d").drawImage(videoRef.current, 0, 0);
-    const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
+    canvas.width = Math.round(vw * scale);
+    canvas.height = Math.round(vh * scale);
+    canvas.getContext("2d").drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.88);
     setPhoto(dataUrl); stopCamera(); setRendered(null); setError(null);
   };
 
-  const uploadPhoto = (e) => {
+  const uploadPhoto = async (e) => {
     const file = e.target.files[0]; if (!file) return;
     if (!file.type.startsWith("image/")) { setError("Please choose an image file (JPG, PNG, etc)."); return; }
     if (file.size > 8 * 1024 * 1024) { setError("Photo too large — keep under 8MB"); return; }
-    const reader = new FileReader();
-    reader.onload = ev => { setPhoto(ev.target.result); setRendered(null); setError(null); };
-    reader.readAsDataURL(file);
+    try {
+      const resized = await resizeImageFile(file);
+      setPhoto(resized); setRendered(null); setError(null);
+    } catch { setError("Could not read that photo - please try a different file."); }
   };
 
   const renderNow = async () => {
