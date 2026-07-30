@@ -110,7 +110,7 @@ const HARDSCAPE_LINKS = {
 };
 
 const ENTRY_FEATURES = [
-  { id:"beach_entry", label:"Beach Entry", icon:"🏖️", desc:"Zero-depth gradual slope entry — resort style", color:"#f59e0b" },
+  { id:"beach_entry", label:"Beach Entry", icon:"🏖️", desc:"Zero-depth gradual slope entry — resort style", color:"#b45309" },
   { id:"baja_shelf", label:"Baja Shelf / Tanning Ledge", icon:"☀️", desc:"Shallow ledge 6-12 inches deep, perfect for loungers", color:"#06b6d4" },
   { id:"steps_corner", label:"Corner Steps", icon:"🔢", desc:"Classic corner entry steps with handrail option", color:"#8b5cf6" },
   { id:"steps_end", label:"End Steps", icon:"⬆️", desc:"Full-width steps at shallow end", color:"#3b82f6" },
@@ -146,7 +146,7 @@ const POOL_COLORS = [
   { id:"caribbean", label:"Caribbean Blue", hex:"#0ea5e9" },
   { id:"tahoe", label:"Tahoe Blue", hex:"#1d4ed8" },
   { id:"midnight", label:"Midnight Black", hex:"#1e293b" },
-  { id:"seafoam", label:"Seafoam Green", hex:"#34d399" },
+  { id:"seafoam", label:"Seafoam Green", hex:"#047857" },
   { id:"sandstone", label:"Sandstone", hex:"#d4a76a" },
   { id:"slate", label:"Slate Grey", hex:"#64748b" },
   { id:"sapphire", label:"Sapphire", hex:"#2563eb" },
@@ -496,7 +496,7 @@ const RETAILER_COLORS = {
   "Home Depot":{bg:"rgba(255,102,0,0.15)",border:"rgba(255,102,0,0.35)",text:"#ff6600"},
   "Lowe's":{bg:"rgba(0,82,165,0.15)",border:"rgba(0,82,165,0.35)",text:"#4d9fff"},
   "Wayfair":{bg:"rgba(122,52,163,0.15)",border:"rgba(122,52,163,0.35)",text:"#c084fc"},
-  "Amazon":{bg:"rgba(255,153,0,0.15)",border:"rgba(255,153,0,0.35)",text:"#ff9900"},
+  "Amazon":{bg:"rgba(255,153,0,0.15)",border:"rgba(255,153,0,0.35)",text:"#c2720a"},
 };
 
 const NAV_TABS=[
@@ -725,7 +725,7 @@ function CloudSyncPanel() {
   const isManaged = typeof SUPABASE_URL !== "undefined" && !!SUPABASE_URL;
   if (isManaged) {
     return (
-      <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
+      <div style={{background:"#ffffff",border:"1px solid #e2e8f0",borderRadius:14,padding:14}}>
         <div style={{fontSize:13,fontWeight:800,color:"#22c55e"}}>✅ Your projects sync automatically</div>
         <div style={{fontSize:12,color:"#64748b",marginTop:4,lineHeight:1.5}}>Saved designs follow you across your phone, tablet, and desktop - nothing to set up.</div>
       </div>
@@ -766,10 +766,10 @@ function CloudSyncPanel() {
       {!connected ? (
         <div style={{background:"linear-gradient(135deg,rgba(34,197,94,0.1),rgba(22,163,74,0.05))",border:"1px solid rgba(34,197,94,0.25)",borderRadius:14,padding:14}}>
           <div style={{fontSize:13,fontWeight:800,color:"#22c55e",marginBottom:6}}>☁️ Activate Cloud Sync</div>
-          <div style={{fontSize:12,color:"#94a3b8",lineHeight:1.6,marginBottom:10}}>
+          <div style={{fontSize:12,color:"#475569",lineHeight:1.6,marginBottom:10}}>
             Right now your projects only live on this device. Add a free Supabase project to sync across phone, tablet, and desktop — and never lose work when you start a new chat or switch devices.
           </div>
-          <div style={{background:"#0f172a",borderRadius:10,padding:12,marginBottom:10}}>
+          <div style={{background:"#f8fafc",borderRadius:10,padding:12,marginBottom:10}}>
             {["Go to supabase.com and create a free account + new project","In your project: SQL Editor → paste the setup code below → Run","Project Settings → API → copy the Project URL and anon public key","Paste both below"].map((s,i)=>(
               <div key={i} style={{display:"flex",gap:8,marginBottom:6,alignItems:"flex-start"}}>
                 <span style={{minWidth:18,height:18,borderRadius:"50%",background:"rgba(34,197,94,0.2)",color:"#22c55e",fontSize:9,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{i+1}</span>
@@ -782,19 +782,19 @@ function CloudSyncPanel() {
           </button>
           {showSql&&(
             <div style={{marginBottom:10}}>
-              <pre style={{background:"#0a0e1a",border:"1px solid #1e293b",borderRadius:8,padding:10,fontSize:10,color:"#86efac",overflowX:"auto",whiteSpace:"pre-wrap",margin:0}}>{SUPABASE_SETUP_SQL}</pre>
+              <pre style={{background:"#0a0e1a",border:"1px solid #e2e8f0",borderRadius:8,padding:10,fontSize:10,color:"#86efac",overflowX:"auto",whiteSpace:"pre-wrap",margin:0}}>{SUPABASE_SETUP_SQL}</pre>
               <button onClick={copySql} style={{marginTop:6,padding:"5px 10px",borderRadius:6,background:"rgba(34,197,94,0.1)",border:"1px solid rgba(34,197,94,0.25)",color:"#22c55e",fontSize:11,fontWeight:700,cursor:"pointer"}}>📋 Copy SQL</button>
             </div>
           )}
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
-            <input type="text" value={urlInput} onChange={e=>setUrlInput(e.target.value)} placeholder="Project URL (https://xxxx.supabase.co)" style={{background:"#1e293b",border:"1px solid #334155",borderRadius:10,padding:"10px 12px",color:"#e2e8f0",fontSize:13,outline:"none"}}/>
-            <input type="password" value={keyInput} onChange={e=>setKeyInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&save()} placeholder="anon public key" style={{background:"#1e293b",border:"1px solid #334155",borderRadius:10,padding:"10px 12px",color:"#e2e8f0",fontSize:13,outline:"none"}}/>
-            <button onClick={save} disabled={!urlInput.trim()||!keyInput.trim()} style={{padding:"10px 18px",borderRadius:10,background:urlInput.trim()&&keyInput.trim()?"linear-gradient(135deg,#22c55e,#16a34a)":"#1e293b",border:"none",color:"white",fontWeight:700,fontSize:13,cursor:urlInput.trim()&&keyInput.trim()?"pointer":"not-allowed"}}>Connect</button>
+            <input type="text" value={urlInput} onChange={e=>setUrlInput(e.target.value)} placeholder="Project URL (https://xxxx.supabase.co)" style={{background:"#e2e8f0",border:"1px solid #cbd5e1",borderRadius:10,padding:"10px 12px",color:"#0f172a",fontSize:13,outline:"none"}}/>
+            <input type="password" value={keyInput} onChange={e=>setKeyInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&save()} placeholder="anon public key" style={{background:"#e2e8f0",border:"1px solid #cbd5e1",borderRadius:10,padding:"10px 12px",color:"#0f172a",fontSize:13,outline:"none"}}/>
+            <button onClick={save} disabled={!urlInput.trim()||!keyInput.trim()} style={{padding:"10px 18px",borderRadius:10,background:urlInput.trim()&&keyInput.trim()?"linear-gradient(135deg,#22c55e,#16a34a)":"#e2e8f0",border:"none",color:urlInput.trim()&&keyInput.trim()?"white":"#64748b",fontWeight:700,fontSize:13,cursor:urlInput.trim()&&keyInput.trim()?"pointer":"not-allowed"}}>Connect</button>
           </div>
           <div style={{marginTop:8,fontSize:11,color:"#64748b"}}>Until connected, projects save to this device only — everything still works, it just won't follow you to other devices.</div>
         </div>
       ) : (
-        <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
+        <div style={{background:"#ffffff",border:"1px solid #e2e8f0",borderRadius:14,padding:14}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,marginBottom:10}}>
             <div>
               <div style={{fontSize:13,fontWeight:800,color:"#22c55e"}}>✅ Cloud Sync Connected</div>
@@ -875,11 +875,11 @@ function RegridKeyPanel() {
     );
   }
   return (
-    <div style={{marginTop:8,padding:"10px 12px",background:"rgba(100,116,139,0.08)",border:"1px dashed #334155",borderRadius:8}}>
-      <div style={{fontSize:11,color:"#94a3b8",marginBottom:6}}>Currently showing an estimated parcel outline. Add a free Regrid API key (regrid.com) for your real lot size, zoning & setbacks.</div>
+    <div style={{marginTop:8,padding:"10px 12px",background:"rgba(100,116,139,0.08)",border:"1px dashed #cbd5e1",borderRadius:8}}>
+      <div style={{fontSize:11,color:"#475569",marginBottom:6}}>Currently showing an estimated parcel outline. Add a free Regrid API key (regrid.com) for your real lot size, zoning & setbacks.</div>
       <div style={{display:"flex",gap:6}}>
-        <input type="password" value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&save()} placeholder="Paste Regrid API key..." style={{flex:1,background:"#1e293b",border:"1px solid #334155",borderRadius:6,padding:"6px 10px",color:"#e2e8f0",fontSize:11,outline:"none"}}/>
-        <button onClick={save} disabled={!input.trim()} style={{padding:"6px 12px",borderRadius:6,background:input.trim()?"rgba(34,197,94,0.15)":"#1e293b",border:"1px solid rgba(34,197,94,0.3)",color:input.trim()?"#22c55e":"#64748b",fontSize:11,fontWeight:700,cursor:input.trim()?"pointer":"not-allowed"}}>Save</button>
+        <input type="password" value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&save()} placeholder="Paste Regrid API key..." style={{flex:1,background:"#e2e8f0",border:"1px solid #cbd5e1",borderRadius:6,padding:"6px 10px",color:"#0f172a",fontSize:11,outline:"none"}}/>
+        <button onClick={save} disabled={!input.trim()} style={{padding:"6px 12px",borderRadius:6,background:input.trim()?"rgba(34,197,94,0.15)":"#e2e8f0",border:"1px solid rgba(34,197,94,0.3)",color:input.trim()?"#22c55e":"#64748b",fontSize:11,fontWeight:700,cursor:input.trim()?"pointer":"not-allowed"}}>Save</button>
       </div>
     </div>
   );
@@ -934,7 +934,7 @@ function Pool3D({ poolLen, poolWid, poolShape, poolColor, depthId, entries, fini
     ctx.clearRect(0,0,W,H);
 
     const sky = ctx.createLinearGradient(0,0,0,H);
-    sky.addColorStop(0,"#1a2c42"); sky.addColorStop(1,"#0b1120");
+    sky.addColorStop(0,"#1a2c42"); sky.addColorStop(1,"#ffffff");
     ctx.fillStyle = sky; ctx.fillRect(0,0,W,H);
 
     const ry = vm==="top" ? 0 : vm==="side" ? 1.57 : rotY;
@@ -1071,17 +1071,17 @@ function Pool3D({ poolLen, poolWid, poolShape, poolColor, depthId, entries, fini
     <div style={{display:"flex",flexDirection:"column",gap:10}}>
       <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
         {[{id:"orbit",label:"🔄 Orbit"},{id:"top",label:"⬇️ Top-Down"},{id:"side",label:"➡️ Side"}].map(v=>(
-          <button key={v.id} onClick={()=>{setViewMode(v.id); viewModeRef.current=v.id; if(v.id==="orbit"){ setAutoRotate(true); autoRotateRef.current=true; }}} style={{padding:"10px 14px",minHeight:40,borderRadius:8,border:`2px solid ${viewMode===v.id?"#06b6d4":"#334155"}`,background:viewMode===v.id?"rgba(6,182,212,0.1)":"#111827",color:viewMode===v.id?"#06b6d4":"#94a3b8",fontSize:12,fontWeight:700,cursor:"pointer"}}>{v.label}</button>
+          <button key={v.id} onClick={()=>{setViewMode(v.id); viewModeRef.current=v.id; if(v.id==="orbit"){ setAutoRotate(true); autoRotateRef.current=true; }}} style={{padding:"10px 14px",minHeight:40,borderRadius:8,border:`2px solid ${viewMode===v.id?"#06b6d4":"#cbd5e1"}`,background:viewMode===v.id?"rgba(6,182,212,0.1)":"#ffffff",color:viewMode===v.id?"#06b6d4":"#475569",fontSize:12,fontWeight:700,cursor:"pointer"}}>{v.label}</button>
         ))}
-        <button onClick={()=>{ const next=!autoRotate; setAutoRotate(next); autoRotateRef.current=next; }} style={{padding:"10px 14px",minHeight:40,borderRadius:8,border:`2px solid ${autoRotate?"#22c55e88":"#334155"}`,background:autoRotate?"rgba(34,197,94,0.1)":"#111827",color:autoRotate?"#22c55e":"#64748b",fontSize:12,fontWeight:700,cursor:"pointer"}}>{autoRotate?"⏸ Pause Spin":"▶️ Auto-Spin"}</button>
+        <button onClick={()=>{ const next=!autoRotate; setAutoRotate(next); autoRotateRef.current=next; }} style={{padding:"10px 14px",minHeight:40,borderRadius:8,border:`2px solid ${autoRotate?"#22c55e88":"#cbd5e1"}`,background:autoRotate?"rgba(34,197,94,0.1)":"#ffffff",color:autoRotate?"#22c55e":"#64748b",fontSize:12,fontWeight:700,cursor:"pointer"}}>{autoRotate?"⏸ Pause Spin":"▶️ Auto-Spin"}</button>
         <div style={{marginLeft:"auto",display:"flex",gap:8}}>
-          <button onClick={()=>handleZoomBtn(0.15)} style={{width:40,height:40,borderRadius:8,border:"1px solid #334155",background:"#1e293b",color:"#e2e8f0",fontSize:18,fontWeight:700,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
-          <button onClick={()=>handleZoomBtn(-0.15)} style={{width:40,height:40,borderRadius:8,border:"1px solid #334155",background:"#1e293b",color:"#e2e8f0",fontSize:18,fontWeight:700,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
+          <button onClick={()=>handleZoomBtn(0.15)} style={{width:40,height:40,borderRadius:8,border:"1px solid #cbd5e1",background:"#e2e8f0",color:"#0f172a",fontSize:18,fontWeight:700,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
+          <button onClick={()=>handleZoomBtn(-0.15)} style={{width:40,height:40,borderRadius:8,border:"1px solid #cbd5e1",background:"#e2e8f0",color:"#0f172a",fontSize:18,fontWeight:700,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
         </div>
       </div>
-      <div style={{borderRadius:14,overflow:"hidden",border:"2px solid #334155",boxShadow:"0 4px 24px rgba(0,0,0,0.5)"}}>
+      <div style={{borderRadius:14,overflow:"hidden",border:"2px solid #cbd5e1",boxShadow:"0 4px 24px rgba(0,0,0,0.5)"}}>
         <canvas ref={canvasRef} width={560} height={380}
-          style={{display:"block",width:"100%",cursor:stateRef.current.dragging?"grabbing":viewMode==="orbit"?"grab":"default",touchAction:"none",background:"#0b1120",willChange:"transform"}}
+          style={{display:"block",width:"100%",cursor:stateRef.current.dragging?"grabbing":viewMode==="orbit"?"grab":"default",touchAction:"none",background:"#ffffff",willChange:"transform"}}
           onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp} onMouseLeave={onUp}
           onTouchStart={onDown} onTouchMove={onMove} onTouchEnd={onUp}
           onWheel={onWheel} />
@@ -1370,9 +1370,9 @@ function MaskTweakPanel({ imageUrl, onTweaked, dailyRenders=0, dailyLimit=10, bu
   }
 
   return (
-    <div style={{background:"#0f172a",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
-      <div style={{fontSize:12,color:"#94a3b8",marginBottom:8}}>Paint over the area you want changed, then describe the change (e.g. "change travertine deck to dark slate stone").</div>
-      <div style={{position:"relative",width:"100%",borderRadius:10,overflow:"hidden",border:"1px solid #334155",lineHeight:0}}>
+    <div style={{background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:14,padding:14}}>
+      <div style={{fontSize:12,color:"#475569",marginBottom:8}}>Paint over the area you want changed, then describe the change (e.g. "change travertine deck to dark slate stone").</div>
+      <div style={{position:"relative",width:"100%",borderRadius:10,overflow:"hidden",border:"1px solid #cbd5e1",lineHeight:0}}>
         <img src={imageUrl} alt="Render to tweak" onLoad={onImgLoad} draggable={false} style={{width:"100%",display:"block"}} />
         <canvas ref={canvasRef}
           onPointerDown={startDraw} onPointerMove={moveDraw} onPointerUp={endDraw} onPointerLeave={endDraw} onPointerCancel={endDraw}
@@ -1381,19 +1381,19 @@ function MaskTweakPanel({ imageUrl, onTweaked, dailyRenders=0, dailyLimit=10, bu
       <div style={{display:"flex",alignItems:"center",gap:10,marginTop:10}}>
         <span style={{fontSize:11,color:"#64748b",whiteSpace:"nowrap"}}>Brush size</span>
         <input type="range" min="15" max="150" value={brushSize} onChange={e=>setBrushSize(Number(e.target.value))} style={{flex:1}} />
-        <button onClick={clearMask} style={{padding:"6px 12px",borderRadius:8,background:"#1e293b",border:"1px solid #334155",color:"#94a3b8",fontSize:11,fontWeight:700,cursor:"pointer"}}>Clear</button>
+        <button onClick={clearMask} style={{padding:"6px 12px",borderRadius:8,background:"#e2e8f0",border:"1px solid #cbd5e1",color:"#475569",fontSize:11,fontWeight:700,cursor:"pointer"}}>Clear</button>
       </div>
       <textarea value={tweakPrompt} onChange={e=>setTweakPrompt(e.target.value)}
         placeholder={`e.g. "Change travertine deck to dark slate stone"`} rows={2}
-        style={{width:"100%",marginTop:10,background:"#1e293b",border:"1px solid #334155",borderRadius:10,padding:"10px 12px",color:"#e2e8f0",fontSize:13,outline:"none",resize:"vertical",boxSizing:"border-box",lineHeight:1.6,fontFamily:"inherit"}} />
+        style={{width:"100%",marginTop:10,background:"#e2e8f0",border:"1px solid #cbd5e1",borderRadius:10,padding:"10px 12px",color:"#0f172a",fontSize:13,outline:"none",resize:"vertical",boxSizing:"border-box",lineHeight:1.6,fontFamily:"inherit"}} />
       {tweakError && <div style={{fontSize:12,color:"#ef4444",fontWeight:600,marginTop:8}}>⚠️ {tweakError}</div>}
       <div style={{display:"flex",gap:8,marginTop:10}}>
         <button onClick={applyTweak} disabled={tweaking}
-          style={{flex:1,padding:"12px",borderRadius:10,background:tweaking?"#1e293b":"linear-gradient(135deg,#06b6d4,#0891b2)",border:"none",color:"white",fontWeight:700,fontSize:13,cursor:tweaking?"not-allowed":"pointer"}}>
+          style={{flex:1,padding:"12px",borderRadius:10,background:tweaking?"#e2e8f0":"linear-gradient(135deg,#06b6d4,#0891b2)",border:"none",color:tweaking?"#64748b":"white",fontWeight:700,fontSize:13,cursor:tweaking?"not-allowed":"pointer"}}>
           {tweaking ? "⏳ Applying tweak..." : "✨ Apply Tweak"}
         </button>
         <button onClick={() => { setOpen(false); clearMask(); setTweakError(null); }} disabled={tweaking}
-          style={{padding:"12px 16px",borderRadius:10,background:"#1e293b",border:"1px solid #334155",color:"#94a3b8",fontWeight:700,fontSize:13,cursor:tweaking?"not-allowed":"pointer"}}>
+          style={{padding:"12px 16px",borderRadius:10,background:"#e2e8f0",border:"1px solid #cbd5e1",color:"#475569",fontWeight:700,fontSize:13,cursor:tweaking?"not-allowed":"pointer"}}>
           Cancel
         </button>
       </div>
@@ -1543,13 +1543,13 @@ function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, fin
 
   return (
     <div style={{display:"flex",flexDirection:"column",gap:14}}>
-      <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
+      <div style={{background:"#ffffff",border:"1px solid #e2e8f0",borderRadius:14,padding:14}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,marginBottom:10}}>
           <div><div style={{fontSize:13,fontWeight:800,color:"#22c55e"}}>✅ FLUX AI Rendering</div><div style={{fontSize:12,color:"#64748b",marginTop:2}}>fal.ai's FLUX model photorealistically renders your pool into a real backyard photo.</div></div>
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
-          {[{label:"Renders This Month", val:monthlyRenders, of:MONTHLY_LIMIT, color:"#06b6d4"},{label:"Total Renders", val:renderCount, of:null, color:"#a78bfa"},{label:"Est. API Cost", val:`$${(monthlyRenders*0.07).toFixed(2)}`, of:null, color:"#22c55e"}].map(s=>(
-            <div key={s.label} style={{background:"#1e293b",borderRadius:8,padding:"9px 10px",textAlign:"center"}}>
+          {[{label:"Renders This Month", val:monthlyRenders, of:MONTHLY_LIMIT, color:"#0e7490"},{label:"Total Renders", val:renderCount, of:null, color:"#6d28d9"},{label:"Est. API Cost", val:`$${(monthlyRenders*0.07).toFixed(2)}`, of:null, color:"#16a34a"}].map(s=>(
+            <div key={s.label} style={{background:"#e2e8f0",borderRadius:8,padding:"9px 10px",textAlign:"center"}}>
               <div style={{fontSize:10,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:4}}>{s.label}</div>
               <div style={{fontSize:17,fontWeight:800,color:s.color}}>{s.val}{s.of?<span style={{fontSize:11,color:"#64748b",fontWeight:400}}> / {s.of}</span>:""}</div>
             </div>
@@ -1558,13 +1558,13 @@ function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, fin
       </div>
 
       <div style={{background:"rgba(245,158,11,0.08)",border:"1px solid rgba(245,158,11,0.25)",borderRadius:12,padding:12}}>
-        <div style={{fontSize:11,color:"#f59e0b",fontWeight:700,marginBottom:4}}>⚠️ Fair use applies</div>
-        <div style={{fontSize:12,color:"#94a3b8",lineHeight:1.6}}>
-          Renders run on a shared <strong style={{color:"#e2e8f0"}}>fal.ai</strong> API key (fal.ai/dashboard) - pay per image, no per-user cap on our end. Your plan's daily render limit is what keeps usage fair across customers.
+        <div style={{fontSize:11,color:"#b45309",fontWeight:700,marginBottom:4}}>⚠️ Fair use applies</div>
+        <div style={{fontSize:12,color:"#475569",lineHeight:1.6}}>
+          Renders run on a shared <strong style={{color:"#0f172a"}}>fal.ai</strong> API key (fal.ai/dashboard) - pay per image, no per-user cap on our end. Your plan's daily render limit is what keeps usage fair across customers.
         </div>
       </div>
 
-      <div style={{background:"#0f172a",border:`2px solid ${bgPhoto?"rgba(34,197,94,0.4)":"rgba(6,182,212,0.2)"}`,borderRadius:14,padding:14}}>
+      <div style={{background:"#f8fafc",border:`2px solid ${bgPhoto?"rgba(34,197,94,0.4)":"rgba(6,182,212,0.2)"}`,borderRadius:14,padding:14}}>
         <div style={{fontSize:11,color:"#06b6d4",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>📸 Backyard Photo - Required</div>
         <div style={{fontSize:12,color:"#64748b",marginBottom:10}}>FLUX edits your actual photo - the pool is rendered realistically into your real space matching lighting, perspective & shadows. Keep photos under 8MB.</div>
         <div style={{display:"flex",gap:8}}>
@@ -1585,29 +1585,29 @@ function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, fin
         )}
       </div>
 
-      <div style={{background:"#0f172a",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
+      <div style={{background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:14,padding:14}}>
         <div style={{fontSize:11,color:"#06b6d4",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:10}}>🎨 Rendering Style</div>
         <div style={{display:"flex",flexDirection:"column",gap:6}}>
           {STYLES.map(s=>(
             <button key={s.id} onClick={()=>setSelectedStyle(s.id)}
-              style={{textAlign:"left",padding:"10px 14px",borderRadius:10,border:`2px solid ${selectedStyle===s.id?"#7c3aed":"#1e293b"}`,background:selectedStyle===s.id?"rgba(124,58,237,0.08)":"transparent",cursor:"pointer",display:"flex",alignItems:"center",gap:10}}>
-              <span style={{fontWeight:700,fontSize:13,color:selectedStyle===s.id?"#a78bfa":"#e2e8f0"}}>{s.label}</span>
+              style={{textAlign:"left",padding:"10px 14px",borderRadius:10,border:`2px solid ${selectedStyle===s.id?"#7c3aed":"#e2e8f0"}`,background:selectedStyle===s.id?"rgba(124,58,237,0.08)":"transparent",cursor:"pointer",display:"flex",alignItems:"center",gap:10}}>
+              <span style={{fontWeight:700,fontSize:13,color:selectedStyle===s.id?"#7c3aed":"#0f172a"}}>{s.label}</span>
               <span style={{fontSize:11,color:"#64748b"}}>- {s.hint}</span>
-              {selectedStyle===s.id&&<span style={{marginLeft:"auto",color:"#a78bfa",fontWeight:800,fontSize:14}}>✓</span>}
+              {selectedStyle===s.id&&<span style={{marginLeft:"auto",color:"#7c3aed",fontWeight:800,fontSize:14}}>✓</span>}
             </button>
           ))}
         </div>
       </div>
 
-      <div style={{background:"#0f172a",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
+      <div style={{background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:14,padding:14}}>
         <div style={{fontSize:11,color:"#06b6d4",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>✍️ Tell FLUX What to Add</div>
         <textarea value={userTweak} onChange={e=>setUserTweak(e.target.value)}
           placeholder="e.g. 'add a natural rock waterfall on the left side with tropical palms and a fire pit in the back right corner'" rows={3}
-          style={{width:"100%",background:"#1e293b",border:"1px solid #334155",borderRadius:10,padding:"10px 12px",color:"#e2e8f0",fontSize:13,outline:"none",resize:"vertical",boxSizing:"border-box",lineHeight:1.6,fontFamily:"inherit"}} />
+          style={{width:"100%",background:"#e2e8f0",border:"1px solid #cbd5e1",borderRadius:10,padding:"10px 12px",color:"#0f172a",fontSize:13,outline:"none",resize:"vertical",boxSizing:"border-box",lineHeight:1.6,fontFamily:"inherit"}} />
         <div style={{marginTop:10}}>
           <div style={{fontSize:10,color:"#64748b",marginBottom:6,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.05em"}}>Quick add →</div>
           <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-            {QUICK_TWEAKS.map(qt=>(<button key={qt} onClick={()=>setUserTweak(p=>p?p+", "+qt:qt)} style={{padding:"5px 10px",borderRadius:20,border:"1px solid #334155",background:"#1e293b",color:"#94a3b8",fontSize:11,cursor:"pointer"}}>+ {qt}</button>))}
+            {QUICK_TWEAKS.map(qt=>(<button key={qt} onClick={()=>setUserTweak(p=>p?p+", "+qt:qt)} style={{padding:"5px 10px",borderRadius:20,border:"1px solid #cbd5e1",background:"#e2e8f0",color:"#475569",fontSize:11,cursor:"pointer"}}>+ {qt}</button>))}
           </div>
         </div>
       </div>
@@ -1615,29 +1615,29 @@ function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, fin
       {dailyLimit <= 0 ? (
         <div style={{background:"rgba(124,58,237,0.08)",border:"1px solid rgba(124,58,237,0.25)",borderRadius:14,padding:16,textAlign:"center"}}>
           <div style={{fontSize:16,marginBottom:6}}>🔒</div>
-          <div style={{fontSize:14,fontWeight:700,color:"#a78bfa",marginBottom:4}}>Subscribe to Start Rendering</div>
-          <div style={{fontSize:12,color:"#94a3b8"}}>AI rendering needs an active Basic or Pro plan - subscribe in Settings to unlock it.</div>
+          <div style={{fontSize:14,fontWeight:700,color:"#7c3aed",marginBottom:4}}>Subscribe to Start Rendering</div>
+          <div style={{fontSize:12,color:"#475569"}}>AI rendering needs an active Basic or Pro plan - subscribe in Settings to unlock it.</div>
         </div>
       ) : dailyRenders >= dailyLimit && (
         <div style={{background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.25)",borderRadius:14,padding:16,textAlign:"center"}}>
           <div style={{fontSize:16,marginBottom:6}}>⏰</div>
           <div style={{fontSize:14,fontWeight:700,color:"#ef4444",marginBottom:4}}>Daily Render Limit Reached</div>
-          <div style={{fontSize:12,color:"#94a3b8",marginBottom:4}}>You've used all {dailyLimit} renders for today - pool and hardscape renders share this limit.</div>
+          <div style={{fontSize:12,color:"#475569",marginBottom:4}}>You've used all {dailyLimit} renders for today - pool and hardscape renders share this limit.</div>
           <div style={{fontSize:11,color:"#64748b"}}>Resets at midnight. Upgrade to Pro in Settings for more daily renders.</div>
         </div>
       )}
 
       <button onClick={rendering||dailyRenders>=dailyLimit?null:handleRender}
-        style={{width:"100%",padding:"17px",borderRadius:12,background:rendering?"#1e293b":"linear-gradient(135deg,#7c3aed,#5b21b6)",
-          border:"none",color:"white",fontWeight:800,fontSize:16,cursor:rendering?"not-allowed":"pointer",boxShadow:!rendering?"0 4px 24px rgba(124,58,237,0.35)":"none",letterSpacing:"0.02em",transition:"all 0.2s"}}>
+        style={{width:"100%",padding:"17px",borderRadius:12,background:rendering?"#e2e8f0":"linear-gradient(135deg,#7c3aed,#5b21b6)",
+          border:"none",color:rendering?"#64748b":"white",fontWeight:800,fontSize:16,cursor:rendering?"not-allowed":"pointer",boxShadow:!rendering?"0 4px 24px rgba(124,58,237,0.35)":"none",letterSpacing:"0.02em",transition:"all 0.2s"}}>
         {rendering ? `⏳ ${progressMsg}` : (renderedImage ? "🔄 Generate New Variation" : "🚀 Generate with FLUX")}
       </button>
 
       {rendering&&(
-        <div style={{background:"#0f172a",border:"1px solid #1e293b",borderRadius:12,padding:16}}>
-          <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}><span style={{fontSize:12,color:"#a78bfa",fontWeight:600}}>{progressMsg}</span><span style={{fontSize:12,color:"#64748b"}}>{progress}%</span></div>
-          <div style={{height:6,background:"#1e293b",borderRadius:3,overflow:"hidden"}}><div style={{height:"100%",width:`${progress}%`,background:"linear-gradient(90deg,#7c3aed,#a78bfa,#06b6d4)",borderRadius:3,transition:"width 2.5s ease"}} /></div>
-          <div style={{marginTop:16,textAlign:"center"}}><div style={{fontSize:36}}>🚀</div><div style={{fontSize:13,color:"#a78bfa",marginTop:6,fontWeight:600}}>FLUX is working on your render...</div><div style={{fontSize:11,color:"#64748b",marginTop:3}}>Photo-realistic results take 20-45 seconds</div></div>
+        <div style={{background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:12,padding:16}}>
+          <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}><span style={{fontSize:12,color:"#7c3aed",fontWeight:600}}>{progressMsg}</span><span style={{fontSize:12,color:"#64748b"}}>{progress}%</span></div>
+          <div style={{height:6,background:"#e2e8f0",borderRadius:3,overflow:"hidden"}}><div style={{height:"100%",width:`${progress}%`,background:"linear-gradient(90deg,#7c3aed,#a78bfa,#06b6d4)",borderRadius:3,transition:"width 2.5s ease"}} /></div>
+          <div style={{marginTop:16,textAlign:"center"}}><div style={{fontSize:36}}>🚀</div><div style={{fontSize:13,color:"#7c3aed",marginTop:6,fontWeight:600}}>FLUX is working on your render...</div><div style={{fontSize:11,color:"#64748b",marginTop:3}}>Photo-realistic results take 20-45 seconds</div></div>
         </div>
       )}
 
@@ -1645,31 +1645,31 @@ function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, fin
         <div style={{background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:12,padding:14}}>
           <div style={{fontSize:13,color:"#ef4444",fontWeight:700,marginBottom:8}}>⚠️ {error}</div>
           <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-            {bgPhoto&&!queued&&<button onClick={handleRefresh} style={{padding:"8px 14px",borderRadius:8,background:"rgba(124,58,237,0.12)",border:"1px solid rgba(124,58,237,0.25)",color:"#a78bfa",fontWeight:700,fontSize:12,cursor:"pointer"}}>🔄 Try Again</button>}
-            {queued&&<div style={{fontSize:12,color:"#f59e0b",padding:"8px 0"}}>⏰ Wait 60 seconds then try again.</div>}
+            {bgPhoto&&!queued&&<button onClick={handleRefresh} style={{padding:"8px 14px",borderRadius:8,background:"rgba(124,58,237,0.12)",border:"1px solid rgba(124,58,237,0.25)",color:"#7c3aed",fontWeight:700,fontSize:12,cursor:"pointer"}}>🔄 Try Again</button>}
+            {queued&&<div style={{fontSize:12,color:"#b45309",padding:"8px 0"}}>⏰ Wait 60 seconds then try again.</div>}
           </div>
         </div>
       )}
 
       {renderedImage&&!rendering&&(
-        <div style={{background:"#0f172a",border:"2px solid rgba(124,58,237,0.35)",borderRadius:16,overflow:"hidden",boxShadow:"0 8px 40px rgba(124,58,237,0.18)"}}>
+        <div style={{background:"#f8fafc",border:"2px solid rgba(124,58,237,0.35)",borderRadius:16,overflow:"hidden",boxShadow:"0 8px 40px rgba(124,58,237,0.18)"}}>
           <div style={{position:"relative"}}>
             <img src={renderedImage} alt="FLUX pool rendering" style={{width:"100%",display:"block"}} />
             <div style={{position:"absolute",top:10,left:10,background:"rgba(124,58,237,0.92)",borderRadius:8,padding:"5px 12px",fontSize:11,color:"white",fontWeight:700}}>🚀 FLUX - Render #{renderCount}</div>
-            <div style={{position:"absolute",top:10,right:10,background:"rgba(0,0,0,0.6)",borderRadius:8,padding:"5px 10px",fontSize:10,color:"#94a3b8"}}>Pool Craft Pro</div>
+            <div style={{position:"absolute",top:10,right:10,background:"rgba(0,0,0,0.6)",borderRadius:8,padding:"5px 10px",fontSize:10,color:"#475569"}}>Pool Craft Pro</div>
           </div>
           {aiDescription&&(
             <div style={{padding:"14px 16px",background:"rgba(124,58,237,0.06)",borderTop:"1px solid rgba(124,58,237,0.15)"}}>
-              <div style={{fontSize:10,color:"#a78bfa",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:5}}>🤖 AI Designer Notes</div>
-              <div style={{fontSize:13,color:"#94a3b8",lineHeight:1.65,fontStyle:"italic"}}>{aiDescription}</div>
+              <div style={{fontSize:10,color:"#7c3aed",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:5}}>🤖 AI Designer Notes</div>
+              <div style={{fontSize:13,color:"#475569",lineHeight:1.65,fontStyle:"italic"}}>{aiDescription}</div>
             </div>
           )}
           <div style={{padding:14}}>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
-              <button onClick={handleRefresh} style={{padding:"12px",borderRadius:10,background:"rgba(124,58,237,0.12)",border:"1px solid rgba(124,58,237,0.3)",color:"#a78bfa",fontWeight:700,fontSize:13,cursor:"pointer"}}>🔄 New Variation</button>
+              <button onClick={handleRefresh} style={{padding:"12px",borderRadius:10,background:"rgba(124,58,237,0.12)",border:"1px solid rgba(124,58,237,0.3)",color:"#7c3aed",fontWeight:700,fontSize:13,cursor:"pointer"}}>🔄 New Variation</button>
               <a href={renderedImage} download={`poolcraft-aurora-${renderCount}.jpg`} style={{padding:"12px",borderRadius:10,background:"rgba(34,197,94,0.12)",border:"1px solid rgba(34,197,94,0.3)",color:"#22c55e",fontWeight:700,fontSize:13,textDecoration:"none",textAlign:"center",display:"block"}}>⬇️ Save Image</a>
             </div>
-            <div style={{fontSize:11,color:"#334155",textAlign:"center"}}>{len}' x {wid}' {POOL_SHAPES.find(s=>s.id===shape)?.label} - {STYLES.find(s=>s.id===selectedStyle)?.label}</div>
+            <div style={{fontSize:11,color:"#94a3b8",textAlign:"center"}}>{len}' x {wid}' {POOL_SHAPES.find(s=>s.id===shape)?.label} - {STYLES.find(s=>s.id===selectedStyle)?.label}</div>
           </div>
         </div>
       )}
@@ -1680,20 +1680,20 @@ function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, fin
 
       {allLinks.length>0&&(
         <div style={{background:"linear-gradient(135deg,rgba(245,158,11,0.1),rgba(217,119,6,0.05))",border:"1px solid rgba(245,158,11,0.22)",borderRadius:14,padding:14}}>
-          <div style={{fontSize:13,fontWeight:800,color:"#f59e0b",marginBottom:10}}>🛒 Shop Everything in This Design</div>
+          <div style={{fontSize:13,fontWeight:800,color:"#b45309",marginBottom:10}}>🛒 Shop Everything in This Design</div>
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
             {allLinks.map((item,i)=>{
-              const rc=RETAILER_COLORS[item.retailer]||{bg:"rgba(100,116,139,0.1)",border:"rgba(100,116,139,0.3)",text:"#94a3b8"};
+              const rc=RETAILER_COLORS[item.retailer]||{bg:"rgba(100,116,139,0.1)",border:"rgba(100,116,139,0.3)",text:"#475569"};
               return(
-                <a key={i} href={item.link} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"11px 14px",borderRadius:10,background:"#111827",border:"1px solid #1e293b",textDecoration:"none",gap:10}}>
+                <a key={i} href={item.link} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"11px 14px",borderRadius:10,background:"#ffffff",border:"1px solid #e2e8f0",textDecoration:"none",gap:10}}>
                   <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:13,fontWeight:600,color:"#e2e8f0",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{item.name}</div>
+                    <div style={{fontSize:13,fontWeight:600,color:"#0f172a",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{item.name}</div>
                     <div style={{display:"flex",gap:6,marginTop:4,alignItems:"center"}}>
                       <span style={{padding:"2px 8px",borderRadius:20,background:rc.bg,border:`1px solid ${rc.border}`,color:rc.text,fontSize:10,fontWeight:700}}>{item.retailer}</span>
                       <span style={{fontSize:10,color:"#64748b"}}>You earn {item.earn}</span>
                     </div>
                   </div>
-                  <span style={{fontSize:18,color:"#f59e0b",flexShrink:0}}>→</span>
+                  <span style={{fontSize:18,color:"#b45309",flexShrink:0}}>→</span>
                 </a>
               );
             })}
@@ -1733,7 +1733,7 @@ function FeatureCard({ feature, active, onToggle }) {
 
     // Background gradient
     const bg = ctx.createLinearGradient(0,0,W,H);
-    bg.addColorStop(0, "#0a0f1e"); bg.addColorStop(1, "#111827");
+    bg.addColorStop(0, "#0a0f1e"); bg.addColorStop(1, "#ffffff");
     ctx.fillStyle = bg; ctx.fillRect(0,0,W,H);
 
     // Feature-specific illustration
@@ -1828,7 +1828,7 @@ function FeatureCard({ feature, active, onToggle }) {
   }, [feature]);
 
   return (
-    <div style={{background:"#111827",border:`2px solid ${active ? feature.color : "#1e293b"}`,borderRadius:16,overflow:"hidden",transition:"all 0.2s",boxShadow: active ? `0 0 20px ${feature.color}33` : "none"}}>
+    <div style={{background:"#ffffff",border:`2px solid ${active ? feature.color : "#e2e8f0"}`,borderRadius:16,overflow:"hidden",transition:"all 0.2s",boxShadow: active ? `0 0 20px ${feature.color}33` : "none"}}>
       <div style={{position:"relative", cursor:"pointer"}} onClick={()=>setExpanded(p=>!p)}>
         <canvas ref={canvasRef} width={400} height={200} style={{width:"100%", display:"block", borderRadius:"14px 14px 0 0"}} />
         <div style={{position:"absolute",top:8,right:8,background:"rgba(0,0,0,0.55)",borderRadius:6,padding:"3px 8px",fontSize:10,color:"rgba(255,255,255,0.75)"}}>{expanded ? "▲ Less" : "▼ Details"}</div>
@@ -1836,18 +1836,18 @@ function FeatureCard({ feature, active, onToggle }) {
       <div style={{padding:"14px 16px"}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
           <div style={{flex:1}}>
-            <div style={{fontWeight:700,fontSize:15,color:active?feature.color:"#e2e8f0",display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+            <div style={{fontWeight:700,fontSize:15,color:active?feature.color:"#0f172a",display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
               {feature.icon} {feature.label}
               {active && <span style={{fontSize:10,background:`${feature.color}33`,color:feature.color,borderRadius:20,padding:"2px 10px",fontWeight:700}}>ADDED ✓</span>}
             </div>
             <div style={{fontSize:12,color:"#64748b",marginTop:4,lineHeight:1.5}}>{feature.desc}</div>
           </div>
-          <button onClick={onToggle} style={{padding:"10px 18px", borderRadius:10, border:`2px solid ${active?feature.color:"#334155"}`,background:active?`${feature.color}22`:"#1e293b",color:active?feature.color:"#94a3b8",fontWeight:800, fontSize:13, cursor:"pointer", flexShrink:0, transition:"all 0.15s",whiteSpace:"nowrap"}}>
+          <button onClick={onToggle} style={{padding:"10px 18px", borderRadius:10, border:`2px solid ${active?feature.color:"#cbd5e1"}`,background:active?`${feature.color}22`:"#e2e8f0",color:active?feature.color:"#475569",fontWeight:800, fontSize:13, cursor:"pointer", flexShrink:0, transition:"all 0.15s",whiteSpace:"nowrap"}}>
             {active ? "✓ Added" : "+ Add"}
           </button>
         </div>
         {expanded && (
-          <div style={{marginTop:12,padding:"10px 12px",background:"rgba(0,0,0,0.3)",borderRadius:10,fontSize:12,color:"#94a3b8",lineHeight:1.7}}>
+          <div style={{marginTop:12,padding:"10px 12px",background:"rgba(0,0,0,0.3)",borderRadius:10,fontSize:12,color:"#475569",lineHeight:1.7}}>
             {FEATURE_DETAILS[feature.id]}
           </div>
         )}
@@ -1882,7 +1882,7 @@ const HARDSCAPE_CATEGORIES = [
       { id:"putting_green",  label:"Putting Green",      icon:"⛳", unit:"sq ft",    desc:"Artificial turf putting green - great for entertaining" },
       { id:"bocce",          label:"Bocce Ball Court",   icon:"🎯", unit:"unit",     desc:"Classic outdoor game court" },
   ]},
-  { id: "safety", label: "Safety & Sport", icon: "🚧", color: "#f59e0b", items: [
+  { id: "safety", label: "Safety & Sport", icon: "🚧", color: "#b45309", items: [
       { id:"fence",       label:"Pool Safety Fence", icon:"🚧", unit:"linear ft", desc:"Code-required safety fence around pool" },
       { id:"sport_court", label:"Sport Court",       icon:"🏀", unit:"sq ft",    desc:"Basketball, pickleball, or multi-sport court" },
   ]},
@@ -1969,14 +1969,14 @@ function HardscapeDesigner({ hardscapes, toggleHardscape, setHSQty, dailyRenders
 
   return (
     <div style={{display:"flex",flexDirection:"column",gap:14}}>
-      <div style={{background:"#111827",border:`2px solid ${photo?"rgba(52,211,153,0.45)":"#1e293b"}`,borderRadius:16,overflow:"hidden"}}>
+      <div style={{background:"#ffffff",border:`2px solid ${photo?"rgba(52,211,153,0.45)":"#e2e8f0"}`,borderRadius:16,overflow:"hidden"}}>
         <div style={{background:"linear-gradient(135deg,#134e4a,#0f3d38)",padding:"14px 16px"}}>
-          <div style={{fontSize:14,fontWeight:800,color:"#34d399",marginBottom:3}}>🏡 Outdoor Space Designer</div>
+          <div style={{fontSize:14,fontWeight:800,color:"#047857",marginBottom:3}}>🏡 Outdoor Space Designer</div>
           <div style={{fontSize:12,color:"#6ee7b7",lineHeight:1.5}}>Upload your backyard photo - Select elements below - FLUX renders everything into your real space</div>
         </div>
         <div style={{padding:14}}>
           <div style={{display:"flex",gap:8,marginBottom:photo?10:0}}>
-            <label style={{flex:1,padding:"13px 0",borderRadius:11,background:photo?"rgba(52,211,153,0.1)":"rgba(52,211,153,0.06)",border:`1.5px solid ${photo?"rgba(52,211,153,0.45)":"rgba(52,211,153,0.2)"}`,color:photo?"#34d399":"#6ee7b7",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+            <label style={{flex:1,padding:"13px 0",borderRadius:11,background:photo?"rgba(52,211,153,0.1)":"rgba(52,211,153,0.06)",border:`1.5px solid ${photo?"rgba(52,211,153,0.45)":"rgba(52,211,153,0.2)"}`,color:photo?"#047857":"#6ee7b7",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
               {photo?"✅ Photo loaded - tap to change":"📁 Upload Backyard Photo"}
               <input type="file" accept="image/*" onChange={handlePhotoUpload} style={{display:"none"}} />
             </label>
@@ -1986,8 +1986,8 @@ function HardscapeDesigner({ hardscapes, toggleHardscape, setHSQty, dailyRenders
         </div>
       </div>
 
-      <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:16,overflow:"hidden"}}>
-        <div style={{display:"flex",overflowX:"auto",borderBottom:"1px solid #1e293b",background:"#0f172a"}}>
+      <div style={{background:"#ffffff",border:"1px solid #e2e8f0",borderRadius:16,overflow:"hidden"}}>
+        <div style={{display:"flex",overflowX:"auto",borderBottom:"1px solid #e2e8f0",background:"#f8fafc"}}>
           {HARDSCAPE_CATEGORIES.map(cat=>{
             const catSelected = cat.items.filter(item=>hardscapes[item.id]!=null).length;
             const isActive = activeCat===cat.id;
@@ -2003,23 +2003,23 @@ function HardscapeDesigner({ hardscapes, toggleHardscape, setHSQty, dailyRenders
           {currentCat.items.map(item=>{
             const active = hardscapes[item.id]!=null;
             return(
-              <div key={item.id} style={{background:active?`${currentCat.color}11`:"#0f172a",border:`2px solid ${active?currentCat.color:"#1e293b"}`,borderRadius:12,padding:"12px 14px",transition:"all 0.15s"}}>
+              <div key={item.id} style={{background:active?`${currentCat.color}11`:"#f8fafc",border:`2px solid ${active?currentCat.color:"#e2e8f0"}`,borderRadius:12,padding:"12px 14px",transition:"all 0.15s"}}>
                 <div style={{display:"flex",alignItems:"center",gap:12}}>
-                  <div style={{width:44,height:44,borderRadius:10,background:active?`${currentCat.color}22`:"#1e293b",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>{item.icon}</div>
+                  <div style={{width:44,height:44,borderRadius:10,background:active?`${currentCat.color}22`:"#e2e8f0",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>{item.icon}</div>
                   <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontWeight:700,fontSize:14,color:active?currentCat.color:"#e2e8f0",display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                    <div style={{fontWeight:700,fontSize:14,color:active?currentCat.color:"#0f172a",display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
                       {item.label}{active&&<span style={{fontSize:10,background:`${currentCat.color}33`,color:currentCat.color,borderRadius:20,padding:"2px 8px",fontWeight:700}}>ADDED ✓</span>}
                     </div>
                     <div style={{fontSize:12,color:"#64748b",marginTop:3}}>{item.desc}</div>
                     {active&&item.unit!=="unit"&&(
                       <div style={{display:"flex",alignItems:"center",gap:8,marginTop:8}}>
                         <span style={{fontSize:11,color:"#64748b"}}>Quantity:</span>
-                        <input type="number" value={hardscapes[item.id]||0} min={0} onChange={e=>setHSQty(item.id,e.target.value)} style={{width:80,background:"#1e293b",border:`1px solid ${currentCat.color}66`,borderRadius:8,padding:"5px 10px",color:currentCat.color,fontSize:14,fontWeight:700,outline:"none"}} />
+                        <input type="number" value={hardscapes[item.id]||0} min={0} onChange={e=>setHSQty(item.id,e.target.value)} style={{width:80,background:"#e2e8f0",border:`1px solid ${currentCat.color}66`,borderRadius:8,padding:"5px 10px",color:currentCat.color,fontSize:14,fontWeight:700,outline:"none"}} />
                         <span style={{fontSize:11,color:"#64748b"}}>{item.unit}</span>
                       </div>
                     )}
                   </div>
-                  <button onClick={()=>toggleHardscape(item.id)} style={{padding:"9px 16px",borderRadius:10,border:`2px solid ${active?currentCat.color:"#334155"}`,background:active?`${currentCat.color}22`:"#1e293b",color:active?currentCat.color:"#94a3b8",fontWeight:800,fontSize:13,cursor:"pointer",flexShrink:0,transition:"all 0.15s",whiteSpace:"nowrap"}}>
+                  <button onClick={()=>toggleHardscape(item.id)} style={{padding:"9px 16px",borderRadius:10,border:`2px solid ${active?currentCat.color:"#cbd5e1"}`,background:active?`${currentCat.color}22`:"#e2e8f0",color:active?currentCat.color:"#475569",fontWeight:800,fontSize:13,cursor:"pointer",flexShrink:0,transition:"all 0.15s",whiteSpace:"nowrap"}}>
                     {active?"✓ Added":"+ Add"}
                   </button>
                 </div>
@@ -2042,51 +2042,51 @@ function HardscapeDesigner({ hardscapes, toggleHardscape, setHSQty, dailyRenders
         </div>
       )}
 
-      <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:16,padding:14,display:"flex",flexDirection:"column",gap:12}}>
+      <div style={{background:"#ffffff",border:"1px solid #e2e8f0",borderRadius:16,padding:14,display:"flex",flexDirection:"column",gap:12}}>
         <div>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-            <div style={{fontSize:11,color:"#94a3b8",fontWeight:600}}>Daily Renders Remaining</div>
-            <div style={{fontSize:12,fontWeight:800,color:limitHit?"#ef4444":rendersLeft<=3?"#f59e0b":"#22c55e"}}>{limitHit?"Limit reached":`${rendersLeft} left today`}</div>
+            <div style={{fontSize:11,color:"#475569",fontWeight:600}}>Daily Renders Remaining</div>
+            <div style={{fontSize:12,fontWeight:800,color:limitHit?"#ef4444":rendersLeft<=3?"#b45309":"#22c55e"}}>{limitHit?"Limit reached":`${rendersLeft} left today`}</div>
           </div>
-          <div style={{height:5,background:"#1e293b",borderRadius:3,overflow:"hidden"}}><div style={{height:"100%",width:`${Math.min((dailyRenders/dailyLimit)*100,100)}%`,background:limitHit?"#ef4444":rendersLeft<=3?"linear-gradient(90deg,#f59e0b,#ef4444)":"linear-gradient(90deg,#22c55e,#34d399)",borderRadius:3,transition:"width 0.4s"}} /></div>
-          <div style={{fontSize:10,color:"#334155",marginTop:4}}>{dailyRenders} of {dailyLimit} used - Pool + Hardscape renders share this limit - Resets midnight</div>
+          <div style={{height:5,background:"#e2e8f0",borderRadius:3,overflow:"hidden"}}><div style={{height:"100%",width:`${Math.min((dailyRenders/dailyLimit)*100,100)}%`,background:limitHit?"#ef4444":rendersLeft<=3?"linear-gradient(90deg,#f59e0b,#ef4444)":"linear-gradient(90deg,#22c55e,#34d399)",borderRadius:3,transition:"width 0.4s"}} /></div>
+          <div style={{fontSize:10,color:"#94a3b8",marginTop:4}}>{dailyRenders} of {dailyLimit} used - Pool + Hardscape renders share this limit - Resets midnight</div>
         </div>
 
         <div>
-          <div style={{fontSize:11,color:"#34d399",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:8}}>🎨 Rendering Style</div>
+          <div style={{fontSize:11,color:"#047857",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:8}}>🎨 Rendering Style</div>
           <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
             {[{id:"photorealistic",label:"📷 Photorealistic"},{id:"twilight",label:"🌅 Twilight"},{id:"night",label:"🌙 Night"},{id:"magazine",label:"✨ Magazine"}].map(s=>(
-              <button key={s.id} onClick={()=>setStyle(s.id)} style={{padding:"7px 14px",borderRadius:20,border:`2px solid ${style===s.id?"#34d399":"#1e293b"}`,background:style===s.id?"rgba(52,211,153,0.1)":"transparent",color:style===s.id?"#34d399":"#64748b",fontSize:12,fontWeight:600,cursor:"pointer"}}>{s.label}</button>
+              <button key={s.id} onClick={()=>setStyle(s.id)} style={{padding:"7px 14px",borderRadius:20,border:`2px solid ${style===s.id?"#047857":"#e2e8f0"}`,background:style===s.id?"rgba(52,211,153,0.1)":"transparent",color:style===s.id?"#047857":"#64748b",fontSize:12,fontWeight:600,cursor:"pointer"}}>{s.label}</button>
             ))}
           </div>
         </div>
 
         <div>
-          <div style={{fontSize:11,color:"#34d399",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:8}}>✍️ Additional Instructions</div>
+          <div style={{fontSize:11,color:"#047857",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:8}}>✍️ Additional Instructions</div>
           <textarea value={tweak} onChange={e=>setTweak(e.target.value)} placeholder="e.g. 'use travertine throughout, add string lights, mature palms in corners'" rows={2}
-            style={{width:"100%",background:"#1e293b",border:"1px solid #334155",borderRadius:10,padding:"9px 12px",color:"#e2e8f0",fontSize:13,outline:"none",resize:"none",boxSizing:"border-box",lineHeight:1.5,fontFamily:"inherit"}} />
+            style={{width:"100%",background:"#e2e8f0",border:"1px solid #cbd5e1",borderRadius:10,padding:"9px 12px",color:"#0f172a",fontSize:13,outline:"none",resize:"none",boxSizing:"border-box",lineHeight:1.5,fontFamily:"inherit"}} />
         </div>
 
         {dailyLimit <= 0 ? (
           <div style={{padding:"14px",borderRadius:12,background:"rgba(124,58,237,0.08)",border:"1px solid rgba(124,58,237,0.2)",textAlign:"center"}}>
-            <div style={{fontSize:14,fontWeight:700,color:"#a78bfa",marginBottom:4}}>🔒 Subscribe to Start Rendering</div>
-            <div style={{fontSize:12,color:"#94a3b8"}}>AI rendering needs an active Basic or Pro plan - subscribe in Settings to unlock it.</div>
+            <div style={{fontSize:14,fontWeight:700,color:"#7c3aed",marginBottom:4}}>🔒 Subscribe to Start Rendering</div>
+            <div style={{fontSize:12,color:"#475569"}}>AI rendering needs an active Basic or Pro plan - subscribe in Settings to unlock it.</div>
           </div>
         ) : limitHit ? (
           <div style={{padding:"14px",borderRadius:12,background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.2)",textAlign:"center"}}>
             <div style={{fontSize:14,fontWeight:700,color:"#ef4444",marginBottom:4}}>⏰ Daily Limit Reached</div>
-            <div style={{fontSize:12,color:"#94a3b8"}}>All {dailyLimit} renders used today. Resets at midnight.</div>
+            <div style={{fontSize:12,color:"#475569"}}>All {dailyLimit} renders used today. Resets at midnight.</div>
           </div>
         ) : (
-          <button onClick={rendering?null:handleRender} style={{width:"100%",padding:"16px",borderRadius:12,background:rendering?"#1e293b":"linear-gradient(135deg,#059669,#047857)",border:"none",color:"white",fontWeight:800,fontSize:15,cursor:rendering?"not-allowed":"pointer",boxShadow:rendering?"none":"0 4px 20px rgba(5,150,105,0.3)",transition:"all 0.2s"}}>
+          <button onClick={rendering?null:handleRender} style={{width:"100%",padding:"16px",borderRadius:12,background:rendering?"#e2e8f0":"linear-gradient(135deg,#059669,#047857)",border:"none",color:rendering?"#64748b":"white",fontWeight:800,fontSize:15,cursor:rendering?"not-allowed":"pointer",boxShadow:rendering?"none":"0 4px 20px rgba(5,150,105,0.3)",transition:"all 0.2s"}}>
             {rendering?`⏳ ${progressMsg}`:rendered?"🔄 Generate New Variation":"🚀 Generate Hardscape Rendering"}
           </button>
         )}
 
         {rendering&&(
-          <div style={{background:"#0f172a",border:"1px solid #1e293b",borderRadius:12,padding:14}}>
-            <div style={{display:"flex",justifyContent:"space-between",marginBottom:7}}><span style={{fontSize:12,color:"#34d399",fontWeight:600}}>{progressMsg}</span><span style={{fontSize:12,color:"#64748b"}}>{progress}%</span></div>
-            <div style={{height:5,background:"#1e293b",borderRadius:3,overflow:"hidden"}}><div style={{height:"100%",width:`${progress}%`,background:"linear-gradient(90deg,#059669,#34d399,#06b6d4)",borderRadius:3,transition:"width 2.5s ease"}} /></div>
+          <div style={{background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:12,padding:14}}>
+            <div style={{display:"flex",justifyContent:"space-between",marginBottom:7}}><span style={{fontSize:12,color:"#047857",fontWeight:600}}>{progressMsg}</span><span style={{fontSize:12,color:"#64748b"}}>{progress}%</span></div>
+            <div style={{height:5,background:"#e2e8f0",borderRadius:3,overflow:"hidden"}}><div style={{height:"100%",width:`${progress}%`,background:"linear-gradient(90deg,#059669,#34d399,#06b6d4)",borderRadius:3,transition:"width 2.5s ease"}} /></div>
           </div>
         )}
 
@@ -2098,15 +2098,15 @@ function HardscapeDesigner({ hardscapes, toggleHardscape, setHSQty, dailyRenders
         )}
 
         {rendered&&!rendering&&(
-          <div style={{background:"#0f172a",border:"2px solid rgba(52,211,153,0.35)",borderRadius:14,overflow:"hidden",boxShadow:"0 6px 30px rgba(52,211,153,0.12)"}}>
+          <div style={{background:"#f8fafc",border:"2px solid rgba(52,211,153,0.35)",borderRadius:14,overflow:"hidden",boxShadow:"0 6px 30px rgba(52,211,153,0.12)"}}>
             <div style={{position:"relative"}}>
               <img src={rendered} alt="Hardscape rendering" style={{width:"100%",display:"block"}} />
               <div style={{position:"absolute",top:10,left:10,background:"rgba(5,150,105,0.92)",borderRadius:8,padding:"5px 12px",fontSize:11,color:"white",fontWeight:700}}>🏡 FLUX - Outdoor Design #{renderCount}</div>
-              <div style={{position:"absolute",top:10,right:10,background:"rgba(0,0,0,0.6)",borderRadius:8,padding:"4px 10px",fontSize:10,color:"#94a3b8"}}>Pool Craft Pro</div>
+              <div style={{position:"absolute",top:10,right:10,background:"rgba(0,0,0,0.6)",borderRadius:8,padding:"4px 10px",fontSize:10,color:"#475569"}}>Pool Craft Pro</div>
             </div>
-            {aiDesc&&(<div style={{padding:"12px 14px",background:"rgba(52,211,153,0.06)",borderTop:"1px solid rgba(52,211,153,0.15)"}}><div style={{fontSize:10,color:"#34d399",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:5}}>🤖 AI Designer Notes</div><div style={{fontSize:13,color:"#94a3b8",lineHeight:1.6,fontStyle:"italic"}}>{aiDesc}</div></div>)}
+            {aiDesc&&(<div style={{padding:"12px 14px",background:"rgba(52,211,153,0.06)",borderTop:"1px solid rgba(52,211,153,0.15)"}}><div style={{fontSize:10,color:"#047857",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:5}}>🤖 AI Designer Notes</div><div style={{fontSize:13,color:"#475569",lineHeight:1.6,fontStyle:"italic"}}>{aiDesc}</div></div>)}
             <div style={{padding:12,display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-              <button onClick={()=>{setRendered(null);setAiDesc(null);setError(null);}} style={{padding:"11px",borderRadius:10,background:"rgba(52,211,153,0.1)",border:"1px solid rgba(52,211,153,0.3)",color:"#34d399",fontWeight:700,fontSize:13,cursor:"pointer"}}>🔄 New Variation</button>
+              <button onClick={()=>{setRendered(null);setAiDesc(null);setError(null);}} style={{padding:"11px",borderRadius:10,background:"rgba(52,211,153,0.1)",border:"1px solid rgba(52,211,153,0.3)",color:"#047857",fontWeight:700,fontSize:13,cursor:"pointer"}}>🔄 New Variation</button>
               <a href={rendered} download={`poolcraft-hardscape-${renderCount}.jpg`} style={{padding:"11px",borderRadius:10,background:"rgba(6,182,212,0.1)",border:"1px solid rgba(6,182,212,0.3)",color:"#06b6d4",fontWeight:700,fontSize:13,textDecoration:"none",textAlign:"center",display:"block"}}>⬇️ Save Design</a>
             </div>
           </div>
@@ -2234,8 +2234,8 @@ function SitePlanMap({ poolLen, poolWid, poolShape, poolColor, initialAddress })
     if (!map || !mapReady || map.getSource("parcel-src")) return;
 
     map.addSource("parcel-src", { type: "geojson", data: turf.featureCollection([]) });
-    map.addLayer({ id: "parcel-fill", type: "fill", source: "parcel-src", paint: { "fill-color": "#e2e8f0", "fill-opacity": 0.05 } });
-    map.addLayer({ id: "parcel-line", type: "line", source: "parcel-src", paint: { "line-color": "#e2e8f0", "line-width": 2 } });
+    map.addLayer({ id: "parcel-fill", type: "fill", source: "parcel-src", paint: { "fill-color": "#0f172a", "fill-opacity": 0.05 } });
+    map.addLayer({ id: "parcel-line", type: "line", source: "parcel-src", paint: { "line-color": "#0f172a", "line-width": 2 } });
 
     map.addSource("envelope-src", { type: "geojson", data: turf.featureCollection([]) });
     map.addLayer({ id: "envelope-line", type: "line", source: "envelope-src", paint: { "line-color": "#3b82f6", "line-width": 2, "line-dasharray": [2, 2] } });
@@ -2374,13 +2374,13 @@ function SitePlanMap({ poolLen, poolWid, poolShape, poolColor, initialAddress })
 
   if (!mapboxToken) {
     return (
-      <div style={{background:"#0f172a",border:"1px dashed #334155",borderRadius:14,padding:20,textAlign:"center"}}>
+      <div style={{background:"#f8fafc",border:"1px dashed #cbd5e1",borderRadius:14,padding:20,textAlign:"center"}}>
         <div style={{fontSize:32,marginBottom:8}}>🗺️</div>
-        <div style={{fontSize:14,fontWeight:700,color:"#e2e8f0",marginBottom:6}}>Add a Mapbox token to enable the Site Plan map</div>
+        <div style={{fontSize:14,fontWeight:700,color:"#0f172a",marginBottom:6}}>Add a Mapbox token to enable the Site Plan map</div>
         <div style={{fontSize:12,color:"#64748b",marginBottom:14}}>Free at mapbox.com — grab a public access token (starts with "pk.") from your account's Tokens page.</div>
         <div style={{display:"flex",gap:6,maxWidth:420,margin:"0 auto"}}>
-          <input type="password" value={tokenInput} onChange={e=>setTokenInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&saveMapboxToken()} placeholder="Paste Mapbox public token (pk....)" style={{flex:1,background:"#1e293b",border:"1px solid #334155",borderRadius:8,padding:"9px 12px",color:"#e2e8f0",fontSize:12,outline:"none"}}/>
-          <button onClick={saveMapboxToken} disabled={!tokenInput.trim()} style={{padding:"9px 16px",borderRadius:8,background:tokenInput.trim()?"rgba(6,182,212,0.15)":"#1e293b",border:"1px solid rgba(6,182,212,0.3)",color:tokenInput.trim()?"#06b6d4":"#64748b",fontSize:12,fontWeight:700,cursor:tokenInput.trim()?"pointer":"not-allowed"}}>Save</button>
+          <input type="password" value={tokenInput} onChange={e=>setTokenInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&saveMapboxToken()} placeholder="Paste Mapbox public token (pk....)" style={{flex:1,background:"#e2e8f0",border:"1px solid #cbd5e1",borderRadius:8,padding:"9px 12px",color:"#0f172a",fontSize:12,outline:"none"}}/>
+          <button onClick={saveMapboxToken} disabled={!tokenInput.trim()} style={{padding:"9px 16px",borderRadius:8,background:tokenInput.trim()?"rgba(6,182,212,0.15)":"#e2e8f0",border:"1px solid rgba(6,182,212,0.3)",color:tokenInput.trim()?"#06b6d4":"#64748b",fontSize:12,fontWeight:700,cursor:tokenInput.trim()?"pointer":"not-allowed"}}>Save</button>
         </div>
       </div>
     );
@@ -2409,15 +2409,15 @@ function SitePlanMap({ poolLen, poolWid, poolShape, poolColor, initialAddress })
           <div key={s.label} style={{flex:"1 1 140px"}}>
             <div style={{fontSize:10,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:4}}>{s.label}</div>
             <input type="number" min="0" max="200" value={s.val} onChange={e=>s.set(Math.max(0, Number(e.target.value)||0))}
-              style={{width:"100%",background:"#1e293b",border:"1px solid #334155",borderRadius:8,padding:"8px 10px",color:"#e2e8f0",fontSize:13,outline:"none",boxSizing:"border-box"}}/>
+              style={{width:"100%",background:"#e2e8f0",border:"1px solid #cbd5e1",borderRadius:8,padding:"8px 10px",color:"#0f172a",fontSize:13,outline:"none",boxSizing:"border-box"}}/>
           </div>
         ))}
       </div>
 
-      <div style={{position:"relative",borderRadius:14,overflow:"hidden",border:"2px solid #334155",boxShadow:"0 4px 24px rgba(0,0,0,0.5)"}}>
+      <div style={{position:"relative",borderRadius:14,overflow:"hidden",border:"2px solid #cbd5e1",boxShadow:"0 4px 24px rgba(0,0,0,0.5)"}}>
         <div ref={mapContainerRef} style={{width:"100%",height:520}} />
         {loadingParcel && (
-          <div style={{position:"absolute",bottom:10,left:10,background:"rgba(15,23,42,0.85)",borderRadius:8,padding:"6px 12px",fontSize:12,color:"#94a3b8",fontWeight:600}}>⏳ Loading parcel data...</div>
+          <div style={{position:"absolute",bottom:10,left:10,background:"rgba(15,23,42,0.85)",borderRadius:8,padding:"6px 12px",fontSize:12,color:"#475569",fontWeight:600}}>⏳ Loading parcel data...</div>
         )}
         {collision && parcelPolygon && (
           <div style={{position:"absolute",top:10,left:10,right:10,background:"rgba(239,68,68,0.95)",borderRadius:8,padding:"8px 14px",fontSize:12,color:"white",fontWeight:700,textAlign:"center"}}>
@@ -2432,11 +2432,11 @@ function SitePlanMap({ poolLen, poolWid, poolShape, poolColor, initialAddress })
         <div style={{background:"rgba(6,182,212,0.08)",border:"1px solid rgba(6,182,212,0.2)",borderRadius:12,padding:14}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
             <div style={{fontSize:12,color:"#06b6d4",fontWeight:700}}>📍 Parcel Data</div>
-            <div style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:parcelSource==="regrid"?"rgba(34,197,94,0.15)":"rgba(245,158,11,0.15)",border:`1px solid ${parcelSource==="regrid"?"rgba(34,197,94,0.3)":"rgba(245,158,11,0.3)"}`,color:parcelSource==="regrid"?"#22c55e":"#f59e0b",fontWeight:700}}>{parcelSource==="regrid"?"🟢 Live Regrid Data":"🟡 Estimated"}</div>
+            <div style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:parcelSource==="regrid"?"rgba(34,197,94,0.15)":"rgba(245,158,11,0.15)",border:`1px solid ${parcelSource==="regrid"?"rgba(34,197,94,0.3)":"rgba(245,158,11,0.3)"}`,color:parcelSource==="regrid"?"#22c55e":"#b45309",fontWeight:700}}>{parcelSource==="regrid"?"🟢 Live Regrid Data":"🟡 Estimated"}</div>
           </div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
             {[{label:"Parcel / APN",val:parcelAttrs.parcel},{label:"Lot Size",val:parcelAttrs.lot_size},{label:"Lot Sq Ft",val:parcelAttrs.lot_sqft},{label:"Zoning",val:parcelAttrs.zoning}].map(r=>(
-              <div key={r.label} style={{background:"#1e293b",borderRadius:8,padding:"8px 10px"}}><div style={{fontSize:10,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em"}}>{r.label}</div><div style={{fontSize:13,fontWeight:700,color:"#e2e8f0",marginTop:2}}>{r.val}</div></div>
+              <div key={r.label} style={{background:"#e2e8f0",borderRadius:8,padding:"8px 10px"}}><div style={{fontSize:10,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em"}}>{r.label}</div><div style={{fontSize:13,fontWeight:700,color:"#0f172a",marginTop:2}}>{r.val}</div></div>
             ))}
           </div>
         </div>
@@ -2525,11 +2525,11 @@ function SchematicTab({ poolLen, poolWid, poolShape, depthId }) {
     if (!win) { alert("Please allow pop-ups for this site to export or print."); return; }
     const date = new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
     win.document.write(`<!DOCTYPE html><html><head><title>Pool Craft Pro — Engineering Schematic</title>
-    <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:system-ui,sans-serif;background:#fff;color:#1e293b;padding:32px}
+    <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:system-ui,sans-serif;background:#fff;color:#e2e8f0;padding:32px}
     .header{margin-bottom:20px}.logo{font-size:18px;font-weight:800;color:#1a2f5e;font-family:Georgia,serif}
-    .meta{font-size:12px;color:#64748b;margin-top:4px}svg{width:100%;max-width:900px;border:1px solid #e2e8f0;border-radius:8px}
-    .config{display:flex;gap:20px;margin-top:16px;font-size:12px;color:#334155;flex-wrap:wrap}
-    .disclaimer{margin-top:20px;padding-top:14px;border-top:2px solid #e2e8f0;font-size:11px;color:#94a3b8;line-height:1.6}
+    .meta{font-size:12px;color:#64748b;margin-top:4px}svg{width:100%;max-width:900px;border:1px solid #0f172a;border-radius:8px}
+    .config{display:flex;gap:20px;margin-top:16px;font-size:12px;color:#cbd5e1;flex-wrap:wrap}
+    .disclaimer{margin-top:20px;padding-top:14px;border-top:2px solid #0f172a;font-size:11px;color:#475569;line-height:1.6}
     @media print{body{padding:16px}}</style></head><body>
     <div class="header"><div class="logo">POOL <span style="color:#c9a84c">CRAFT</span> PRO — Engineering Schematic</div><div class="meta">${poolLen}' x ${poolWid}' pool — generated ${date}</div></div>
     ${svgEl.outerHTML}
@@ -2547,7 +2547,7 @@ function SchematicTab({ poolLen, poolWid, poolShape, depthId }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ background: "#111827", border: "1px solid #1e293b", borderRadius: 14, padding: 14 }}>
+      <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 14, padding: 14 }}>
         <div style={{ fontSize: 12, fontWeight: 700, color: "#06b6d4", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 10 }}>⚙️ Schematic Settings</div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {[
@@ -2560,7 +2560,7 @@ function SchematicTab({ poolLen, poolWid, poolShape, depthId }) {
               <div style={{ fontSize: 10, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>{f.label}</div>
               <input type="number" min={f.min} max={f.max} value={f.val}
                 onChange={(e) => f.set(Math.max(f.min, Number(e.target.value) || f.min))}
-                style={{ width: "100%", background: "#1e293b", border: "1px solid #334155", borderRadius: 8, padding: "8px 10px", color: "#e2e8f0", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
+                style={{ width: "100%", background: "#e2e8f0", border: "1px solid #cbd5e1", borderRadius: 8, padding: "8px 10px", color: "#0f172a", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
             </div>
           ))}
         </div>
@@ -2573,9 +2573,9 @@ function SchematicTab({ poolLen, poolWid, poolShape, depthId }) {
             { label: "Returns", val: schematic.returns.length },
             { label: "Rebar (linear ft)", val: totalRebarLinFt.toLocaleString() },
           ].map((s) => (
-            <div key={s.label} style={{ background: "#1e293b", borderRadius: 8, padding: "9px 10px", textAlign: "center" }}>
+            <div key={s.label} style={{ background: "#e2e8f0", borderRadius: 8, padding: "9px 10px", textAlign: "center" }}>
               <div style={{ fontSize: 10, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>{s.label}</div>
-              <div style={{ fontSize: 17, fontWeight: 800, color: "#06b6d4" }}>{s.val}</div>
+              <div style={{ fontSize: 17, fontWeight: 800, color: "#0e7490" }}>{s.val}</div>
             </div>
           ))}
         </div>
@@ -2586,7 +2586,7 @@ function SchematicTab({ poolLen, poolWid, poolShape, depthId }) {
       </div>
 
       <button onClick={exportPdf} disabled={!schematic}
-        style={{ padding: "12px", borderRadius: 10, background: schematic ? "linear-gradient(135deg,#06b6d4,#0284c7)" : "#1e293b", border: "none", color: schematic ? "white" : "#64748b", fontWeight: 700, fontSize: 13, cursor: schematic ? "pointer" : "not-allowed" }}>
+        style={{ padding: "12px", borderRadius: 10, background: schematic ? "linear-gradient(135deg,#06b6d4,#0284c7)" : "#e2e8f0", border: "none", color: schematic ? "white" : "#64748b", fontWeight: 700, fontSize: 13, cursor: schematic ? "pointer" : "not-allowed" }}>
         🖨️ Export as PDF
       </button>
 
@@ -2616,24 +2616,24 @@ function HowItWorksTab({ onSubscribeClick }) {
   return (
     <div style={{display:"flex",flexDirection:"column",gap:14}}>
       <div style={{background:"linear-gradient(135deg,rgba(124,58,237,0.18),rgba(6,182,212,0.1))",border:"1px solid rgba(124,58,237,0.3)",borderRadius:16,padding:20}}>
-        <div style={{fontSize:11,color:"#a78bfa",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>✨ What Pool Craft Pro Actually Does</div>
-        <div style={{fontSize:18,fontWeight:800,color:"#e2e8f0",lineHeight:1.4}}>Design, render, engineer, price, and quote a pool project — all in one place, with the calculations already done for you.</div>
-        <div style={{fontSize:13,color:"#94a3b8",marginTop:10,lineHeight:1.6}}>Most pool builders juggle a separate design tool, a separate estimating spreadsheet, and a separate way to send quotes. This app replaces all three — so a conversation with a customer can go from "what if we put a pool here?" to a real rendering, a real cost estimate, and a real quote, in one sitting.</div>
+        <div style={{fontSize:11,color:"#7c3aed",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>✨ What Pool Craft Pro Actually Does</div>
+        <div style={{fontSize:18,fontWeight:800,color:"#0f172a",lineHeight:1.4}}>Design, render, engineer, price, and quote a pool project — all in one place, with the calculations already done for you.</div>
+        <div style={{fontSize:13,color:"#475569",marginTop:10,lineHeight:1.6}}>Most pool builders juggle a separate design tool, a separate estimating spreadsheet, and a separate way to send quotes. This app replaces all three — so a conversation with a customer can go from "what if we put a pool here?" to a real rendering, a real cost estimate, and a real quote, in one sitting.</div>
       </div>
 
       {HOW_IT_WORKS_SECTIONS.map((s,i)=>(
-        <div key={s.title} style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:16,display:"flex",gap:14,alignItems:"flex-start"}}>
+        <div key={s.title} style={{background:"#ffffff",border:"1px solid #e2e8f0",borderRadius:14,padding:16,display:"flex",gap:14,alignItems:"flex-start"}}>
           <div style={{fontSize:28,flexShrink:0,width:36,textAlign:"center"}}>{s.icon}</div>
           <div>
-            <div style={{fontSize:14,fontWeight:700,color:"#e2e8f0",marginBottom:4}}>{i+1}. {s.title}</div>
-            <div style={{fontSize:13,color:"#94a3b8",lineHeight:1.6}}>{s.body}</div>
+            <div style={{fontSize:14,fontWeight:700,color:"#0f172a",marginBottom:4}}>{i+1}. {s.title}</div>
+            <div style={{fontSize:13,color:"#475569",lineHeight:1.6}}>{s.body}</div>
           </div>
         </div>
       ))}
 
       <div style={{background:"linear-gradient(135deg,rgba(34,197,94,0.12),rgba(6,182,212,0.08))",border:"1px solid rgba(34,197,94,0.3)",borderRadius:16,padding:20,textAlign:"center"}}>
         <div style={{fontSize:15,fontWeight:800,color:"#22c55e",marginBottom:6}}>Try every tab above free right now — no card required</div>
-        <div style={{fontSize:12,color:"#94a3b8",marginBottom:14,lineHeight:1.6}}>Design, site planning, materials, cost estimating, quotes, and the engineering schematic are all open to explore. A subscription unlocks AI photorealistic rendering of your actual design.</div>
+        <div style={{fontSize:12,color:"#475569",marginBottom:14,lineHeight:1.6}}>Design, site planning, materials, cost estimating, quotes, and the engineering schematic are all open to explore. A subscription unlocks AI photorealistic rendering of your actual design.</div>
         <button onClick={onSubscribeClick} style={{padding:"12px 24px",borderRadius:10,background:"linear-gradient(135deg,#7c3aed,#5b21b6)",border:"none",color:"white",fontWeight:700,fontSize:14,cursor:"pointer"}}>
           See Plans & Pricing →
         </button>
@@ -2667,9 +2667,9 @@ function SplashScreen({ onDone }) {
       {/* Wordmark */}
       <div style={{textAlign:"center",marginBottom:8}}>
         <div style={{fontSize:32,fontWeight:900,letterSpacing:"3px",fontFamily:"Georgia,serif"}}>
-          <span style={{color:"#e2e8f0"}}>POOL </span>
-          <span style={{color:"#c9a84c"}}>CRAFT </span>
-          <span style={{color:"#e2e8f0"}}>PRO</span>
+          <span style={{color:"#0f172a"}}>POOL </span>
+          <span style={{color:"#a8873a"}}>CRAFT </span>
+          <span style={{color:"#0f172a"}}>PRO</span>
         </div>
         <div style={{fontSize:11,color:"#8a9ab5",letterSpacing:"2.5px",textTransform:"uppercase",marginTop:6,fontFamily:"sans-serif"}}>Design Pools. Craft Outdoor Living.</div>
       </div>
@@ -2803,16 +2803,16 @@ function CostEstimator({ shape, len, wid, depthId, finishId, colorId, entries, h
   const laborMult = localRates?.laborMultiplier || 1;
 
   const cats = [...new Set(items.map(i=>i.cat))];
-  const catColors = { "Pool Structure":"#06b6d4", "Entry & Features":"#f59e0b", "Hardscapes":"#22c55e", "Equipment":"#8b5cf6", "Labor":"#94a3b8" };
+  const catColors = { "Pool Structure":"#06b6d4", "Entry & Features":"#b45309", "Hardscapes":"#22c55e", "Equipment":"#8b5cf6", "Labor":"#475569" };
 
   return (
     <div style={{display:"flex",flexDirection:"column",gap:14}}>
       <div style={{background:"rgba(245,158,11,0.08)",border:"1px solid rgba(245,158,11,0.25)",borderRadius:14,padding:14}}>
-        <div style={{fontSize:12,fontWeight:700,color:"#f59e0b",marginBottom:4}}>📊 {mult!==1||laborMult!==1?"Cost Ranges Adjusted to Your Local Rates":"Typical Cost Ranges - For Budgeting Reference Only"}</div>
-        <div style={{fontSize:12,color:"#94a3b8",lineHeight:1.6}}>{mult!==1||laborMult!==1?"You've customized these from national averages. Adjust further below.":"These are typical national cost ranges. Adjust to your local market below, or get 3 contractor quotes for exact pricing."}</div>
+        <div style={{fontSize:12,fontWeight:700,color:"#b45309",marginBottom:4}}>📊 {mult!==1||laborMult!==1?"Cost Ranges Adjusted to Your Local Rates":"Typical Cost Ranges - For Budgeting Reference Only"}</div>
+        <div style={{fontSize:12,color:"#475569",lineHeight:1.6}}>{mult!==1||laborMult!==1?"You've customized these from national averages. Adjust further below.":"These are typical national cost ranges. Adjust to your local market below, or get 3 contractor quotes for exact pricing."}</div>
       </div>
 
-      <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,overflow:"hidden"}}>
+      <div style={{background:"#ffffff",border:"1px solid #e2e8f0",borderRadius:14,overflow:"hidden"}}>
         <button onClick={()=>setShowLocalRates(p=>!p)} style={{width:"100%",background:"none",border:"none",cursor:"pointer",padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",textAlign:"left"}}>
           <span style={{fontSize:13,fontWeight:700,color:"#06b6d4"}}>⚙️ Adjust to Your Local Market</span>
           <span style={{color:"#64748b",fontSize:14}}>{showLocalRates?"▲":"▼"}</span>
@@ -2822,19 +2822,19 @@ function CostEstimator({ shape, len, wid, depthId, finishId, colorId, entries, h
             <div style={{fontSize:11,color:"#64748b",lineHeight:1.6}}>National averages are a starting point. If your local material costs or labor rates run higher or lower, adjust the multipliers below — every number in this estimate updates instantly.</div>
             <div>
               <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
-                <span style={{fontSize:12,color:"#94a3b8",fontWeight:600}}>Material & Equipment Costs</span>
+                <span style={{fontSize:12,color:"#475569",fontWeight:600}}>Material & Equipment Costs</span>
                 <span style={{fontSize:12,fontWeight:800,color:"#06b6d4"}}>{Math.round(mult*100)}% of national avg</span>
               </div>
               <input type="range" min="0.6" max="1.6" step="0.05" value={mult} onChange={e=>setLocalRates(p=>({...(p||{}),multiplier:Number(e.target.value)}))} style={{width:"100%",accentColor:"#c9a84c"}} />
             </div>
             <div>
               <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
-                <span style={{fontSize:12,color:"#94a3b8",fontWeight:600}}>Local Labor Rates</span>
-                <span style={{fontSize:12,fontWeight:800,color:"#f59e0b"}}>{Math.round(laborMult*100)}% of national avg</span>
+                <span style={{fontSize:12,color:"#475569",fontWeight:600}}>Local Labor Rates</span>
+                <span style={{fontSize:12,fontWeight:800,color:"#b45309"}}>{Math.round(laborMult*100)}% of national avg</span>
               </div>
-              <input type="range" min="0.6" max="1.8" step="0.05" value={laborMult} onChange={e=>setLocalRates(p=>({...(p||{}),laborMultiplier:Number(e.target.value)}))} style={{width:"100%",accentColor:"#f59e0b"}} />
+              <input type="range" min="0.6" max="1.8" step="0.05" value={laborMult} onChange={e=>setLocalRates(p=>({...(p||{}),laborMultiplier:Number(e.target.value)}))} style={{width:"100%",accentColor:"#b45309"}} />
             </div>
-            {(mult!==1||laborMult!==1)&&<button onClick={()=>setLocalRates({multiplier:1,laborMultiplier:1})} style={{padding:"7px 14px",borderRadius:8,background:"rgba(100,116,139,0.1)",border:"1px solid #334155",color:"#94a3b8",fontSize:11,fontWeight:700,cursor:"pointer",alignSelf:"flex-start"}}>Reset to National Average</button>}
+            {(mult!==1||laborMult!==1)&&<button onClick={()=>setLocalRates({multiplier:1,laborMultiplier:1})} style={{padding:"7px 14px",borderRadius:8,background:"rgba(100,116,139,0.1)",border:"1px solid #cbd5e1",color:"#475569",fontSize:11,fontWeight:700,cursor:"pointer",alignSelf:"flex-start"}}>Reset to National Average</button>}
           </div>
         )}
       </div>
@@ -2846,7 +2846,7 @@ function CostEstimator({ shape, len, wid, depthId, finishId, colorId, entries, h
       </div>
 
       {financingLinks.length > 0 && (
-        <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
+        <div style={{background:"#ffffff",border:"1px solid #e2e8f0",borderRadius:14,padding:14}}>
           <div style={{fontSize:12,fontWeight:700,color:"#22c55e",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:10}}>💳 Estimate Your Financing</div>
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
             {financingLinks.map((f,i)=>(
@@ -2872,19 +2872,19 @@ function CostEstimator({ shape, len, wid, depthId, finishId, colorId, entries, h
         const color = catColors[cat]||"#06b6d4";
         const pct = Math.round((catLow/totalLow)*100);
         return (
-          <div key={cat} style={{background:"#111827",border:`1px solid #1e293b`,borderRadius:14,overflow:"hidden"}}>
+          <div key={cat} style={{background:"#ffffff",border:`1px solid #e2e8f0`,borderRadius:14,overflow:"hidden"}}>
             <button onClick={()=>toggleExp(cat)} style={{width:"100%",background:"none",border:"none",cursor:"pointer",padding:"14px 16px",display:"flex",alignItems:"center",gap:12,textAlign:"left"}}>
               <div style={{flex:1}}>
                 <div style={{fontWeight:700,fontSize:14,color}}>{cat === "Pool Structure" ? "🏗️" : cat === "Entry & Features" ? "🏖️" : cat === "Hardscapes" ? "🧱" : cat === "Equipment" ? "⚙️" : "👷"} {cat}</div>
-                <div style={{fontSize:12,color:"#64748b",marginTop:3}}>{fmt(catLow)} – {fmt(catHigh)} <span style={{color:"#334155"}}>- ~{pct}% of total</span></div>
+                <div style={{fontSize:12,color:"#64748b",marginTop:3}}>{fmt(catLow)} – {fmt(catHigh)} <span style={{color:"#94a3b8"}}>- ~{pct}% of total</span></div>
               </div>
-              <div style={{width:60,height:6,background:"#1e293b",borderRadius:3,overflow:"hidden",flexShrink:0}}><div style={{height:"100%",width:`${pct}%`,background:color,borderRadius:3}} /></div>
+              <div style={{width:60,height:6,background:"#e2e8f0",borderRadius:3,overflow:"hidden",flexShrink:0}}><div style={{height:"100%",width:`${pct}%`,background:color,borderRadius:3}} /></div>
               <span style={{color:"#64748b",fontSize:14}}>{expanded[cat]?"▲":"▼"}</span>
             </button>
             {expanded[cat] && (
-              <div style={{borderTop:"1px solid #1e293b"}}>
-                {catItems.map((item,i)=>(<div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 16px",borderBottom:"1px solid #0f172a"}}>
-                  <div><div style={{fontSize:13,fontWeight:600,color:"#e2e8f0"}}>{item.label}</div><div style={{fontSize:11,color:"#64748b",marginTop:2}}>{item.qty} {item.unit}</div></div>
+              <div style={{borderTop:"1px solid #e2e8f0"}}>
+                {catItems.map((item,i)=>(<div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 16px",borderBottom:"1px solid #f8fafc"}}>
+                  <div><div style={{fontSize:13,fontWeight:600,color:"#0f172a"}}>{item.label}</div><div style={{fontSize:11,color:"#64748b",marginTop:2}}>{item.qty} {item.unit}</div></div>
                   <div style={{textAlign:"right",flexShrink:0}}><div style={{fontSize:13,fontWeight:700,color}}>{fmt(item.low)} – {fmt(item.high)}</div></div>
                 </div>))}
               </div>
@@ -2893,7 +2893,7 @@ function CostEstimator({ shape, len, wid, depthId, finishId, colorId, entries, h
         );
       })}
 
-      <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:12,padding:14,display:"flex",gap:0}}>
+      <div style={{background:"#ffffff",border:"1px solid #e2e8f0",borderRadius:12,padding:14,display:"flex",gap:0}}>
         {(() => {
           const footprintSf = len*wid*sf;
           const safeArea = footprintSf > 0 ? footprintSf : null;
@@ -2905,13 +2905,13 @@ function CostEstimator({ shape, len, wid, depthId, finishId, colorId, entries, h
             { label:"Midpoint Est.", val:fmt(Math.round((totalLow+totalHigh)/2)) },
           ];
         })().map((s,i)=>(
-          <div key={i} style={{flex:1,textAlign:"center",borderRight:i<2?"1px solid #1e293b":"none",padding:"0 8px"}}>
+          <div key={i} style={{flex:1,textAlign:"center",borderRight:i<2?"1px solid #e2e8f0":"none",padding:"0 8px"}}>
             <div style={{fontSize:10,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:4}}>{s.label}</div>
             <div style={{fontSize:13,fontWeight:800,color:"#06b6d4"}}>{s.val}</div>
           </div>
         ))}
       </div>
-      <div style={{fontSize:11,color:"#334155",textAlign:"center",lineHeight:1.6}}>{mult!==1||laborMult!==1?"Adjusted from national base rates using your local multipliers above.":"Ranges based on typical US market rates. Get local contractor quotes for accurate pricing."}</div>
+      <div style={{fontSize:11,color:"#94a3b8",textAlign:"center",lineHeight:1.6}}>{mult!==1||laborMult!==1?"Adjusted from national base rates using your local multipliers above.":"Ranges based on typical US market rates. Get local contractor quotes for accurate pricing."}</div>
     </div>
   );
 }
@@ -2946,9 +2946,9 @@ function ShareDesign({ projectName, clientName, clientEmail, clientPhone, shape,
 
   return (
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.8)",zIndex:999,display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
-      <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:"20px 20px 0 0",width:"100%",maxWidth:500,maxHeight:"85vh",overflow:"hidden",display:"flex",flexDirection:"column"}}>
-        <div style={{padding:"18px 20px 14px",borderBottom:"1px solid #1e293b",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <div style={{fontSize:15,fontWeight:800,color:"#e2e8f0"}}>📤 Share Design</div>
+      <div style={{background:"#ffffff",border:"1px solid #e2e8f0",borderRadius:"20px 20px 0 0",width:"100%",maxWidth:500,maxHeight:"85vh",overflow:"hidden",display:"flex",flexDirection:"column"}}>
+        <div style={{padding:"18px 20px 14px",borderBottom:"1px solid #e2e8f0",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div style={{fontSize:15,fontWeight:800,color:"#0f172a"}}>📤 Share Design</div>
           <button onClick={onClose} style={{background:"none",border:"none",color:"#64748b",fontSize:22,cursor:"pointer",padding:10,margin:-10,minWidth:44,minHeight:44}}>✕</button>
         </div>
         <div style={{overflowY:"auto",flex:1,padding:16,display:"flex",flexDirection:"column",gap:12}}>
@@ -2965,8 +2965,8 @@ function ShareDesign({ projectName, clientName, clientEmail, clientPhone, shape,
             <div style={{fontSize:11,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:8}}>{hasContact?"Or share another way":"Share Via"}</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8}}>
               {[{id:"copy",icon:"📋",label:"Copy",action:copyToClipboard},{id:"sms",icon:"💬",label:"Text",action:()=>shareVia("sms")},{id:"email",icon:"📧",label:"Email",action:()=>shareVia("email")},{id:"whatsapp",icon:"💚",label:"WhatsApp",action:()=>shareVia("whatsapp")}].map(btn=>(
-                <button key={btn.id} onClick={btn.action} style={{padding:"12px 8px",borderRadius:12,border:"1px solid #334155",background:copied&&btn.id==="copy"?"rgba(34,197,94,0.15)":"#0f172a",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:6,transition:"all 0.15s"}}>
-                  <span style={{fontSize:22}}>{btn.icon}</span><span style={{fontSize:11,fontWeight:700,color:copied&&btn.id==="copy"?"#22c55e":"#94a3b8"}}>{btn.id==="copy"&&copied?"Copied!":btn.label}</span>
+                <button key={btn.id} onClick={btn.action} style={{padding:"12px 8px",borderRadius:12,border:"1px solid #cbd5e1",background:copied&&btn.id==="copy"?"rgba(34,197,94,0.15)":"#f8fafc",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:6,transition:"all 0.15s"}}>
+                  <span style={{fontSize:22}}>{btn.icon}</span><span style={{fontSize:11,fontWeight:700,color:copied&&btn.id==="copy"?"#22c55e":"#475569"}}>{btn.id==="copy"&&copied?"Copied!":btn.label}</span>
                 </button>
               ))}
             </div>
@@ -2974,7 +2974,7 @@ function ShareDesign({ projectName, clientName, clientEmail, clientPhone, shape,
           {typeof navigator.share !== "undefined" && (<button onClick={()=>navigator.share({title:`Pool Design: ${projectName}`,text:summaryText})} style={{width:"100%",padding:"13px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#06b6d4,#0284c7)",color:"white",fontWeight:800,fontSize:14,cursor:"pointer"}}>📱 Share via Phone / System Share</button>)}
           <div>
             <div style={{fontSize:11,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:8}}>Design Summary Preview</div>
-            <div style={{background:"#0f172a",border:"1px solid #1e293b",borderRadius:12,padding:14,fontFamily:"monospace",fontSize:11,color:"#94a3b8",lineHeight:1.7,whiteSpace:"pre-wrap",maxHeight:240,overflowY:"auto"}}>{summaryText}</div>
+            <div style={{background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:12,padding:14,fontFamily:"monospace",fontSize:11,color:"#475569",lineHeight:1.7,whiteSpace:"pre-wrap",maxHeight:240,overflowY:"auto"}}>{summaryText}</div>
           </div>
         </div>
       </div>
@@ -3007,12 +3007,12 @@ function OnboardingModal({ onComplete, onSeePricing, userMode, setUserMode, setL
             <ellipse cx="23" cy="15" rx="2.5" ry="4" fill="white" opacity="0.4" transform="rotate(-15 23 15)"/>
             <text x="30" y="34" fontFamily="Georgia,serif" fontWeight="700" fontSize="34" fill="url(#oG)">P</text>
           </svg>
-          <div style={{fontSize:13,color:"#94a3b8",lineHeight:1.7}}>The most complete pool design tool ever built for contractors and homeowners. Design, estimate, render, and close — all in one place.</div>
+          <div style={{fontSize:13,color:"#475569",lineHeight:1.7}}>The most complete pool design tool ever built for contractors and homeowners. Design, estimate, render, and close — all in one place.</div>
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:4}}>
           {[{icon:"⚡",label:"AI Renderings",sub:"FLUX (fal.ai)"},{icon:"📊",label:"Materials Calc",sub:"Real engineering math"},{icon:"🗺️",label:"Site Plan",sub:"Scale-accurate map"},{icon:"💰",label:"Cost Estimator",sub:"Local market rates"},{icon:"📄",label:"Client Proposals",sub:"Close the deal"},{icon:"🏗️",label:"Build Tracker",sub:"Post-sale tool"}].map(f=>(
             <div key={f.label} style={{background:"rgba(201,168,76,0.08)",border:"1px solid rgba(201,168,76,0.18)",borderRadius:10,padding:"10px 12px"}}>
-              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}><span style={{fontSize:18}}>{f.icon}</span><span style={{fontSize:12,fontWeight:700,color:"#e2e8f0"}}>{f.label}</span></div>
+              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}><span style={{fontSize:18}}>{f.icon}</span><span style={{fontSize:12,fontWeight:700,color:"#0f172a"}}>{f.label}</span></div>
               <div style={{fontSize:10,color:"#64748b",paddingLeft:26}}>{f.sub}</div>
             </div>
           ))}
@@ -3023,10 +3023,10 @@ function OnboardingModal({ onComplete, onSeePricing, userMode, setUserMode, setL
     { icon:"✨", title:"Here's what you can do", subtitle:"One tool instead of three separate ones", content:(
       <div style={{display:"flex",flexDirection:"column",gap:8}}>
         {HOW_IT_WORKS_SECTIONS.map(s=>(
-          <div key={s.title} style={{background:"#0f172a",border:"1px solid #1e293b",borderRadius:12,padding:"11px 14px",display:"flex",gap:12,alignItems:"flex-start"}}>
+          <div key={s.title} style={{background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:12,padding:"11px 14px",display:"flex",gap:12,alignItems:"flex-start"}}>
             <div style={{fontSize:20,flexShrink:0,width:26,textAlign:"center"}}>{s.icon}</div>
             <div>
-              <div style={{fontSize:13,fontWeight:700,color:"#e2e8f0",marginBottom:2}}>{s.title}</div>
+              <div style={{fontSize:13,fontWeight:700,color:"#0f172a",marginBottom:2}}>{s.title}</div>
               <div style={{fontSize:12,color:"#64748b",lineHeight:1.5}}>{s.body}</div>
             </div>
           </div>
@@ -3037,13 +3037,13 @@ function OnboardingModal({ onComplete, onSeePricing, userMode, setUserMode, setL
     { icon:"👤", title:"Who's designing today?", subtitle:"We'll tailor the experience for you", content:(
       <div style={{display:"flex",flexDirection:"column",gap:10}}>
         {[{id:"contractor",icon:"👷",title:"Pool Contractor / Builder",desc:"Full technical detail — specs, permits, client quotes, build tracking"},{id:"homeowner",icon:"🏠",title:"Homeowner / DIY",desc:"Guided visual design — easy material lists, contractor comparison"},{id:"designer",icon:"🎨",title:"Landscape Designer",desc:"Visual design focus — yard planning, hardscapes, AI renderings"}].map(m=>(
-          <button key={m.id} onClick={()=>setUserMode(m.id)} style={{textAlign:"left",padding:"14px 16px",borderRadius:12,border:`2px solid ${userMode===m.id?"#c9a84c":"#1e293b"}`,background:userMode===m.id?"rgba(201,168,76,0.08)":"#0f172a",cursor:"pointer",display:"flex",gap:14,alignItems:"flex-start",transition:"all 0.15s"}}>
+          <button key={m.id} onClick={()=>setUserMode(m.id)} style={{textAlign:"left",padding:"14px 16px",borderRadius:12,border:`2px solid ${userMode===m.id?"#c9a84c":"#e2e8f0"}`,background:userMode===m.id?"rgba(201,168,76,0.08)":"#f8fafc",cursor:"pointer",display:"flex",gap:14,alignItems:"flex-start",transition:"all 0.15s"}}>
             <span style={{fontSize:28,flexShrink:0}}>{m.icon}</span>
             <div style={{flex:1}}>
-              <div style={{fontWeight:700,fontSize:14,color:userMode===m.id?"#c9a84c":"#e2e8f0",marginBottom:3}}>{m.title}</div>
+              <div style={{fontWeight:700,fontSize:14,color:userMode===m.id?"#c9a84c":"#0f172a",marginBottom:3}}>{m.title}</div>
               <div style={{fontSize:12,color:"#64748b",lineHeight:1.5}}>{m.desc}</div>
             </div>
-            {userMode===m.id&&<span style={{color:"#c9a84c",fontSize:18,flexShrink:0}}>✓</span>}
+            {userMode===m.id&&<span style={{color:"#a8873a",fontSize:18,flexShrink:0}}>✓</span>}
           </button>
         ))}
       </div>
@@ -3051,35 +3051,35 @@ function OnboardingModal({ onComplete, onSeePricing, userMode, setUserMode, setL
     // Step 2: Design your first pool (guided)
     { icon:"🏊", title:"Design your first pool", subtitle:"Adjust below — you can change everything later", content:(
       <div style={{display:"flex",flexDirection:"column",gap:14}}>
-        <div style={{background:"#0f172a",border:"1px solid #1e293b",borderRadius:12,padding:14}}>
-          <div style={{fontSize:11,color:"#c9a84c",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:10}}>Shape</div>
+        <div style={{background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:12,padding:14}}>
+          <div style={{fontSize:11,color:"#a8873a",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:10}}>Shape</div>
           <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
             {POOL_SHAPES.map(s=>(
-              <button key={s.id} onClick={()=>setDemoShape(s.id)} style={{padding:"7px 12px",borderRadius:20,border:`2px solid ${demoShape===s.id?"#c9a84c":"#334155"}`,background:demoShape===s.id?"rgba(201,168,76,0.1)":"transparent",color:demoShape===s.id?"#c9a84c":"#64748b",fontSize:12,fontWeight:600,cursor:"pointer"}}>{s.label}</button>
+              <button key={s.id} onClick={()=>setDemoShape(s.id)} style={{padding:"7px 12px",borderRadius:20,border:`2px solid ${demoShape===s.id?"#c9a84c":"#cbd5e1"}`,background:demoShape===s.id?"rgba(201,168,76,0.1)":"transparent",color:demoShape===s.id?"#a8873a":"#64748b",fontSize:12,fontWeight:600,cursor:"pointer"}}>{s.label}</button>
             ))}
           </div>
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
           {[{label:"Length (ft)",val:demoLen,set:setDemoLen,min:10,max:120},{label:"Width (ft)",val:demoWid,set:setDemoWid,min:8,max:60}].map(f=>(
-            <div key={f.label} style={{background:"#0f172a",border:"1px solid #1e293b",borderRadius:12,padding:12}}>
-              <div style={{fontSize:11,color:"#c9a84c",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4}}>{f.label}</div>
-              <div style={{fontSize:24,fontWeight:900,color:"#e2e8f0",textAlign:"center",marginBottom:6}}>{f.val}′</div>
+            <div key={f.label} style={{background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:12,padding:12}}>
+              <div style={{fontSize:11,color:"#a8873a",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4}}>{f.label}</div>
+              <div style={{fontSize:24,fontWeight:900,color:"#0f172a",textAlign:"center",marginBottom:6}}>{f.val}′</div>
               <input type="range" min={f.min} max={f.max} value={f.val} onChange={e=>f.set(Number(e.target.value))} style={{width:"100%",accentColor:"#c9a84c"}}/>
-              <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"#334155",marginTop:2}}><span>{f.min}′</span><span>{f.max}′</span></div>
+              <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"#94a3b8",marginTop:2}}><span>{f.min}′</span><span>{f.max}′</span></div>
             </div>
           ))}
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-          <div style={{background:"#0f172a",border:"1px solid #1e293b",borderRadius:12,padding:12}}>
-            <div style={{fontSize:11,color:"#c9a84c",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:8}}>Depth</div>
+          <div style={{background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:12,padding:12}}>
+            <div style={{fontSize:11,color:"#a8873a",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:8}}>Depth</div>
             {DEPTHS.map(d=>(
-              <button key={d.id} onClick={()=>setDemoDepth(d.id)} style={{display:"block",width:"100%",textAlign:"left",padding:"7px 10px",borderRadius:8,border:`1px solid ${demoDepth===d.id?"#c9a84c":"transparent"}`,background:demoDepth===d.id?"rgba(201,168,76,0.08)":"transparent",color:demoDepth===d.id?"#c9a84c":"#64748b",fontSize:12,fontWeight:600,cursor:"pointer",marginBottom:3}}>{d.label}</button>
+              <button key={d.id} onClick={()=>setDemoDepth(d.id)} style={{display:"block",width:"100%",textAlign:"left",padding:"7px 10px",borderRadius:8,border:`1px solid ${demoDepth===d.id?"#c9a84c":"transparent"}`,background:demoDepth===d.id?"rgba(201,168,76,0.08)":"transparent",color:demoDepth===d.id?"#a8873a":"#64748b",fontSize:12,fontWeight:600,cursor:"pointer",marginBottom:3}}>{d.label}</button>
             ))}
           </div>
-          <div style={{background:"#0f172a",border:"1px solid #1e293b",borderRadius:12,padding:12}}>
-            <div style={{fontSize:11,color:"#c9a84c",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:8}}>Finish</div>
+          <div style={{background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:12,padding:12}}>
+            <div style={{fontSize:11,color:"#a8873a",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:8}}>Finish</div>
             {POOL_FINISHES.slice(0,4).map(f=>(
-              <button key={f.id} onClick={()=>setDemoFinish(f.id)} style={{display:"block",width:"100%",textAlign:"left",padding:"7px 10px",borderRadius:8,border:`1px solid ${demoFinish===f.id?"#c9a84c":"transparent"}`,background:demoFinish===f.id?"rgba(201,168,76,0.08)":"transparent",color:demoFinish===f.id?"#c9a84c":"#64748b",fontSize:12,fontWeight:600,cursor:"pointer",marginBottom:3}}>{f.label}</button>
+              <button key={f.id} onClick={()=>setDemoFinish(f.id)} style={{display:"block",width:"100%",textAlign:"left",padding:"7px 10px",borderRadius:8,border:`1px solid ${demoFinish===f.id?"#c9a84c":"transparent"}`,background:demoFinish===f.id?"rgba(201,168,76,0.08)":"transparent",color:demoFinish===f.id?"#a8873a":"#64748b",fontSize:12,fontWeight:600,cursor:"pointer",marginBottom:3}}>{f.label}</button>
             ))}
           </div>
         </div>
@@ -3092,11 +3092,11 @@ function OnboardingModal({ onComplete, onSeePricing, userMode, setUserMode, setL
     { icon:"✅", title:"You're all set!", subtitle:"Your pool design is loaded and ready", content:(
       <div style={{display:"flex",flexDirection:"column",gap:14,alignItems:"center"}}>
         <div style={{background:"linear-gradient(135deg,rgba(201,168,76,0.12),rgba(168,135,58,0.06))",border:"1px solid rgba(201,168,76,0.25)",borderRadius:14,padding:20,width:"100%",textAlign:"center"}}>
-          <div style={{fontFamily:"Georgia,serif",fontSize:22,fontWeight:700,color:"#e2e8f0",marginBottom:4}}>{demoLen}′ × {demoWid}′ {POOL_SHAPES.find(s=>s.id===demoShape)?.label}</div>
-          <div style={{fontSize:13,color:"#c9a84c"}}>{POOL_FINISHES.find(f=>f.id===demoFinish)?.label} Finish · {DEPTHS.find(d=>d.id===demoDepth)?.label}</div>
+          <div style={{fontFamily:"Georgia,serif",fontSize:22,fontWeight:700,color:"#0f172a",marginBottom:4}}>{demoLen}′ × {demoWid}′ {POOL_SHAPES.find(s=>s.id===demoShape)?.label}</div>
+          <div style={{fontSize:13,color:"#a8873a"}}>{POOL_FINISHES.find(f=>f.id===demoFinish)?.label} Finish · {DEPTHS.find(d=>d.id===demoDepth)?.label}</div>
         </div>
-        <div style={{background:"#0f172a",border:"1px solid #1e293b",borderRadius:12,padding:14,width:"100%"}}>
-          <div style={{fontSize:12,fontWeight:700,color:"#94a3b8",marginBottom:10}}>Quick tips to get started:</div>
+        <div style={{background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:12,padding:14,width:"100%"}}>
+          <div style={{fontSize:12,fontWeight:700,color:"#475569",marginBottom:10}}>Quick tips to get started:</div>
           {[{icon:"🏊",tip:"Use the 3D preview on the Design tab — drag to rotate it"},{icon:"⚡",tip:"Try Quick Render — stand in a backyard and render your pool live"},{icon:"💰",tip:"Cost Est. tab builds a client proposal with one tap"},{icon:"📂",tip:"Save projects with client names using the 💾 button above"},{icon:"🔧",tip:"Subscribe to a Basic or Pro plan in Settings to unlock AI photo rendering"}].map((t,i)=>(
             <div key={i} style={{display:"flex",gap:10,marginBottom:8,alignItems:"flex-start"}}>
               <span style={{fontSize:16,flexShrink:0}}>{t.icon}</span>
@@ -3125,29 +3125,29 @@ function OnboardingModal({ onComplete, onSeePricing, userMode, setUserMode, setL
 
   return (
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:16,overflowY:"auto"}}>
-      <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:20,width:"100%",maxWidth:500,overflow:"hidden",boxShadow:"0 20px 60px rgba(0,0,0,0.6)",maxHeight:"92vh",display:"flex",flexDirection:"column"}}>
+      <div style={{background:"#ffffff",border:"1px solid #e2e8f0",borderRadius:20,width:"100%",maxWidth:500,overflow:"hidden",boxShadow:"0 20px 60px rgba(0,0,0,0.6)",maxHeight:"92vh",display:"flex",flexDirection:"column"}}>
         {/* Progress bar */}
-        <div style={{height:3,background:"#1e293b",flexShrink:0}}>
+        <div style={{height:3,background:"#e2e8f0",flexShrink:0}}>
           <div style={{height:"100%",width:`${((step+1)/steps.length)*100}%`,background:"linear-gradient(90deg,#c9a84c,#e8c96a)",transition:"width 0.4s"}} />
         </div>
         {/* Header */}
         <div style={{background:"linear-gradient(135deg,#0a0f1e,#0f1e3d)",padding:"24px 24px 20px",textAlign:"center",flexShrink:0}}>
           {current.icon && <div style={{fontSize:44,marginBottom:10}}>{current.icon}</div>}
-          <div style={{fontSize:18,fontWeight:800,color:"#e2e8f0",marginBottom:4,fontFamily:"Georgia,serif"}}>{current.title}</div>
+          <div style={{fontSize:18,fontWeight:800,color:"#0f172a",marginBottom:4,fontFamily:"Georgia,serif"}}>{current.title}</div>
           <div style={{fontSize:12,color:"#64748b"}}>{current.subtitle}</div>
         </div>
         {/* Content */}
         <div style={{padding:20,overflowY:"auto",flex:1}}>{current.content}</div>
         {/* Actions */}
         <div style={{padding:"0 20px 20px",display:"flex",gap:10,flexShrink:0}}>
-          {step > 0 && <button onClick={()=>setStep(s=>s-1)} style={{flex:1,padding:"13px",borderRadius:10,border:"1px solid #334155",background:"#1e293b",color:"#94a3b8",fontWeight:700,fontSize:14,cursor:"pointer"}}>← Back</button>}
+          {step > 0 && <button onClick={()=>setStep(s=>s-1)} style={{flex:1,padding:"13px",borderRadius:10,border:"1px solid #cbd5e1",background:"#e2e8f0",color:"#475569",fontWeight:700,fontSize:14,cursor:"pointer"}}>← Back</button>}
           <button onClick={handleNext} style={{flex:2,padding:"13px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#c9a84c,#a8873a)",color:"#0a0f1e",fontWeight:800,fontSize:14,cursor:"pointer"}}>
-            {isLast ? "Start Designing 🏊" : step === 2 ? "Apply My Pool →" : "Next →"}
+            {isLast ? "Start Designing 🏊" : step === 3 ? "Apply My Pool →" : "Next →"}
           </button>
         </div>
         <div style={{display:"flex",justifyContent:"center",gap:16,paddingBottom:16,flexShrink:0}}>
-          <button onClick={onSeePricing} style={{background:"none",border:"none",color:"#c9a84c",fontSize:12,fontWeight:700,cursor:"pointer"}}>💰 See Plans &amp; Pricing →</button>
-          {!isLast && <button onClick={()=>{ try{localStorage.setItem("pc_onboarded","1");}catch{} onComplete(); }} style={{background:"none",border:"none",color:"#334155",fontSize:12,cursor:"pointer"}}>Skip setup</button>}
+          <button onClick={onSeePricing} style={{background:"none",border:"none",color:"#a8873a",fontSize:12,fontWeight:700,cursor:"pointer"}}>💰 See Plans &amp; Pricing →</button>
+          {!isLast && <button onClick={()=>{ try{localStorage.setItem("pc_onboarded","1");}catch{} onComplete(); }} style={{background:"none",border:"none",color:"#94a3b8",fontSize:12,cursor:"pointer"}}>Skip setup</button>}
         </div>
       </div>
     </div>
@@ -3197,15 +3197,15 @@ function ProjectManager({ currentProjectId, onLoad, onClose }) {
 
   return (
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.8)",zIndex:999,display:"flex",alignItems:"flex-end",justifyContent:"center",padding:0}}>
-      <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:"20px 20px 0 0",width:"100%",maxWidth:520,maxHeight:"82vh",overflow:"hidden",display:"flex",flexDirection:"column"}}>
-        <div style={{padding:"18px 20px",borderBottom:"1px solid #1e293b"}}>
+      <div style={{background:"#ffffff",border:"1px solid #e2e8f0",borderRadius:"20px 20px 0 0",width:"100%",maxWidth:520,maxHeight:"82vh",overflow:"hidden",display:"flex",flexDirection:"column"}}>
+        <div style={{padding:"18px 20px",borderBottom:"1px solid #e2e8f0"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-            <div style={{fontSize:15,fontWeight:800,color:"#e2e8f0",display:"flex",alignItems:"center",gap:8}}>
+            <div style={{fontSize:15,fontWeight:800,color:"#0f172a",display:"flex",alignItems:"center",gap:8}}>
               📂 Projects {cloudConnected&&<span style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:"rgba(34,197,94,0.15)",border:"1px solid rgba(34,197,94,0.3)",color:"#22c55e",fontWeight:700}}>☁️ Synced</span>}
             </div>
             <button onClick={onClose} style={{background:"none",border:"none",color:"#64748b",fontSize:22,cursor:"pointer",padding:10,margin:-10,minWidth:44,minHeight:44}}>✕</button>
           </div>
-          {projects.length>3&&(<input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Search by project or client name..." style={{width:"100%",background:"#1e293b",border:"1px solid #334155",borderRadius:10,padding:"9px 12px",color:"#e2e8f0",fontSize:13,outline:"none",boxSizing:"border-box"}} />)}
+          {projects.length>3&&(<input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Search by project or client name..." style={{width:"100%",background:"#e2e8f0",border:"1px solid #cbd5e1",borderRadius:10,padding:"9px 12px",color:"#0f172a",fontSize:13,outline:"none",boxSizing:"border-box"}} />)}
         </div>
         <div style={{overflowY:"auto",flex:1,padding:16}}>
           {loading ? (
@@ -3214,7 +3214,7 @@ function ProjectManager({ currentProjectId, onLoad, onClose }) {
             <div style={{textAlign:"center",padding:"40px 20px"}}>
               <div style={{fontSize:40,marginBottom:10}}>📂</div>
               <div style={{fontSize:14,color:"#64748b"}}>{search?"No projects match your search":"No saved projects yet"}</div>
-              <div style={{fontSize:12,color:"#334155",marginTop:6}}>Use the Save button to store your current design</div>
+              <div style={{fontSize:12,color:"#94a3b8",marginTop:6}}>Use the Save button to store your current design</div>
             </div>
           ) : (
             <div style={{display:"flex",flexDirection:"column",gap:16}}>
@@ -3229,24 +3229,24 @@ function ProjectManager({ currentProjectId, onLoad, onClose }) {
                       <span style={{fontSize:12,fontWeight:800,color:isUnassigned?"#64748b":"#06b6d4",textTransform:"uppercase",letterSpacing:"0.06em"}}>
                         {isUnassigned?"👤 Unassigned":`👤 ${clientName}`}
                       </span>
-                      <span style={{fontSize:11,color:"#334155",fontWeight:600}}>({projectsInGroup.length})</span>
+                      <span style={{fontSize:11,color:"#94a3b8",fontWeight:600}}>({projectsInGroup.length})</span>
                     </button>
                     {!isCollapsed && (
                       <div style={{display:"flex",flexDirection:"column",gap:10}}>
                         {projectsInGroup.map(p=>(
-                          <div key={p.id} style={{background:String(p.id)===String(currentProjectId)?"rgba(6,182,212,0.07)":"#0f172a",border:`1px solid ${String(p.id)===String(currentProjectId)?"rgba(6,182,212,0.3)":"#1e293b"}`,borderRadius:12,padding:14}}>
+                          <div key={p.id} style={{background:String(p.id)===String(currentProjectId)?"rgba(6,182,212,0.07)":"#f8fafc",border:`1px solid ${String(p.id)===String(currentProjectId)?"rgba(6,182,212,0.3)":"#e2e8f0"}`,borderRadius:12,padding:14}}>
                             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10}}>
                               <div style={{flex:1,minWidth:0}}>
-                                <div style={{fontWeight:700,fontSize:14,color:"#e2e8f0",marginBottom:4}}>{p.name}{String(p.id)===String(currentProjectId)&&<span style={{fontSize:10,color:"#06b6d4",fontWeight:700,marginLeft:8}}>● CURRENT</span>}</div>
+                                <div style={{fontWeight:700,fontSize:14,color:"#0f172a",marginBottom:4}}>{p.name}{String(p.id)===String(currentProjectId)&&<span style={{fontSize:10,color:"#06b6d4",fontWeight:700,marginLeft:8}}>● CURRENT</span>}</div>
                                 <div style={{fontSize:11,color:"#64748b",marginBottom:6}}>{formatDate(p.savedAt)} - {p.shape} {p.len}'x{p.wid}' - {p.gallons?.toLocaleString()} gal</div>
                                 <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
                                   {p.entryCount>0&&<span style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:"rgba(6,182,212,0.1)",border:"1px solid rgba(6,182,212,0.2)",color:"#06b6d4"}}>{p.entryCount} features</span>}
-                                  {p.hardscapeCount>0&&<span style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:"rgba(245,158,11,0.1)",border:"1px solid rgba(245,158,11,0.2)",color:"#f59e0b"}}>{p.hardscapeCount} hardscapes</span>}
+                                  {p.hardscapeCount>0&&<span style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:"rgba(245,158,11,0.1)",border:"1px solid rgba(245,158,11,0.2)",color:"#b45309"}}>{p.hardscapeCount} hardscapes</span>}
                                   <span style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:"rgba(34,197,94,0.1)",border:"1px solid rgba(34,197,94,0.2)",color:"#22c55e"}}>{p.finish}</span>
                                 </div>
                                 {renamingClient===p.id ? (
                                   <div style={{display:"flex",gap:6,marginTop:8}}>
-                                    <input autoFocus defaultValue={p.clientName||""} onKeyDown={e=>{ if(e.key==="Enter"){ setProjectClient(p, e.target.value); setRenamingClient(null);} if(e.key==="Escape") setRenamingClient(null); }} placeholder="Client name..." style={{flex:1,background:"#1e293b",border:"1px solid #334155",borderRadius:8,padding:"9px 10px",minHeight:38,color:"#e2e8f0",fontSize:13,outline:"none",boxSizing:"border-box"}} id={`client-input-${p.id}`} />
+                                    <input autoFocus defaultValue={p.clientName||""} onKeyDown={e=>{ if(e.key==="Enter"){ setProjectClient(p, e.target.value); setRenamingClient(null);} if(e.key==="Escape") setRenamingClient(null); }} placeholder="Client name..." style={{flex:1,background:"#e2e8f0",border:"1px solid #cbd5e1",borderRadius:8,padding:"9px 10px",minHeight:38,color:"#0f172a",fontSize:13,outline:"none",boxSizing:"border-box"}} id={`client-input-${p.id}`} />
                                     <button onClick={()=>{ const el=document.getElementById(`client-input-${p.id}`); setProjectClient(p, el?el.value:""); setRenamingClient(null); }} style={{padding:"9px 14px",minHeight:38,borderRadius:8,background:"rgba(34,197,94,0.15)",border:"1px solid rgba(34,197,94,0.3)",color:"#22c55e",fontSize:12,fontWeight:700,cursor:"pointer"}}>Save</button>
                                   </div>
                                 ) : (
@@ -3255,7 +3255,7 @@ function ProjectManager({ currentProjectId, onLoad, onClose }) {
                               </div>
                               <div style={{display:"flex",gap:6,flexShrink:0}}>
                                 <button onClick={()=>onLoad(p)} style={{padding:"9px 16px",minHeight:40,borderRadius:8,border:"none",background:"linear-gradient(135deg,#06b6d4,#0284c7)",color:"white",fontWeight:700,fontSize:12,cursor:"pointer"}}>Load</button>
-                                {confirmDelete===p.id ? (<button onClick={()=>deleteProject(p.id)} style={{padding:"9px 14px",minHeight:40,borderRadius:8,border:"1px solid rgba(239,68,68,0.4)",background:"rgba(239,68,68,0.15)",color:"#ef4444",fontWeight:700,fontSize:12,cursor:"pointer"}}>Confirm</button>) : (<button onClick={()=>setConfirmDelete(p.id)} style={{width:40,height:40,borderRadius:8,border:"1px solid #334155",background:"#1e293b",color:"#64748b",fontWeight:700,fontSize:14,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>🗑</button>)}
+                                {confirmDelete===p.id ? (<button onClick={()=>deleteProject(p.id)} style={{padding:"9px 14px",minHeight:40,borderRadius:8,border:"1px solid rgba(239,68,68,0.4)",background:"rgba(239,68,68,0.15)",color:"#ef4444",fontWeight:700,fontSize:12,cursor:"pointer"}}>Confirm</button>) : (<button onClick={()=>setConfirmDelete(p.id)} style={{width:40,height:40,borderRadius:8,border:"1px solid #cbd5e1",background:"#e2e8f0",color:"#64748b",fontWeight:700,fontSize:14,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>🗑</button>)}
                               </div>
                             </div>
                           </div>
@@ -3269,7 +3269,7 @@ function ProjectManager({ currentProjectId, onLoad, onClose }) {
           )}
         </div>
         {!cloudConnected&&projects.length>0&&(
-          <div style={{padding:"10px 16px",borderTop:"1px solid #1e293b",fontSize:11,color:"#64748b",textAlign:"center"}}>💡 These projects are saved to this device only. Connect Cloud Sync on the Design tab to access them anywhere.</div>
+          <div style={{padding:"10px 16px",borderTop:"1px solid #e2e8f0",fontSize:11,color:"#64748b",textAlign:"center"}}>💡 These projects are saved to this device only. Connect Cloud Sync on the Design tab to access them anywhere.</div>
         )}
       </div>
     </div>
@@ -3286,13 +3286,13 @@ function generatePDF({ projectName, shape, len, wid, depthId, finishId, colorId,
   const activeHardscapes = HARDSCAPE_OPTIONS.filter(h=>hardscapes[h.id]!=null);
   const date = new Date().toLocaleDateString("en-US",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
   const win = window.open("","_blank"); if (!win) { alert("Please allow pop-ups for this site to export or print."); return; }
-  win.document.write(`<!DOCTYPE html><html><head><title>Pool Craft Pro — ${escapeHtml(projectName)}</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:system-ui,sans-serif;background:#fff;color:#1e293b;padding:40px}.header{background:linear-gradient(135deg,#0f2027,#203a43);color:white;padding:32px;border-radius:12px;margin-bottom:28px}.logo{font-size:24px;font-weight:800;margin-bottom:4px}.project-name{font-size:20px;font-weight:800;margin:12px 0 4px}.section{margin-bottom:24px}.section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#06b6d4;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #e2e8f0}.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px}.card-label{font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:#94a3b8;margin-bottom:3px}.card-value{font-size:15px;font-weight:800;color:#0f172a}.material-row{display:flex;justify-content:space-between;padding:9px 12px;border-bottom:1px solid #f1f5f9}.eq-row{display:flex;justify-content:space-between;align-items:flex-start;padding:9px 12px;border-bottom:1px solid #f1f5f9}.chip{display:inline-block;padding:3px 10px;border-radius:20px;background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;font-size:12px;font-weight:600;margin:3px}.footer{margin-top:36px;padding-top:18px;border-top:2px solid #e2e8f0;font-size:11px;color:#94a3b8}@media print{body{padding:20px}}</style></head><body>
-  <div class="header"><div class="logo"><strong style="font-size:18px;color:#1a2f5e;font-family:Georgia,serif;letter-spacing:2px">POOL <span style="color:#c9a84c">CRAFT</span> PRO</strong><br><span style="font-size:11px;color:#94a3b8">Design Pools. Craft Outdoor Living.<</div><div class="project-name">${escapeHtml(projectName)}</div><div style="font-size:12px;color:#94a3b8">Generated ${date}</div>${parcelData?`<div style="font-size:12px;color:#94a3b8;margin-top:6px">📍 ${escapeHtml(parcelData.address)}</div>`:""}</div>
+  win.document.write(`<!DOCTYPE html><html><head><title>Pool Craft Pro — ${escapeHtml(projectName)}</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:system-ui,sans-serif;background:#fff;color:#e2e8f0;padding:40px}.header{background:linear-gradient(135deg,#0f2027,#203a43);color:white;padding:32px;border-radius:12px;margin-bottom:28px}.logo{font-size:24px;font-weight:800;margin-bottom:4px}.project-name{font-size:20px;font-weight:800;margin:12px 0 4px}.section{margin-bottom:24px}.section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#06b6d4;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #0f172a}.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.card{background:#f8fafc;border:1px solid #0f172a;border-radius:8px;padding:12px}.card-label{font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:#475569;margin-bottom:3px}.card-value{font-size:15px;font-weight:800;color:#f8fafc}.material-row{display:flex;justify-content:space-between;padding:9px 12px;border-bottom:1px solid #f1f5f9}.eq-row{display:flex;justify-content:space-between;align-items:flex-start;padding:9px 12px;border-bottom:1px solid #f1f5f9}.chip{display:inline-block;padding:3px 10px;border-radius:20px;background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;font-size:12px;font-weight:600;margin:3px}.footer{margin-top:36px;padding-top:18px;border-top:2px solid #0f172a;font-size:11px;color:#475569}@media print{body{padding:20px}}</style></head><body>
+  <div class="header"><div class="logo"><strong style="font-size:18px;color:#1a2f5e;font-family:Georgia,serif;letter-spacing:2px">POOL <span style="color:#c9a84c">CRAFT</span> PRO</strong><br><span style="font-size:11px;color:#475569">Design Pools. Craft Outdoor Living.<</div><div class="project-name">${escapeHtml(projectName)}</div><div style="font-size:12px;color:#475569">Generated ${date}</div>${parcelData?`<div style="font-size:12px;color:#475569;margin-top:6px">📍 ${escapeHtml(parcelData.address)}</div>`:""}</div>
   <div class="section"><div class="section-title">Pool Design Summary</div><div class="grid-2"><div class="card"><div class="card-label">Size</div><div class="card-value">${len}' x ${wid}'</div></div><div class="card"><div class="card-label">Shape</div><div class="card-value">${shapeLabel}</div></div><div class="card"><div class="card-label">Depth Profile</div><div class="card-value" style="font-size:13px">${depthLabel}</div></div><div class="card"><div class="card-label">Volume</div><div class="card-value">${materials.gallons.toLocaleString()} gal</div></div><div class="card"><div class="card-label">Water Color</div><div class="card-value" style="font-size:13px">${colorLabel}</div></div><div class="card"><div class="card-label">Finish</div><div class="card-value" style="font-size:13px">${finishLabel}</div></div></div></div>
   ${activeEntries.length>0?`<div class="section"><div class="section-title">Pool Features & Entry</div><div>${activeEntries.map(e=>`<span class="chip">${e.icon} ${e.label}</span>`).join("")}</div></div>`:""}
-  <div class="section"><div class="section-title">Materials Takeoff</div><div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden">${[{l:"Excavation",v:materials.excavation},{l:"Gunite / Shotcrete",v:materials.gunite},{l:"Rebar (#3)",v:materials.rebar},{l:"Gravel Base",v:materials.gravel},{l:"PVC Plumbing",v:materials.plumbing},{l:"Coping",v:materials.coping},{l:"Interior Finish",v:materials.finish}].map(r=>`<div class="material-row"><span style="font-weight:600">${r.l}</span><span style="font-weight:800;color:#0284c7">${r.v}</span></div>`).join("")}</div></div>
-  ${activeHardscapes.length>0?`<div class="section"><div class="section-title">Hardscape Elements</div><div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden">${activeHardscapes.map(h=>`<div class="material-row"><span style="font-weight:600">${h.icon} ${h.label}</span><span style="font-weight:800;color:#0284c7">${h.unit==="unit"?"1 unit":`${hardscapes[h.id]} ${h.unit}`}</span></div>`).join("")}</div></div>`:""}
-  <div class="section"><div class="section-title">Recommended Pentair Equipment</div><div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden">${equipment.map(eq=>`<div class="eq-row"><div><div style="font-size:10px;color:#94a3b8;text-transform:uppercase">${eq.label}</div><div style="font-size:13px;font-weight:700;margin-top:2px">${eq.model}</div><div style="font-size:11px;color:#64748b;margin-top:2px">${eq.note}</div></div><div style="font-size:11px;font-family:monospace;background:#e2e8f0;padding:2px 8px;border-radius:6px;white-space:nowrap">${eq.sku}</div></div>`).join("")}</div></div>
+  <div class="section"><div class="section-title">Materials Takeoff</div><div style="background:#f8fafc;border:1px solid #0f172a;border-radius:8px;overflow:hidden">${[{l:"Excavation",v:materials.excavation},{l:"Gunite / Shotcrete",v:materials.gunite},{l:"Rebar (#3)",v:materials.rebar},{l:"Gravel Base",v:materials.gravel},{l:"PVC Plumbing",v:materials.plumbing},{l:"Coping",v:materials.coping},{l:"Interior Finish",v:materials.finish}].map(r=>`<div class="material-row"><span style="font-weight:600">${r.l}</span><span style="font-weight:800;color:#0284c7">${r.v}</span></div>`).join("")}</div></div>
+  ${activeHardscapes.length>0?`<div class="section"><div class="section-title">Hardscape Elements</div><div style="background:#f8fafc;border:1px solid #0f172a;border-radius:8px;overflow:hidden">${activeHardscapes.map(h=>`<div class="material-row"><span style="font-weight:600">${h.icon} ${h.label}</span><span style="font-weight:800;color:#0284c7">${h.unit==="unit"?"1 unit":`${hardscapes[h.id]} ${h.unit}`}</span></div>`).join("")}</div></div>`:""}
+  <div class="section"><div class="section-title">Recommended Pentair Equipment</div><div style="background:#f8fafc;border:1px solid #0f172a;border-radius:8px;overflow:hidden">${equipment.map(eq=>`<div class="eq-row"><div><div style="font-size:10px;color:#475569;text-transform:uppercase">${eq.label}</div><div style="font-size:13px;font-weight:700;margin-top:2px">${eq.model}</div><div style="font-size:11px;color:#64748b;margin-top:2px">${eq.note}</div></div><div style="font-size:11px;font-family:monospace;background:#0f172a;padding:2px 8px;border-radius:6px;white-space:nowrap">${eq.sku}</div></div>`).join("")}</div></div>
   <div class="footer">Pool Craft Pro — Design Pools. Craft Outdoor Living.<br>All material quantities are estimates. Verify with your licensed pool contractor. Always obtain proper permits before construction.</div>
   <script>window.onload=()=>setTimeout(()=>window.print(),800);</script></body></html>`);
   win.document.close();
@@ -3318,7 +3318,7 @@ function generateProposal({ projectName, clientName, shape, len, wid, depthId, f
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:"Inter",system-ui,sans-serif;background:#fff;color:#1e293b;line-height:1.5;-webkit-font-smoothing:antialiased}
+    body{font-family:"Inter",system-ui,sans-serif;background:#fff;color:#e2e8f0;line-height:1.5;-webkit-font-smoothing:antialiased}
     /* ── COVER ── */
     .cover{background:linear-gradient(145deg,#0a0f1e 0%,#0f1e3d 55%,#0a0f1e 100%);color:white;padding:64px 56px 72px;min-height:320px;position:relative;overflow:hidden}
     .cover::before{content:'';position:absolute;top:-30%;right:-10%;width:60%;height:160%;background:radial-gradient(ellipse,rgba(201,168,76,0.12) 0%,transparent 70%);pointer-events:none}
@@ -3337,12 +3337,12 @@ function generateProposal({ projectName, clientName, shape, len, wid, depthId, f
     .body{padding:52px 56px}
     .section{margin-bottom:40px}
     .section-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.14em;color:#c9a84c;margin-bottom:16px;display:flex;align-items:center;gap:10px}
-    .section-label::after{content:'';flex:1;height:1px;background:#e2e8f0}
+    .section-label::after{content:'';flex:1;height:1px;background:#0f172a}
     /* ── SPEC GRID ── */
     .spec-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
     .spec{background:#f8fafc;border-radius:8px;padding:16px;border:1px solid #f1f5f9}
-    .spec label{font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:6px;font-weight:600}
-    .spec span{font-family:"Cormorant Garamond",Georgia,serif;font-size:20px;font-weight:600;color:#0f172a;line-height:1.2}
+    .spec label{font-size:10px;color:#475569;text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:6px;font-weight:600}
+    .spec span{font-family:"Cormorant Garamond",Georgia,serif;font-size:20px;font-weight:600;color:#f8fafc;line-height:1.2}
     /* ── HIGHLIGHTS ── */
     .highlight-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:4px}
     .highlight{background:linear-gradient(135deg,#0a0f1e,#0f1e3d);border-radius:10px;padding:16px;text-align:center;border:1px solid rgba(201,168,76,0.15)}
@@ -3353,10 +3353,10 @@ function generateProposal({ projectName, clientName, shape, len, wid, depthId, f
     .feature-pill{background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px}
     /* ── INVESTMENT TABLE ── */
     .invest-table{width:100%;border-collapse:collapse}
-    .invest-table th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;padding:10px 0;border-bottom:2px solid #0f172a;font-weight:700}
+    .invest-table th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:#475569;padding:10px 0;border-bottom:2px solid #f8fafc;font-weight:700}
     .invest-table td{padding:14px 0;border-bottom:1px solid #f1f5f9;font-size:14px;vertical-align:top}
-    .invest-table .cat-name{font-weight:600;color:#0f172a}
-    .invest-table .cat-note{font-size:11px;color:#94a3b8;margin-top:2px}
+    .invest-table .cat-name{font-weight:600;color:#f8fafc}
+    .invest-table .cat-note{font-size:11px;color:#475569;margin-top:2px}
     .invest-table .amt{text-align:right;font-family:"Cormorant Garamond",Georgia,serif;font-size:17px;font-weight:600;color:#0284c7;white-space:nowrap}
     /* ── TOTAL BANNER ── */
     .total-banner{background:linear-gradient(135deg,#0a0f1e,#1a2f5e);color:white;border-radius:16px;padding:36px 40px;display:flex;justify-content:space-between;align-items:center;margin-top:20px}
@@ -3372,15 +3372,15 @@ function generateProposal({ projectName, clientName, shape, len, wid, depthId, f
     .step{display:flex;gap:14px;align-items:flex-start;background:#f8fafc;border-radius:10px;padding:16px;border:1px solid #f1f5f9}
     .step-num{min-width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#c9a84c,#a8873a);color:#0a0f1e;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0}
     .step-text{font-size:13px;color:#374151;line-height:1.5;padding-top:3px}
-    .step-text strong{color:#0f172a;display:block;margin-bottom:3px}
+    .step-text strong{color:#f8fafc;display:block;margin-bottom:3px}
     /* ── MATERIALS PAGE ── */
     .page-break{page-break-before:always}
     .materials-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px}
-    .mat-card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;display:flex;justify-content:space-between;align-items:center}
+    .mat-card{background:#f8fafc;border:1px solid #0f172a;border-radius:8px;padding:16px;display:flex;justify-content:space-between;align-items:center}
     .mat-label{font-size:12px;color:#64748b;font-weight:500}
     .mat-val{font-family:"Cormorant Garamond",Georgia,serif;font-size:17px;font-weight:600;color:#0284c7}
     /* ── FOOTER ── */
-    .footer{margin-top:48px;padding-top:20px;border-top:1px solid #e2e8f0;font-size:10px;color:#94a3b8;line-height:1.8;display:flex;justify-content:space-between;align-items:flex-start;gap:24px}
+    .footer{margin-top:48px;padding-top:20px;border-top:1px solid #0f172a;font-size:10px;color:#475569;line-height:1.8;display:flex;justify-content:space-between;align-items:flex-start;gap:24px}
     @media print{
       .cover{padding:40px;min-height:auto}
       .body{padding:40px}
@@ -3510,7 +3510,7 @@ function generateProposal({ projectName, clientName, shape, len, wid, depthId, f
     <div class="footer">
       <div style="max-width:480px">This proposal provides estimated pricing for budgeting and decision-making purposes based on typical regional construction costs. It is not a final contract or fixed-price quote. Final pricing is confirmed after an in-person site evaluation. Excludes engineering fees, utility relocation, HOA fees, and unforeseen site conditions. All work subject to local permit approval.</div>
       <div style="text-align:right;flex-shrink:0">
-        <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:14px;font-weight:600;color:#0f172a;letter-spacing:1px">POOL <span style="color:#c9a84c">CRAFT</span> PRO</div>
+        <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:14px;font-weight:600;color:#f8fafc;letter-spacing:1px">POOL <span style="color:#c9a84c">CRAFT</span> PRO</div>
         <div>poolcraftpro.ai</div>
       </div>
     </div>
@@ -3524,7 +3524,7 @@ function generateProposal({ projectName, clientName, shape, len, wid, depthId, f
           <div style="font-size:10px;color:#c9a84c;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:6px">Materials Reference</div>
           <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:28px;font-weight:300">Estimated Quantities</div>
         </div>
-        <div style="font-size:12px;color:#94a3b8;text-align:right">${len}' × ${wid}' ${escapeHtml(shapeLabel)}<br>${escapeHtml(clientName||projectName)}</div>
+        <div style="font-size:12px;color:#475569;text-align:right">${len}' × ${wid}' ${escapeHtml(shapeLabel)}<br>${escapeHtml(clientName||projectName)}</div>
       </div>
       <div class="materials-grid">
         <div class="mat-card"><span class="mat-label">Excavation</span><span class="mat-val">${materials.excavation}</span></div>
@@ -3536,13 +3536,13 @@ function generateProposal({ projectName, clientName, shape, len, wid, depthId, f
         <div class="mat-card"><span class="mat-label">Waterline Tile</span><span class="mat-val">${materials.tile}</span></div>
         <div class="mat-card"><span class="mat-label">Total Pool Volume</span><span class="mat-val">${materials.gallons.toLocaleString()} gal</span></div>
       </div>
-      <div style="margin-top:24px;padding:14px 18px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;font-size:12px;color:#64748b;line-height:1.7">
-        <strong style="color:#0f172a;display:block;margin-bottom:4px">About These Estimates</strong>
+      <div style="margin-top:24px;padding:14px 18px;background:#f8fafc;border:1px solid #0f172a;border-radius:10px;font-size:12px;color:#64748b;line-height:1.7">
+        <strong style="color:#f8fafc;display:block;margin-bottom:4px">About These Estimates</strong>
         Rebar calculated at #3 bar on 12" grid spacing with 15% lap splice allowance, displayed in sticks (20 ft) and total linear feet. Excavation includes 15% over-dig for formwork. Gunite at 4" shell thickness. All quantities for reference — final takeoff by licensed contractor.
       </div>
       <div class="footer" style="margin-top:32px">
         <div>Materials estimates are for budgeting reference only. Actual quantities determined by licensed contractor after final engineering drawings. Prepared by Pool Craft Pro · poolcraftpro.ai</div>
-        <div style="text-align:right;flex-shrink:0;font-family:'Cormorant Garamond',Georgia,serif;font-size:13px;font-weight:600;color:#94a3b8;letter-spacing:1px">POOL CRAFT PRO</div>
+        <div style="text-align:right;flex-shrink:0;font-family:'Cormorant Garamond',Georgia,serif;font-size:13px;font-weight:600;color:#475569;letter-spacing:1px">POOL CRAFT PRO</div>
       </div>
     </div>
   </div>
@@ -3630,9 +3630,9 @@ function TeamManagementPanel({ user, ownPlan, seats, teamMembership }) {
 
   if (!isOwner && teamMembership) {
     return (
-      <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
+      <div style={{background:"#ffffff",border:"1px solid #e2e8f0",borderRadius:14,padding:14}}>
         <div style={{fontSize:12,fontWeight:700,color:"#22c55e",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:6}}>👥 Team Membership</div>
-        <div style={{fontSize:12,color:"#94a3b8",lineHeight:1.6}}>✅ You're an active member of a Team plan — you get {PLANS.team.dailyLimitPerSeat} renders/day under your own account.</div>
+        <div style={{fontSize:12,color:"#475569",lineHeight:1.6}}>✅ You're an active member of a Team plan — you get {PLANS.team.dailyLimitPerSeat} renders/day under your own account.</div>
       </div>
     );
   }
@@ -3643,17 +3643,17 @@ function TeamManagementPanel({ user, ownPlan, seats, teamMembership }) {
   const pendingCount = members.filter((m) => m.status === "pending").length;
 
   return (
-    <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
+    <div style={{background:"#ffffff",border:"1px solid #e2e8f0",borderRadius:14,padding:14}}>
       <div style={{fontSize:12,fontWeight:700,color:"#22c55e",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4}}>👥 Team Management</div>
       <div style={{fontSize:11,color:"#64748b",marginBottom:12}}>{seats}-seat plan · {activeCount} active{pendingCount>0?`, ${pendingCount} pending`:""}. Invited teammates sign up (or log in) normally with the email you invite — they don't need their own subscription.</div>
 
       {dbError && (
         <div style={{marginBottom:12}}>
-          <div style={{padding:"10px 12px",background:"rgba(245,158,11,0.08)",border:"1px solid rgba(245,158,11,0.25)",borderRadius:8,fontSize:12,color:"#f59e0b",marginBottom:8}}>⚠️ Team tables aren't set up in your Supabase project yet. Paste this into the same SQL editor you used for Cloud Sync, then reopen this tab.</div>
+          <div style={{padding:"10px 12px",background:"rgba(245,158,11,0.08)",border:"1px solid rgba(245,158,11,0.25)",borderRadius:8,fontSize:12,color:"#b45309",marginBottom:8}}>⚠️ Team tables aren't set up in your Supabase project yet. Paste this into the same SQL editor you used for Cloud Sync, then reopen this tab.</div>
           <button onClick={()=>setShowSql(p=>!p)} style={{fontSize:11,color:"#22c55e",background:"none",border:"none",cursor:"pointer",padding:0,marginBottom:showSql?8:0}}>{showSql?"▲ Hide setup code":"▼ Show setup SQL code"}</button>
           {showSql && (
             <div>
-              <pre style={{background:"#0a0e1a",border:"1px solid #1e293b",borderRadius:8,padding:10,fontSize:10,color:"#86efac",overflowX:"auto",whiteSpace:"pre-wrap",margin:0}}>{TEAM_SETUP_SQL}</pre>
+              <pre style={{background:"#0a0e1a",border:"1px solid #e2e8f0",borderRadius:8,padding:10,fontSize:10,color:"#86efac",overflowX:"auto",whiteSpace:"pre-wrap",margin:0}}>{TEAM_SETUP_SQL}</pre>
               <button onClick={copySql} style={{marginTop:6,padding:"5px 10px",borderRadius:6,background:"rgba(34,197,94,0.1)",border:"1px solid rgba(34,197,94,0.25)",color:"#22c55e",fontSize:11,fontWeight:700,cursor:"pointer"}}>📋 Copy SQL</button>
             </div>
           )}
@@ -3665,10 +3665,10 @@ function TeamManagementPanel({ user, ownPlan, seats, teamMembership }) {
           {members.length > 0 && (
             <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:10}}>
               {members.map((m) => (
-                <div key={m.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,padding:"8px 12px",background:"#1e293b",borderRadius:8}}>
+                <div key={m.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,padding:"8px 12px",background:"#e2e8f0",borderRadius:8}}>
                   <div style={{minWidth:0}}>
-                    <div style={{fontSize:12,fontWeight:700,color:"#e2e8f0",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.email}</div>
-                    <div style={{fontSize:10,color:m.status==="active"?"#22c55e":"#f59e0b"}}>{m.status==="active"?"✅ Active":"⏳ Pending — waiting for them to log in"}</div>
+                    <div style={{fontSize:12,fontWeight:700,color:"#0f172a",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.email}</div>
+                    <div style={{fontSize:10,color:m.status==="active"?"#22c55e":"#b45309"}}>{m.status==="active"?"✅ Active":"⏳ Pending — waiting for them to log in"}</div>
                   </div>
                   <button onClick={()=>removeMember(m.id)} style={{padding:"6px 10px",borderRadius:6,background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",fontSize:11,fontWeight:700,cursor:"pointer",flexShrink:0}}>✕</button>
                 </div>
@@ -3677,9 +3677,9 @@ function TeamManagementPanel({ user, ownPlan, seats, teamMembership }) {
           )}
           <div style={{display:"flex",gap:6}}>
             <input type="email" value={inviteEmail} onChange={e=>setInviteEmail(e.target.value)} onKeyDown={e=>e.key==="Enter"&&invite()} placeholder="teammate@email.com"
-              style={{flex:1,background:"#1e293b",border:"1px solid #334155",borderRadius:8,padding:"9px 10px",color:"#e2e8f0",fontSize:12,outline:"none"}}/>
+              style={{flex:1,background:"#e2e8f0",border:"1px solid #cbd5e1",borderRadius:8,padding:"9px 10px",color:"#0f172a",fontSize:12,outline:"none"}}/>
             <button onClick={invite} disabled={!inviteEmail.trim()||members.length>=seats}
-              style={{padding:"9px 14px",borderRadius:8,background:inviteEmail.trim()&&members.length<seats?"rgba(34,197,94,0.15)":"#1e293b",border:"1px solid rgba(34,197,94,0.3)",color:inviteEmail.trim()&&members.length<seats?"#22c55e":"#64748b",fontSize:12,fontWeight:700,cursor:inviteEmail.trim()&&members.length<seats?"pointer":"not-allowed",flexShrink:0}}>Invite</button>
+              style={{padding:"9px 14px",borderRadius:8,background:inviteEmail.trim()&&members.length<seats?"rgba(34,197,94,0.15)":"#e2e8f0",border:"1px solid rgba(34,197,94,0.3)",color:inviteEmail.trim()&&members.length<seats?"#22c55e":"#64748b",fontSize:12,fontWeight:700,cursor:inviteEmail.trim()&&members.length<seats?"pointer":"not-allowed",flexShrink:0}}>Invite</button>
           </div>
           {inviteError && <div style={{marginTop:6,fontSize:11,color:"#ef4444"}}>{inviteError}</div>}
         </>
@@ -3754,18 +3754,18 @@ function SettingsScreen({ userMode, setUserMode, onSwitchMode, plan, ownPlan, se
   };
 
   const KeyRow = ({ label, value, setValue, storageKey, placeholder, hint, isSet }) => (
-    <div style={{background:"#0f172a",border:`1px solid ${isSet?"rgba(34,197,94,0.3)":"#1e293b"}`,borderRadius:12,padding:14,marginBottom:10}}>
+    <div style={{background:"#f8fafc",border:`1px solid ${isSet?"rgba(34,197,94,0.3)":"#e2e8f0"}`,borderRadius:12,padding:14,marginBottom:10}}>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
-        <div style={{fontSize:13,fontWeight:700,color:"#e2e8f0"}}>{label}</div>
+        <div style={{fontSize:13,fontWeight:700,color:"#0f172a"}}>{label}</div>
         {isSet ? <span style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:"rgba(34,197,94,0.15)",border:"1px solid rgba(34,197,94,0.3)",color:"#22c55e",fontWeight:700}}>✅ Active</span>
-               : <span style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:"rgba(245,158,11,0.1)",border:"1px solid rgba(245,158,11,0.3)",color:"#f59e0b",fontWeight:700}}>⚠️ Not set</span>}
+               : <span style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:"rgba(245,158,11,0.1)",border:"1px solid rgba(245,158,11,0.3)",color:"#b45309",fontWeight:700}}>⚠️ Not set</span>}
       </div>
       {hint&&<div style={{fontSize:11,color:"#64748b",marginBottom:8,lineHeight:1.5}}>{hint}</div>}
       <div style={{display:"flex",gap:8}}>
         <input type="password" value={value} onChange={e=>setValue(e.target.value)} placeholder={placeholder}
-          style={{flex:1,background:"#1e293b",border:`1px solid ${saved===label?"#22c55e":"#334155"}`,borderRadius:8,padding:"9px 12px",color:"#e2e8f0",fontSize:13,outline:"none"}}/>
+          style={{flex:1,background:"#e2e8f0",border:`1px solid ${saved===label?"#22c55e":"#cbd5e1"}`,borderRadius:8,padding:"9px 12px",color:"#0f172a",fontSize:13,outline:"none"}}/>
         <button onClick={()=>save(label, value, storageKey)} disabled={!value.trim()||value==="●●●●●●●●"}
-          style={{padding:"9px 16px",borderRadius:8,background:value.trim()&&value!=="●●●●●●●●"?"linear-gradient(135deg,#22c55e,#16a34a)":"#1e293b",border:"none",color:"white",fontWeight:700,fontSize:12,cursor:"pointer",flexShrink:0}}>
+          style={{padding:"9px 16px",borderRadius:8,background:value.trim()&&value!=="●●●●●●●●"?"linear-gradient(135deg,#22c55e,#16a34a)":"#e2e8f0",border:"none",color:value.trim()&&value!=="●●●●●●●●"?"white":"#64748b",fontWeight:700,fontSize:12,cursor:"pointer",flexShrink:0}}>
           {saved===label?"✓ Saved!":"Save"}
         </button>
         {isSet&&<button onClick={()=>{ save(label,"",storageKey); setValue(""); }}
@@ -3778,18 +3778,18 @@ function SettingsScreen({ userMode, setUserMode, onSwitchMode, plan, ownPlan, se
     <div style={{display:"flex",flexDirection:"column",gap:14}}>
       <div style={{background:"linear-gradient(135deg,rgba(6,182,212,0.12),rgba(2,132,199,0.06))",border:"1px solid rgba(6,182,212,0.25)",borderRadius:14,padding:14}}>
         <div style={{fontSize:14,fontWeight:800,color:"#06b6d4",marginBottom:4}}>🔧 App Settings</div>
-        <div style={{fontSize:12,color:"#94a3b8",lineHeight:1.6}}>All your API keys and affiliate tags live here. Keys are stored only on your device and never sent to anyone other than the service they're for.</div>
+        <div style={{fontSize:12,color:"#475569",lineHeight:1.6}}>All your API keys and affiliate tags live here. Keys are stored only on your device and never sent to anyone other than the service they're for.</div>
       </div>
 
       {/* User Mode */}
-      <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
+      <div style={{background:"#ffffff",border:"1px solid #e2e8f0",borderRadius:14,padding:14}}>
         <div style={{fontSize:12,fontWeight:700,color:"#06b6d4",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:10}}>👤 Your Profile</div>
         <div style={{display:"flex",flexDirection:"column",gap:8}}>
           {[{id:"contractor",icon:"👷",label:"Pool Contractor / Builder",desc:"Full technical detail, permits, client tools"},{id:"homeowner",icon:"🏠",label:"Homeowner / DIY",desc:"Simplified visual design, guided steps"},{id:"designer",icon:"🎨",label:"Landscape Designer",desc:"Visual design focus, hardscapes, renderings"}].map(m=>(
             <button key={m.id} onClick={()=>{ setUserMode(m.id); try{localStorage.setItem("pc_mode",m.id);}catch{} }}
-              style={{textAlign:"left",padding:"12px 14px",borderRadius:10,border:`2px solid ${userMode===m.id?"#06b6d4":"#1e293b"}`,background:userMode===m.id?"rgba(6,182,212,0.08)":"#0f172a",cursor:"pointer",display:"flex",alignItems:"center",gap:12}}>
+              style={{textAlign:"left",padding:"12px 14px",borderRadius:10,border:`2px solid ${userMode===m.id?"#06b6d4":"#e2e8f0"}`,background:userMode===m.id?"rgba(6,182,212,0.08)":"#f8fafc",cursor:"pointer",display:"flex",alignItems:"center",gap:12}}>
               <span style={{fontSize:22}}>{m.icon}</span>
-              <div><div style={{fontSize:13,fontWeight:700,color:userMode===m.id?"#06b6d4":"#e2e8f0"}}>{m.label}</div><div style={{fontSize:11,color:"#64748b",marginTop:2}}>{m.desc}</div></div>
+              <div><div style={{fontSize:13,fontWeight:700,color:userMode===m.id?"#06b6d4":"#0f172a"}}>{m.label}</div><div style={{fontSize:11,color:"#64748b",marginTop:2}}>{m.desc}</div></div>
               {userMode===m.id&&<span style={{marginLeft:"auto",color:"#06b6d4",fontSize:16}}>✓</span>}
             </button>
           ))}
@@ -3797,12 +3797,12 @@ function SettingsScreen({ userMode, setUserMode, onSwitchMode, plan, ownPlan, se
       </div>
 
       {/* AI Rendering / Billing */}
-      <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
-        <div style={{fontSize:12,fontWeight:700,color:"#a78bfa",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4}}>🚀 FLUX — AI Pool Rendering</div>
+      <div style={{background:"#ffffff",border:"1px solid #e2e8f0",borderRadius:14,padding:14}}>
+        <div style={{fontSize:12,fontWeight:700,color:"#7c3aed",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4}}>🚀 FLUX — AI Pool Rendering</div>
         <div style={{fontSize:11,color:"#64748b",marginBottom:12}}>Every plan runs on a shared fal.ai key configured on the server — just choose a plan below.</div>
 
         {!user ? (
-          <div style={{padding:"14px",borderRadius:10,background:"rgba(6,182,212,0.06)",border:"1px solid rgba(6,182,212,0.2)",fontSize:12,color:"#94a3b8"}}>
+          <div style={{padding:"14px",borderRadius:10,background:"rgba(6,182,212,0.06)",border:"1px solid rgba(6,182,212,0.2)",fontSize:12,color:"#475569"}}>
             Sign in to subscribe — plans are tied to your account so they follow you across devices.
           </div>
         ) : (
@@ -3821,7 +3821,7 @@ function SettingsScreen({ userMode, setUserMode, onSwitchMode, plan, ownPlan, se
 
             <div style={{display:"flex",gap:6,marginBottom:12}}>
               {[{id:"month",label:"Monthly"},{id:"year",label:"Annual — save ~2 months"}].map(iv=>(
-                <button key={iv.id} onClick={()=>setBillingInterval(iv.id)} style={{flex:1,padding:"8px 10px",borderRadius:8,border:`2px solid ${billingInterval===iv.id?"#a78bfa":"#1e293b"}`,background:billingInterval===iv.id?"rgba(124,58,237,0.1)":"#0f172a",color:billingInterval===iv.id?"#a78bfa":"#64748b",fontSize:11,fontWeight:700,cursor:"pointer"}}>{iv.label}</button>
+                <button key={iv.id} onClick={()=>setBillingInterval(iv.id)} style={{flex:1,padding:"8px 10px",borderRadius:8,border:`2px solid ${billingInterval===iv.id?"#7c3aed":"#e2e8f0"}`,background:billingInterval===iv.id?"rgba(124,58,237,0.1)":"#f8fafc",color:billingInterval===iv.id?"#7c3aed":"#64748b",fontSize:11,fontWeight:700,cursor:"pointer"}}>{iv.label}</button>
               ))}
             </div>
 
@@ -3830,12 +3830,12 @@ function SettingsScreen({ userMode, setUserMode, onSwitchMode, plan, ownPlan, se
                 const isCurrent = plan === p.id;
                 const price = billingInterval === "year" ? PLANS[p.id].year : PLANS[p.id].month;
                 return (
-                  <div key={p.id} style={{padding:"14px",borderRadius:10,border:`2px solid ${isCurrent?"#22c55e":"#1e293b"}`,background:isCurrent?"rgba(34,197,94,0.06)":"#0f172a"}}>
-                    <div style={{fontSize:13,fontWeight:800,color:isCurrent?"#22c55e":"#e2e8f0"}}>{PLANS[p.id].name}{isCurrent?" ✓":""}</div>
-                    <div style={{fontSize:20,fontWeight:800,color:"#e2e8f0",marginTop:4}}>${fmtUSD(price)}<span style={{fontSize:11,color:"#64748b",fontWeight:400}}>/{billingInterval==="year"?"yr":"mo"}</span></div>
+                  <div key={p.id} style={{padding:"14px",borderRadius:10,border:`2px solid ${isCurrent?"#22c55e":"#e2e8f0"}`,background:isCurrent?"rgba(34,197,94,0.06)":"#f8fafc"}}>
+                    <div style={{fontSize:13,fontWeight:800,color:isCurrent?"#22c55e":"#0f172a"}}>{PLANS[p.id].name}{isCurrent?" ✓":""}</div>
+                    <div style={{fontSize:20,fontWeight:800,color:"#0f172a",marginTop:4}}>${fmtUSD(price)}<span style={{fontSize:11,color:"#64748b",fontWeight:400}}>/{billingInterval==="year"?"yr":"mo"}</span></div>
                     <div style={{fontSize:11,color:"#64748b",marginTop:2,marginBottom:10}}>{p.renders} renders / day</div>
                     <button onClick={()=>startCheckout(p.id, 1)} disabled={isCurrent||billingLoading}
-                      style={{width:"100%",padding:"9px",borderRadius:8,background:isCurrent?"#1e293b":"linear-gradient(135deg,#7c3aed,#5b21b6)",border:"none",color:isCurrent?"#64748b":"white",fontWeight:700,fontSize:12,cursor:isCurrent||billingLoading?"not-allowed":"pointer"}}>
+                      style={{width:"100%",padding:"9px",borderRadius:8,background:isCurrent?"#e2e8f0":"linear-gradient(135deg,#7c3aed,#5b21b6)",border:"none",color:isCurrent?"#64748b":"white",fontWeight:700,fontSize:12,cursor:isCurrent||billingLoading?"not-allowed":"pointer"}}>
                       {isCurrent?"Current Plan":billingLoading?"...":"Subscribe"}
                     </button>
                   </div>
@@ -3847,26 +3847,26 @@ function SettingsScreen({ userMode, setUserMode, onSwitchMode, plan, ownPlan, se
                 now: this purchases a bigger daily render cap on the one account that
                 subscribes, not separate logins for each teammate - there's no
                 multi-user/team-account system in the app yet. */}
-            <div style={{padding:"14px",borderRadius:10,border:`2px solid ${plan==="team"?"#22c55e":"#1e293b"}`,background:plan==="team"?"rgba(34,197,94,0.06)":"#0f172a"}}>
+            <div style={{padding:"14px",borderRadius:10,border:`2px solid ${plan==="team"?"#22c55e":"#e2e8f0"}`,background:plan==="team"?"rgba(34,197,94,0.06)":"#f8fafc"}}>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,flexWrap:"wrap"}}>
                 <div>
-                  <div style={{fontSize:13,fontWeight:800,color:plan==="team"?"#22c55e":"#e2e8f0"}}>👥 {PLANS.team.name} — for contractor shops{plan==="team"?" ✓":""}</div>
+                  <div style={{fontSize:13,fontWeight:800,color:plan==="team"?"#22c55e":"#0f172a"}}>👥 {PLANS.team.name} — for contractor shops{plan==="team"?" ✓":""}</div>
                   <div style={{fontSize:11,color:"#64748b",marginTop:2}}>${fmtUSD(billingInterval==="year"?PLANS.team.year:PLANS.team.month)}/seat/{billingInterval==="year"?"yr":"mo"} · {PLANS.team.dailyLimitPerSeat} renders/day per seat</div>
                 </div>
                 <div style={{display:"flex",alignItems:"center",gap:8}}>
                   <span style={{fontSize:11,color:"#64748b"}}>Seats</span>
                   <input type="number" min={PLANS.team.minSeats} max={PLANS.team.maxSeats} value={teamSeats}
                     onChange={e=>setTeamSeats(Math.min(PLANS.team.maxSeats,Math.max(PLANS.team.minSeats,Number(e.target.value)||PLANS.team.minSeats)))}
-                    style={{width:56,background:"#1e293b",border:"1px solid #334155",borderRadius:8,padding:"6px 8px",color:"#e2e8f0",fontSize:13,outline:"none",textAlign:"center"}}/>
+                    style={{width:56,background:"#e2e8f0",border:"1px solid #cbd5e1",borderRadius:8,padding:"6px 8px",color:"#0f172a",fontSize:13,outline:"none",textAlign:"center"}}/>
                 </div>
               </div>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:10,gap:10}}>
-                <div style={{fontSize:16,fontWeight:800,color:"#e2e8f0"}}>
+                <div style={{fontSize:16,fontWeight:800,color:"#0f172a"}}>
                   ${fmtUSD((billingInterval==="year"?PLANS.team.year:PLANS.team.month)*teamSeats)}
                   <span style={{fontSize:11,color:"#64748b",fontWeight:400}}>/{billingInterval==="year"?"yr":"mo"} total ({teamSeats} × ${fmtUSD(billingInterval==="year"?PLANS.team.year:PLANS.team.month)})</span>
                 </div>
                 <button onClick={()=>startCheckout("team", teamSeats)} disabled={plan==="team"||billingLoading}
-                  style={{padding:"9px 16px",borderRadius:8,background:plan==="team"?"#1e293b":"linear-gradient(135deg,#7c3aed,#5b21b6)",border:"none",color:plan==="team"?"#64748b":"white",fontWeight:700,fontSize:12,cursor:plan==="team"||billingLoading?"not-allowed":"pointer",flexShrink:0}}>
+                  style={{padding:"9px 16px",borderRadius:8,background:plan==="team"?"#e2e8f0":"linear-gradient(135deg,#7c3aed,#5b21b6)",border:"none",color:plan==="team"?"#64748b":"white",fontWeight:700,fontSize:12,cursor:plan==="team"||billingLoading?"not-allowed":"pointer",flexShrink:0}}>
                   {plan==="team"?"Current Plan":billingLoading?"...":"Subscribe"}
                 </button>
               </div>
@@ -3880,7 +3880,7 @@ function SettingsScreen({ userMode, setUserMode, onSwitchMode, plan, ownPlan, se
       {(ownPlan==="team" || teamMembership) && <TeamManagementPanel user={user} ownPlan={ownPlan} seats={seats} teamMembership={teamMembership} />}
 
       {/* Maps & Parcel */}
-      <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
+      <div style={{background:"#ffffff",border:"1px solid #e2e8f0",borderRadius:14,padding:14}}>
         <div style={{fontSize:12,fontWeight:700,color:"#06b6d4",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4}}>🛰️ Site Plan Map</div>
         <div style={{fontSize:11,color:"#64748b",marginBottom:10}}>The Site Plan tab's interactive map works out of the box - no setup needed. Only paste your own Mapbox token below if you'd rather track usage on your own free Mapbox account instead.</div>
         <KeyRow label="Mapbox Access Token (optional override)" value={mapboxToken} setValue={setMapboxToken} storageKey="pc_mapbox_token" placeholder="Paste your own Mapbox public token (pk....)" isSet={!!mapboxToken}
@@ -3890,31 +3890,31 @@ function SettingsScreen({ userMode, setUserMode, onSwitchMode, plan, ownPlan, se
       </div>
 
       {/* Cloud Sync */}
-      <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
+      <div style={{background:"#ffffff",border:"1px solid #e2e8f0",borderRadius:14,padding:14}}>
         <div style={{fontSize:12,fontWeight:700,color:"#22c55e",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4}}>☁️ Cloud Sync (Supabase)</div>
         <div style={{fontSize:11,color:"#64748b",marginBottom:10}}>Sync projects across all your devices. Free at supabase.com. Create a project, run the setup SQL, then paste your URL and anon key.</div>
         <CloudSyncPanel />
       </div>
 
       {/* Affiliate Tags */}
-      <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
-        <div style={{fontSize:12,fontWeight:700,color:"#f59e0b",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4}}>💰 Affiliate Tags — Your Revenue</div>
+      <div style={{background:"#ffffff",border:"1px solid #e2e8f0",borderRadius:14,padding:14}}>
+        <div style={{fontSize:12,fontWeight:700,color:"#b45309",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4}}>💰 Affiliate Tags — Your Revenue</div>
         <div style={{fontSize:11,color:"#64748b",marginBottom:10}}>Replace the placeholders below with your real affiliate IDs. Every product link in the app includes your tag automatically.</div>
         <KeyRow label="Amazon Associates Tag" value={amazonTag} setValue={setAmazonTag} storageKey="pc_tag_amazon" placeholder="yourname-20" isSet={!amazonTag.includes("YOURTAG")} hint="Sign up at affiliate-program.amazon.com"/>
         <KeyRow label="Home Depot Affiliate Tag" value={hdTag} setValue={setHdTag} storageKey="pc_tag_hd" placeholder="Your HD tag" isSet={!hdTag.includes("YOUR_HD")} hint="Sign up at homedepot.com/affiliate"/>
       </div>
 
       {/* Financing Partners */}
-      <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
+      <div style={{background:"#ffffff",border:"1px solid #e2e8f0",borderRadius:14,padding:14}}>
         <div style={{fontSize:12,fontWeight:700,color:"#22c55e",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4}}>💳 Financing Partners</div>
         <div style={{fontSize:11,color:"#64748b",marginBottom:12}}>Paste your own financing company's application/referral link (Wisetack, Hearth, Synchrony, GreenSky, or any lender you already work with). These show up as "Estimate Your Financing" buttons for your clients in the Cost Estimator and Quote Builder.</div>
 
         {financingLinks.length > 0 && (
           <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:10}}>
             {financingLinks.map((f,i)=>(
-              <div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,padding:"8px 12px",background:"#1e293b",borderRadius:8}}>
+              <div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,padding:"8px 12px",background:"#e2e8f0",borderRadius:8}}>
                 <div style={{minWidth:0}}>
-                  <div style={{fontSize:12,fontWeight:700,color:"#e2e8f0"}}>{f.name}</div>
+                  <div style={{fontSize:12,fontWeight:700,color:"#0f172a"}}>{f.name}</div>
                   <div style={{fontSize:10,color:"#64748b",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.url}</div>
                 </div>
                 <button onClick={()=>removeFinancingLink(i)} style={{padding:"6px 10px",borderRadius:6,background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",fontSize:11,fontWeight:700,cursor:"pointer",flexShrink:0}}>✕</button>
@@ -3925,42 +3925,42 @@ function SettingsScreen({ userMode, setUserMode, onSwitchMode, plan, ownPlan, se
 
         <div style={{display:"flex",gap:6}}>
           <input type="text" value={newFinancingName} onChange={e=>setNewFinancingName(e.target.value)} placeholder="Name (e.g. Wisetack)"
-            style={{flex:"0 0 150px",background:"#1e293b",border:"1px solid #334155",borderRadius:8,padding:"9px 10px",color:"#e2e8f0",fontSize:12,outline:"none"}}/>
+            style={{flex:"0 0 150px",background:"#e2e8f0",border:"1px solid #cbd5e1",borderRadius:8,padding:"9px 10px",color:"#0f172a",fontSize:12,outline:"none"}}/>
           <input type="text" value={newFinancingUrl} onChange={e=>setNewFinancingUrl(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addFinancingLink()} placeholder="Your referral link URL"
-            style={{flex:1,background:"#1e293b",border:"1px solid #334155",borderRadius:8,padding:"9px 10px",color:"#e2e8f0",fontSize:12,outline:"none"}}/>
+            style={{flex:1,background:"#e2e8f0",border:"1px solid #cbd5e1",borderRadius:8,padding:"9px 10px",color:"#0f172a",fontSize:12,outline:"none"}}/>
           <button onClick={addFinancingLink} disabled={!newFinancingName.trim()||!newFinancingUrl.trim()}
-            style={{padding:"9px 14px",borderRadius:8,background:newFinancingName.trim()&&newFinancingUrl.trim()?"rgba(34,197,94,0.15)":"#1e293b",border:"1px solid rgba(34,197,94,0.3)",color:newFinancingName.trim()&&newFinancingUrl.trim()?"#22c55e":"#64748b",fontSize:12,fontWeight:700,cursor:newFinancingName.trim()&&newFinancingUrl.trim()?"pointer":"not-allowed",flexShrink:0}}>Add</button>
+            style={{padding:"9px 14px",borderRadius:8,background:newFinancingName.trim()&&newFinancingUrl.trim()?"rgba(34,197,94,0.15)":"#e2e8f0",border:"1px solid rgba(34,197,94,0.3)",color:newFinancingName.trim()&&newFinancingUrl.trim()?"#22c55e":"#64748b",fontSize:12,fontWeight:700,cursor:newFinancingName.trim()&&newFinancingUrl.trim()?"pointer":"not-allowed",flexShrink:0}}>Add</button>
         </div>
       </div>
 
       {/* Review / Referral Links */}
-      <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
-        <div style={{fontSize:12,fontWeight:700,color:"#a78bfa",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4}}>⭐ Review & Referral Links</div>
+      <div style={{background:"#ffffff",border:"1px solid #e2e8f0",borderRadius:14,padding:14}}>
+        <div style={{fontSize:12,fontWeight:700,color:"#7c3aed",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4}}>⭐ Review & Referral Links</div>
         <div style={{fontSize:11,color:"#64748b",marginBottom:10}}>Shown to the client on the Build Tracker's final phase, right when satisfaction is highest. Saved automatically as you type.</div>
         {[
           { key:"google", label:"Google Business Review Link", placeholder:"https://g.page/r/.../review", hint:"Find yours in your Google Business Profile → Ask for reviews" },
           { key:"yelp", label:"Yelp Page Link", placeholder:"https://www.yelp.com/biz/...", hint:"Your business's Yelp page URL" },
           { key:"referral", label:"Referral Link", placeholder:"Your website's referral/promo page", hint:"Where a referred friend should land" },
         ].map(f=>(
-          <div key={f.key} style={{background:"#0f172a",border:`1px solid ${reviewLinks[f.key]?"rgba(34,197,94,0.3)":"#1e293b"}`,borderRadius:12,padding:14,marginBottom:10}}>
+          <div key={f.key} style={{background:"#f8fafc",border:`1px solid ${reviewLinks[f.key]?"rgba(34,197,94,0.3)":"#e2e8f0"}`,borderRadius:12,padding:14,marginBottom:10}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
-              <div style={{fontSize:13,fontWeight:700,color:"#e2e8f0"}}>{f.label}</div>
+              <div style={{fontSize:13,fontWeight:700,color:"#0f172a"}}>{f.label}</div>
               {reviewLinks[f.key] ? <span style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:"rgba(34,197,94,0.15)",border:"1px solid rgba(34,197,94,0.3)",color:"#22c55e",fontWeight:700}}>✅ Set</span>
-                                   : <span style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:"rgba(245,158,11,0.1)",border:"1px solid rgba(245,158,11,0.3)",color:"#f59e0b",fontWeight:700}}>⚠️ Not set</span>}
+                                   : <span style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:"rgba(245,158,11,0.1)",border:"1px solid rgba(245,158,11,0.3)",color:"#b45309",fontWeight:700}}>⚠️ Not set</span>}
             </div>
             <div style={{fontSize:11,color:"#64748b",marginBottom:8,lineHeight:1.5}}>{f.hint}</div>
             <input type="text" value={reviewLinks[f.key]||""} onChange={e=>setReviewLinks(p=>({...p,[f.key]:e.target.value}))} placeholder={f.placeholder}
-              style={{width:"100%",background:"#1e293b",border:"1px solid #334155",borderRadius:8,padding:"9px 12px",color:"#e2e8f0",fontSize:13,outline:"none",boxSizing:"border-box"}}/>
+              style={{width:"100%",background:"#e2e8f0",border:"1px solid #cbd5e1",borderRadius:8,padding:"9px 12px",color:"#0f172a",fontSize:13,outline:"none",boxSizing:"border-box"}}/>
           </div>
         ))}
       </div>
 
       {/* Version / About */}
-      <div style={{background:"#0f172a",border:"1px solid #1e293b",borderRadius:12,padding:14,textAlign:"center"}}>
-        <div style={{fontSize:13,fontWeight:800,color:"#e2e8f0",marginBottom:4,fontFamily:"Georgia,serif",letterSpacing:"2px"}}>
-          <span style={{color:"#dde6f0"}}>POOL </span><span style={{color:"#c9a84c"}}>CRAFT </span><span style={{color:"#dde6f0"}}>PRO</span>
+      <div style={{background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:12,padding:14,textAlign:"center"}}>
+        <div style={{fontSize:13,fontWeight:800,color:"#0f172a",marginBottom:4,fontFamily:"Georgia,serif",letterSpacing:"2px"}}>
+          <span style={{color:"#0f172a"}}>POOL </span><span style={{color:"#a8873a"}}>CRAFT </span><span style={{color:"#0f172a"}}>PRO</span>
         </div>
-        <div style={{fontSize:10,color:"#8a9ab5",letterSpacing:"2px",textTransform:"uppercase",marginBottom:8}}>Design Pools. Craft Outdoor Living.</div>
+        <div style={{fontSize:10,color:"#64748b",letterSpacing:"2px",textTransform:"uppercase",marginBottom:8}}>Design Pools. Craft Outdoor Living.</div>
         <div style={{fontSize:11,color:"#64748b",lineHeight:1.7}}>Version 1.0 · poolcraftpro.ai · Built with React<br/>AI rendering by fal.ai FLUX · Maps by Mapbox<br/>Parcel data by Regrid · Cloud sync by Supabase</div>
       </div>
     </div>
@@ -4005,11 +4005,11 @@ function QuoteBuilder({ shape, len, wid, depthId, finishId, entries, hardscapes,
     const date = new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"});
     const validUntil = new Date(Date.now()+30*24*60*60*1000).toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"});
     win.document.write(`<!DOCTYPE html><html><head><title>Quote - ${escapeHtml(clientName||projectName)}</title>
-    <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Inter,system-ui,sans-serif;background:#fff;color:#1e293b;padding:40px}
+    <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Inter,system-ui,sans-serif;background:#fff;color:#e2e8f0;padding:40px}
     h1{font-size:22px;font-weight:800;margin-bottom:4px}h2{font-size:14px;font-weight:700;margin:20px 0 10px;text-transform:uppercase;letter-spacing:0.07em;color:#64748b}
     .row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f1f5f9;font-size:14px}
-    .total-row{display:flex;justify-content:space-between;padding:16px 20px;background:#0f172a;color:white;border-radius:12px;font-size:18px;font-weight:800;margin-top:16px}
-    .footer{margin-top:30px;font-size:11px;color:#94a3b8;line-height:1.7;border-top:1px solid #e2e8f0;padding-top:16px}
+    .total-row{display:flex;justify-content:space-between;padding:16px 20px;background:#f8fafc;color:white;border-radius:12px;font-size:18px;font-weight:800;margin-top:16px}
+    .footer{margin-top:30px;font-size:11px;color:#475569;line-height:1.7;border-top:1px solid #0f172a;padding-top:16px}
     @media print{body{padding:20px}}</style></head><body>
     <h1>Construction Quote</h1>
     <div style="font-size:13px;color:#64748b;margin-bottom:20px">${clientName?`Prepared for: ${escapeHtml(clientName)} | `:""}${escapeHtml(projectName)} | ${date}</div>
@@ -4038,55 +4038,55 @@ function QuoteBuilder({ shape, len, wid, depthId, finishId, entries, hardscapes,
   return (
     <div style={{display:"flex",flexDirection:"column",gap:14}}>
       <div style={{background:"linear-gradient(135deg,rgba(245,158,11,0.12),rgba(217,119,6,0.06))",border:"1px solid rgba(245,158,11,0.3)",borderRadius:14,padding:14}}>
-        <div style={{fontSize:14,fontWeight:800,color:"#f59e0b",marginBottom:4}}>📋 Quote Builder</div>
-        <div style={{fontSize:12,color:"#94a3b8",lineHeight:1.6}}>Apply your contractor margin, add custom line items, and generate a formal quote to send to the client. This is separate from the cost estimate — it's the number you stand behind.</div>
+        <div style={{fontSize:14,fontWeight:800,color:"#b45309",marginBottom:4}}>📋 Quote Builder</div>
+        <div style={{fontSize:12,color:"#475569",lineHeight:1.6}}>Apply your contractor margin, add custom line items, and generate a formal quote to send to the client. This is separate from the cost estimate — it's the number you stand behind.</div>
       </div>
 
-      <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:14,display:"flex",flexDirection:"column",gap:12}}>
-        <div style={{fontSize:12,fontWeight:700,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.07em"}}>Quote Base</div>
+      <div style={{background:"#ffffff",border:"1px solid #e2e8f0",borderRadius:14,padding:14,display:"flex",flexDirection:"column",gap:12}}>
+        <div style={{fontSize:12,fontWeight:700,color:"#475569",textTransform:"uppercase",letterSpacing:"0.07em"}}>Quote Base</div>
         <div style={{display:"flex",gap:8}}>
           {[{id:false,label:"Midpoint Estimate"},{id:true,label:"High Estimate"}].map(opt=>(
-            <button key={String(opt.id)} onClick={()=>setUseHigh(opt.id)} style={{flex:1,padding:"10px",borderRadius:10,border:`2px solid ${useHigh===opt.id?"#f59e0b":"#1e293b"}`,background:useHigh===opt.id?"rgba(245,158,11,0.1)":"#0f172a",color:useHigh===opt.id?"#f59e0b":"#64748b",fontWeight:700,fontSize:12,cursor:"pointer"}}>{opt.label}</button>
+            <button key={String(opt.id)} onClick={()=>setUseHigh(opt.id)} style={{flex:1,padding:"10px",borderRadius:10,border:`2px solid ${useHigh===opt.id?"#b45309":"#e2e8f0"}`,background:useHigh===opt.id?"rgba(245,158,11,0.1)":"#f8fafc",color:useHigh===opt.id?"#b45309":"#64748b",fontWeight:700,fontSize:12,cursor:"pointer"}}>{opt.label}</button>
           ))}
         </div>
-        <div style={{textAlign:"center",padding:"12px",background:"#0f172a",borderRadius:10}}>
+        <div style={{textAlign:"center",padding:"12px",background:"#f8fafc",borderRadius:10}}>
           <div style={{fontSize:11,color:"#64748b",marginBottom:4}}>Base (before margin)</div>
-          <div style={{fontSize:28,fontWeight:900,color:"#e2e8f0"}}>{fmt(base)}</div>
+          <div style={{fontSize:28,fontWeight:900,color:"#0f172a"}}>{fmt(base)}</div>
         </div>
       </div>
 
-      <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
+      <div style={{background:"#ffffff",border:"1px solid #e2e8f0",borderRadius:14,padding:14}}>
         <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
-          <span style={{fontSize:12,fontWeight:700,color:"#f59e0b"}}>Contractor Margin</span>
-          <span style={{fontSize:14,fontWeight:800,color:"#f59e0b"}}>{markup}% = {fmt(markupAmt)}</span>
+          <span style={{fontSize:12,fontWeight:700,color:"#b45309"}}>Contractor Margin</span>
+          <span style={{fontSize:14,fontWeight:800,color:"#b45309"}}>{markup}% = {fmt(markupAmt)}</span>
         </div>
-        <input type="range" min={0} max={40} step={1} value={markup} onChange={e=>setMarkup(Number(e.target.value))} style={{width:"100%",accentColor:"#f59e0b"}}/>
+        <input type="range" min={0} max={40} step={1} value={markup} onChange={e=>setMarkup(Number(e.target.value))} style={{width:"100%",accentColor:"#b45309"}}/>
         <div style={{fontSize:11,color:"#64748b",marginTop:4}}>Industry standard: 10-20% for residential pools</div>
       </div>
 
-      <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
+      <div style={{background:"#ffffff",border:"1px solid #e2e8f0",borderRadius:14,padding:14}}>
         <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
-          <span style={{fontSize:12,fontWeight:700,color:"#94a3b8"}}>Contingency Reserve</span>
-          <span style={{fontSize:14,fontWeight:800,color:"#94a3b8"}}>{contingency}% = {fmt(contingencyAmt)}</span>
+          <span style={{fontSize:12,fontWeight:700,color:"#475569"}}>Contingency Reserve</span>
+          <span style={{fontSize:14,fontWeight:800,color:"#475569"}}>{contingency}% = {fmt(contingencyAmt)}</span>
         </div>
         <input type="range" min={0} max={20} step={1} value={contingency} onChange={e=>setContingency(Number(e.target.value))} style={{width:"100%",accentColor:"#64748b"}}/>
         <div style={{fontSize:11,color:"#64748b",marginTop:4}}>Covers unexpected site conditions, material price changes</div>
       </div>
 
-      <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
+      <div style={{background:"#ffffff",border:"1px solid #e2e8f0",borderRadius:14,padding:14}}>
         <div style={{fontSize:12,fontWeight:700,color:"#06b6d4",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:10}}>+ Custom Line Items</div>
         <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:10}}>
           {customLines.map(l=>(
-            <div key={l.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",background:"#0f172a",borderRadius:8,border:"1px solid #1e293b"}}>
-              <span style={{flex:1,fontSize:13,color:"#e2e8f0"}}>{l.label}</span>
+            <div key={l.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",background:"#f8fafc",borderRadius:8,border:"1px solid #e2e8f0"}}>
+              <span style={{flex:1,fontSize:13,color:"#0f172a"}}>{l.label}</span>
               <span style={{fontSize:13,fontWeight:700,color:l.amount<0?"#ef4444":"#22c55e"}}>{l.amount<0?"-":""}{fmt(Math.abs(l.amount))}</span>
               <button onClick={()=>removeLine(l.id)} style={{background:"none",border:"none",color:"#64748b",cursor:"pointer",fontSize:14,padding:"4px",minWidth:28,minHeight:28}}>✕</button>
             </div>
           ))}
         </div>
         <div style={{display:"flex",gap:8}}>
-          <input value={newLabel} onChange={e=>setNewLabel(e.target.value)} placeholder="Line item description" style={{flex:2,background:"#1e293b",border:"1px solid #334155",borderRadius:8,padding:"9px 10px",color:"#e2e8f0",fontSize:12,outline:"none"}}/>
-          <input value={newAmount} onChange={e=>setNewAmount(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addLine()} placeholder="$ amount" style={{flex:1,background:"#1e293b",border:"1px solid #334155",borderRadius:8,padding:"9px 10px",color:"#e2e8f0",fontSize:12,outline:"none"}}/>
+          <input value={newLabel} onChange={e=>setNewLabel(e.target.value)} placeholder="Line item description" style={{flex:2,background:"#e2e8f0",border:"1px solid #cbd5e1",borderRadius:8,padding:"9px 10px",color:"#0f172a",fontSize:12,outline:"none"}}/>
+          <input value={newAmount} onChange={e=>setNewAmount(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addLine()} placeholder="$ amount" style={{flex:1,background:"#e2e8f0",border:"1px solid #cbd5e1",borderRadius:8,padding:"9px 10px",color:"#0f172a",fontSize:12,outline:"none"}}/>
           <button onClick={addLine} style={{padding:"9px 14px",borderRadius:8,background:"rgba(6,182,212,0.15)",border:"1px solid rgba(6,182,212,0.3)",color:"#06b6d4",fontWeight:700,fontSize:12,cursor:"pointer",flexShrink:0}}>+ Add</button>
         </div>
         <div style={{fontSize:11,color:"#64748b",marginTop:6}}>Use negative amounts for discounts</div>
@@ -4100,20 +4100,20 @@ function QuoteBuilder({ shape, len, wid, depthId, finishId, entries, hardscapes,
       </div>
 
       {showBreakdown && (
-        <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:12,overflow:"hidden"}}>
+        <div style={{background:"#ffffff",border:"1px solid #e2e8f0",borderRadius:12,overflow:"hidden"}}>
           {cats.map(cat=>{
             const ci=items.filter(i=>i.cat===cat);
             const lo=ci.reduce((s,i)=>s+i.low,0), hi=ci.reduce((s,i)=>s+i.high,0);
-            return <div key={cat} style={{display:"flex",justifyContent:"space-between",padding:"10px 14px",borderBottom:"1px solid #0f172a"}}><span style={{fontSize:13,color:"#94a3b8"}}>{cat}</span><span style={{fontSize:13,fontWeight:700,color:"#e2e8f0"}}>{fmt(useHigh?hi:Math.round((lo+hi)/2))}</span></div>;
+            return <div key={cat} style={{display:"flex",justifyContent:"space-between",padding:"10px 14px",borderBottom:"1px solid #f8fafc"}}><span style={{fontSize:13,color:"#475569"}}>{cat}</span><span style={{fontSize:13,fontWeight:700,color:"#0f172a"}}>{fmt(useHigh?hi:Math.round((lo+hi)/2))}</span></div>;
           })}
-          {customLines.map(l=>(<div key={l.id} style={{display:"flex",justifyContent:"space-between",padding:"10px 14px",borderBottom:"1px solid #0f172a"}}><span style={{fontSize:13,color:"#06b6d4"}}>{l.label}</span><span style={{fontSize:13,fontWeight:700,color:l.amount<0?"#ef4444":"#22c55e"}}>{fmt(l.amount)}</span></div>))}
-          <div style={{display:"flex",justifyContent:"space-between",padding:"10px 14px",borderBottom:"1px solid #0f172a"}}><span style={{fontSize:13,color:"#f59e0b"}}>Contractor Margin ({markup}%)</span><span style={{fontSize:13,fontWeight:700,color:"#f59e0b"}}>{fmt(markupAmt)}</span></div>
-          {contingency>0&&<div style={{display:"flex",justifyContent:"space-between",padding:"10px 14px",borderBottom:"1px solid #0f172a"}}><span style={{fontSize:13,color:"#64748b"}}>Contingency ({contingency}%)</span><span style={{fontSize:13,fontWeight:700,color:"#64748b"}}>{fmt(contingencyAmt)}</span></div>}
+          {customLines.map(l=>(<div key={l.id} style={{display:"flex",justifyContent:"space-between",padding:"10px 14px",borderBottom:"1px solid #f8fafc"}}><span style={{fontSize:13,color:"#06b6d4"}}>{l.label}</span><span style={{fontSize:13,fontWeight:700,color:l.amount<0?"#ef4444":"#22c55e"}}>{fmt(l.amount)}</span></div>))}
+          <div style={{display:"flex",justifyContent:"space-between",padding:"10px 14px",borderBottom:"1px solid #f8fafc"}}><span style={{fontSize:13,color:"#b45309"}}>Contractor Margin ({markup}%)</span><span style={{fontSize:13,fontWeight:700,color:"#b45309"}}>{fmt(markupAmt)}</span></div>
+          {contingency>0&&<div style={{display:"flex",justifyContent:"space-between",padding:"10px 14px",borderBottom:"1px solid #f8fafc"}}><span style={{fontSize:13,color:"#64748b"}}>Contingency ({contingency}%)</span><span style={{fontSize:13,fontWeight:700,color:"#64748b"}}>{fmt(contingencyAmt)}</span></div>}
         </div>
       )}
 
       {financingLinks.length > 0 && (
-        <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
+        <div style={{background:"#ffffff",border:"1px solid #e2e8f0",borderRadius:14,padding:14}}>
           <div style={{fontSize:12,fontWeight:700,color:"#22c55e",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:10}}>💳 Estimate Your Financing</div>
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
             {financingLinks.map((f,i)=>(
@@ -4126,24 +4126,24 @@ function QuoteBuilder({ shape, len, wid, depthId, finishId, entries, hardscapes,
         </div>
       )}
 
-      <div style={{background:"#111827",border:`1px solid ${signedRecord?"rgba(34,197,94,0.4)":"#1e293b"}`,borderRadius:14,padding:14}}>
-        <div style={{fontSize:12,fontWeight:700,color:signedRecord?"#22c55e":"#a78bfa",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:10}}>✍️ Client Sign-Off</div>
+      <div style={{background:"#ffffff",border:`1px solid ${signedRecord?"rgba(34,197,94,0.4)":"#e2e8f0"}`,borderRadius:14,padding:14}}>
+        <div style={{fontSize:12,fontWeight:700,color:signedRecord?"#22c55e":"#7c3aed",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:10}}>✍️ Client Sign-Off</div>
         {signedRecord ? (
           <div>
             <div style={{fontSize:13,fontWeight:700,color:"#22c55e"}}>✅ Signed by {signedRecord.name}</div>
             <div style={{fontSize:11,color:"#64748b",marginTop:2,marginBottom:10}}>{signedRecord.date}</div>
-            <button onClick={clearSignature} style={{padding:"7px 14px",borderRadius:8,background:"rgba(100,116,139,0.1)",border:"1px solid #334155",color:"#94a3b8",fontSize:11,fontWeight:700,cursor:"pointer"}}>Clear signature</button>
+            <button onClick={clearSignature} style={{padding:"7px 14px",borderRadius:8,background:"rgba(100,116,139,0.1)",border:"1px solid #cbd5e1",color:"#475569",fontSize:11,fontWeight:700,cursor:"pointer"}}>Clear signature</button>
           </div>
         ) : (
           <>
             <input type="text" value={signerName} onChange={e=>setSignerName(e.target.value)} placeholder="Type full legal name to sign"
-              style={{width:"100%",background:"#1e293b",border:"1px solid #334155",borderRadius:8,padding:"9px 12px",color:"#e2e8f0",fontSize:13,outline:"none",boxSizing:"border-box",marginBottom:10}}/>
+              style={{width:"100%",background:"#e2e8f0",border:"1px solid #cbd5e1",borderRadius:8,padding:"9px 12px",color:"#0f172a",fontSize:13,outline:"none",boxSizing:"border-box",marginBottom:10}}/>
             <label style={{display:"flex",alignItems:"center",gap:8,marginBottom:10,cursor:"pointer"}}>
               <input type="checkbox" checked={agreedToTerms} onChange={e=>setAgreedToTerms(e.target.checked)} style={{width:16,height:16}}/>
-              <span style={{fontSize:12,color:"#94a3b8"}}>I have reviewed this quote and agree to its terms.</span>
+              <span style={{fontSize:12,color:"#475569"}}>I have reviewed this quote and agree to its terms.</span>
             </label>
             <button onClick={signQuote} disabled={!signerName.trim()||!agreedToTerms}
-              style={{width:"100%",padding:"10px",borderRadius:8,background:signerName.trim()&&agreedToTerms?"linear-gradient(135deg,#7c3aed,#5b21b6)":"#1e293b",border:"none",color:signerName.trim()&&agreedToTerms?"white":"#64748b",fontWeight:700,fontSize:12,cursor:signerName.trim()&&agreedToTerms?"pointer":"not-allowed"}}>
+              style={{width:"100%",padding:"10px",borderRadius:8,background:signerName.trim()&&agreedToTerms?"linear-gradient(135deg,#7c3aed,#5b21b6)":"#e2e8f0",border:"none",color:signerName.trim()&&agreedToTerms?"white":"#64748b",fontWeight:700,fontSize:12,cursor:signerName.trim()&&agreedToTerms?"pointer":"not-allowed"}}>
               Sign Quote
             </button>
           </>
@@ -4170,7 +4170,7 @@ function BuildTimeline({ shape, len, wid, depthId, entries, hardscapes }) {
   const phases = [
     { phase:"Week 1-2", icon:"📋", title:"Design, Permits & Planning", color:"#06b6d4",
       tasks:["Finalize pool design and sign contract","Submit permit application to local building dept","Engineering drawings completed (structural, electrical)","Utility locate (call 811 before any digging)","HOA approval if applicable"] },
-    { phase:`Week 2-4${isLarge?" (extend 1 wk for large pools)":""}`, icon:"🚜", title:"Excavation & Steel", color:"#f59e0b",
+    { phase:`Week 2-4${isLarge?" (extend 1 wk for large pools)":""}`, icon:"🚜", title:"Excavation & Steel", color:"#b45309",
       tasks:["Excavation: remove soil to pool depth + overdig","Steel rebar grid tied and inspected","Plumbing roughed in (main drains, returns, skimmers)","Steel/plumbing inspection — city inspector visits","Any retaining walls started now"] },
     { phase:"Week 4-5", icon:"💪", title:"Gunite / Shotcrete Shell", color:"#8b5cf6",
       tasks:["Gunite crew shoots concrete shell (4 inch thickness)","Shell cures 7-10 days (kept wet — critical step)","Grotto and infinity edge forms built during this phase",`Attached spa ${hasSpa?"shell poured simultaneously":""}`] },
@@ -4190,7 +4190,7 @@ function BuildTimeline({ shape, len, wid, depthId, entries, hardscapes }) {
     <div style={{display:"flex",flexDirection:"column",gap:14}}>
       <div style={{background:"linear-gradient(135deg,rgba(6,182,212,0.1),rgba(2,132,199,0.05))",border:"1px solid rgba(6,182,212,0.25)",borderRadius:14,padding:14}}>
         <div style={{fontSize:14,fontWeight:800,color:"#06b6d4",marginBottom:4}}>📅 Build Timeline</div>
-        <div style={{fontSize:12,color:"#94a3b8",lineHeight:1.6}}>Estimated schedule based on your pool configuration. Timelines vary by contractor, permit speed, and weather.</div>
+        <div style={{fontSize:12,color:"#475569",lineHeight:1.6}}>Estimated schedule based on your pool configuration. Timelines vary by contractor, permit speed, and weather.</div>
         <div style={{marginTop:10,display:"flex",gap:10,flexWrap:"wrap"}}>
           {[{label:"Total Build Time",val:`${totalWeeks}-${totalWeeks+2} weeks`},{label:"Pool Size",val:`${len}'×${wid}'`},{label:"Permit Time",val:"2-4 weeks"}].map(s=>(
             <div key={s.label} style={{background:"rgba(6,182,212,0.1)",border:"1px solid rgba(6,182,212,0.2)",borderRadius:8,padding:"8px 12px"}}>
@@ -4202,19 +4202,19 @@ function BuildTimeline({ shape, len, wid, depthId, entries, hardscapes }) {
       </div>
 
       {phases.map((p,i)=>(
-        <div key={i} style={{background:"#111827",border:`1px solid #1e293b`,borderRadius:14,overflow:"hidden"}}>
+        <div key={i} style={{background:"#ffffff",border:`1px solid #e2e8f0`,borderRadius:14,overflow:"hidden"}}>
           <div style={{background:`linear-gradient(135deg,${p.color}22,${p.color}11)`,padding:"12px 14px",display:"flex",alignItems:"center",gap:12,borderLeft:`4px solid ${p.color}`}}>
             <span style={{fontSize:22}}>{p.icon}</span>
             <div>
               <div style={{fontSize:10,color:p.color,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em"}}>{p.phase}</div>
-              <div style={{fontSize:14,fontWeight:800,color:"#e2e8f0"}}>{p.title}</div>
+              <div style={{fontSize:14,fontWeight:800,color:"#0f172a"}}>{p.title}</div>
             </div>
           </div>
           <div style={{padding:"10px 14px"}}>
             {p.tasks.filter(Boolean).map((task,j)=>(
               <div key={j} style={{display:"flex",gap:10,marginBottom:7,alignItems:"flex-start"}}>
                 <span style={{color:p.color,fontSize:12,marginTop:1,flexShrink:0}}>→</span>
-                <span style={{fontSize:13,color:"#94a3b8",lineHeight:1.5}}>{task}</span>
+                <span style={{fontSize:13,color:"#475569",lineHeight:1.5}}>{task}</span>
               </div>
             ))}
           </div>
@@ -4222,9 +4222,9 @@ function BuildTimeline({ shape, len, wid, depthId, entries, hardscapes }) {
       ))}
 
       <div style={{background:"rgba(245,158,11,0.08)",border:"1px solid rgba(245,158,11,0.25)",borderRadius:12,padding:14}}>
-        <div style={{fontSize:12,fontWeight:700,color:"#f59e0b",marginBottom:6}}>⚠️ Common Delays to Plan For</div>
+        <div style={{fontSize:12,fontWeight:700,color:"#b45309",marginBottom:6}}>⚠️ Common Delays to Plan For</div>
         {["Permits can take 2-8 weeks depending on your county","Rain stops gunite and concrete pours — plan for weather","Equipment supply chain: order Pentair gear before excavation","HOA approval can add 2-4 weeks if required","Inspector availability varies by city — schedule early"].map((d,i)=>(
-          <div key={i} style={{fontSize:12,color:"#94a3b8",marginBottom:5,display:"flex",gap:8}}><span style={{color:"#f59e0b",flexShrink:0}}>•</span>{d}</div>
+          <div key={i} style={{fontSize:12,color:"#475569",marginBottom:5,display:"flex",gap:8}}><span style={{color:"#b45309",flexShrink:0}}>•</span>{d}</div>
         ))}
       </div>
     </div>
@@ -4353,38 +4353,38 @@ function QuickRender({ len, wid, shape, finishId, colorId, entries, hardscapes, 
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       {/* Header */}
       <div style={{ background: "linear-gradient(135deg,rgba(201,168,76,0.15),rgba(168,135,58,0.08))", border: "1px solid rgba(201,168,76,0.35)", borderRadius: 16, padding: 16 }}>
-        <div style={{ fontSize: 15, fontWeight: 800, color: "#c9a84c", marginBottom: 6 }}>⚡ Quick Render — Close the Deal On-Site</div>
-        <div style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.7 }}>
+        <div style={{ fontSize: 15, fontWeight: 800,color:"#a8873a", marginBottom: 6 }}>⚡ Quick Render — Close the Deal On-Site</div>
+        <div style={{ fontSize: 12, color: "#475569", lineHeight: 1.7 }}>
           Stand in the client's backyard → tap the camera → show them their pool rendered into their real yard in under 60 seconds. No laptop needed. No site visit to schedule later. Close the deal right now.
         </div>
         <div style={{ marginTop: 10, display: "flex", flexWrap: "wrap", gap: 8 }}>
           {[`${len}'×${wid}' ${shapeLabel}`, colorLabel, finishLabel, ...activeFeatures.slice(0, 2).map(f => f.label)].map(tag => (
-            <span key={tag} style={{ padding: "3px 10px", borderRadius: 20, background: "rgba(201,168,76,0.12)", border: "1px solid rgba(201,168,76,0.25)", color: "#c9a84c", fontSize: 11, fontWeight: 600 }}>{tag}</span>
+            <span key={tag} style={{ padding: "3px 10px", borderRadius: 20, background: "rgba(201,168,76,0.12)", border: "1px solid rgba(201,168,76,0.25)",color:"#a8873a", fontSize: 11, fontWeight: 600 }}>{tag}</span>
           ))}
         </div>
       </div>
 
       {/* Camera / Photo */}
       {!photo ? (
-        <div style={{ background: "#111827", border: "1px solid #1e293b", borderRadius: 16, overflow: "hidden" }}>
+        <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 16, overflow: "hidden" }}>
           {cameraActive ? (
             <div>
               <video ref={videoRef} autoPlay playsInline muted style={{ width: "100%", display: "block", maxHeight: 320, objectFit: "cover", background: "#000" }} />
               <div style={{ padding: 12, display: "flex", gap: 8 }}>
                 <button onClick={capturePhoto} style={{ flex: 2, padding: 14, borderRadius: 12, border: "none", background: "linear-gradient(135deg,#c9a84c,#a8873a)", color: "#0a0f1e", fontWeight: 900, fontSize: 16, cursor: "pointer" }}>📸 Capture</button>
-                <button onClick={stopCamera} style={{ flex: 1, padding: 14, borderRadius: 12, border: "1px solid #334155", background: "#1e293b", color: "#94a3b8", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>Cancel</button>
+                <button onClick={stopCamera} style={{ flex: 1, padding: 14, borderRadius: 12, border: "1px solid #cbd5e1", background: "#e2e8f0", color: "#475569", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>Cancel</button>
               </div>
             </div>
           ) : (
             <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 12 }}>
-              <div style={{ fontSize: 13, color: "#94a3b8", textAlign: "center", lineHeight: 1.6 }}>Step 1 — Get a photo of the client's backyard</div>
+              <div style={{ fontSize: 13, color: "#475569", textAlign: "center", lineHeight: 1.6 }}>Step 1 — Get a photo of the client's backyard</div>
               <button onClick={startCamera} style={{ padding: 16, borderRadius: 12, border: "none", background: "linear-gradient(135deg,#c9a84c,#a8873a)", color: "#0a0f1e", fontWeight: 800, fontSize: 15, cursor: "pointer" }}>📷 Open Camera — Take Live Photo</button>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={{ flex: 1, height: 1, background: "#1e293b" }} />
+                <div style={{ flex: 1, height: 1, background: "#e2e8f0" }} />
                 <span style={{ fontSize: 11, color: "#64748b" }}>or</span>
-                <div style={{ flex: 1, height: 1, background: "#1e293b" }} />
+                <div style={{ flex: 1, height: 1, background: "#e2e8f0" }} />
               </div>
-              <label style={{ padding: 14, borderRadius: 12, border: "1px solid #334155", background: "#0f172a", color: "#94a3b8", fontWeight: 700, fontSize: 13, cursor: "pointer", textAlign: "center", display: "block" }}>
+              <label style={{ padding: 14, borderRadius: 12, border: "1px solid #cbd5e1", background: "#f8fafc", color: "#475569", fontWeight: 700, fontSize: 13, cursor: "pointer", textAlign: "center", display: "block" }}>
                 📁 Upload Existing Photo
                 <input type="file" accept="image/*" onChange={uploadPhoto} style={{ display: "none" }} />
               </label>
@@ -4392,7 +4392,7 @@ function QuickRender({ len, wid, shape, finishId, colorId, entries, hardscapes, 
           )}
         </div>
       ) : (
-        <div style={{ background: "#111827", border: "1px solid #1e293b", borderRadius: 16, overflow: "hidden" }}>
+        <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 16, overflow: "hidden" }}>
           <div style={{ position: "relative" }}>
             <img src={photo} alt="Backyard" style={{ width: "100%", display: "block", maxHeight: 260, objectFit: "cover" }} />
             <div style={{ position: "absolute", top: 10, left: 10, background: "rgba(201,168,76,0.9)", borderRadius: 8, padding: "4px 10px", fontSize: 11, fontWeight: 700, color: "#0a0f1e" }}>✅ Photo Ready</div>
@@ -4404,14 +4404,14 @@ function QuickRender({ len, wid, shape, finishId, colorId, entries, hardscapes, 
       {/* Style selector */}
       <div style={{ display: "flex", gap: 6 }}>
         {STYLES.map(s => (
-          <button key={s.id} onClick={() => setStyle(s.id)} style={{ flex: 1, padding: "8px 4px", borderRadius: 10, border: `2px solid ${style === s.id ? "#c9a84c" : "#334155"}`, background: style === s.id ? "rgba(201,168,76,0.1)" : "#111827", color: style === s.id ? "#c9a84c" : "#64748b", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>{s.label}</button>
+          <button key={s.id} onClick={() => setStyle(s.id)} style={{ flex: 1, padding: "8px 4px", borderRadius: 10, border: `2px solid ${style === s.id ? "#c9a84c" : "#cbd5e1"}`, background: style === s.id ? "rgba(201,168,76,0.1)" : "#ffffff", color: style === s.id ? "#c9a84c" : "#64748b", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>{s.label}</button>
         ))}
       </div>
 
       {/* Render button */}
       {!rendering && !rendered && (
         <>
-          <button onClick={renderNow} disabled={!photo || dailyRenders>=dailyLimit} style={{ width: "100%", padding: 18, borderRadius: 14, border: "none", background: (photo && dailyRenders<dailyLimit) ? "linear-gradient(135deg,#7c3aed,#5b21b6)" : "#1e293b", color: "white", fontWeight: 900, fontSize: 17, cursor: (photo && dailyRenders<dailyLimit) ? "pointer" : "not-allowed", boxShadow: (photo && dailyRenders<dailyLimit) ? "0 4px 30px rgba(124,58,237,0.4)" : "none", letterSpacing: "0.02em" }}>
+          <button onClick={renderNow} disabled={!photo || dailyRenders>=dailyLimit} style={{ width: "100%", padding: 18, borderRadius: 14, border: "none", background: (photo && dailyRenders<dailyLimit) ? "linear-gradient(135deg,#7c3aed,#5b21b6)" : "#e2e8f0", color: (photo && dailyRenders<dailyLimit) ? "white" : "#64748b", fontWeight: 900, fontSize: 17, cursor: (photo && dailyRenders<dailyLimit) ? "pointer" : "not-allowed", boxShadow: (photo && dailyRenders<dailyLimit) ? "0 4px 30px rgba(124,58,237,0.4)" : "none", letterSpacing: "0.02em" }}>
             {dailyLimit<=0 ? "🔒 Subscribe to Start Rendering" : dailyRenders>=dailyLimit ? `⚠️ All ${dailyLimit} renders used today` : "🚀 Render Pool Into This Backyard"}
           </button>
           <div style={{ fontSize: 10, color: "#64748b", textAlign: "center" }}>
@@ -4422,10 +4422,10 @@ function QuickRender({ len, wid, shape, finishId, colorId, entries, hardscapes, 
 
       {/* Progress */}
       {rendering && (
-        <div style={{ background: "#111827", border: "1px solid #1e293b", borderRadius: 14, padding: 20, textAlign: "center" }}>
+        <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 14, padding: 20, textAlign: "center" }}>
           <div style={{ fontSize: 40, marginBottom: 12 }}>🚀</div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: "#a78bfa", marginBottom: 10 }}>FLUX is rendering your pool...</div>
-          <div style={{ height: 6, background: "#1e293b", borderRadius: 3, overflow: "hidden", marginBottom: 8 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "#7c3aed", marginBottom: 10 }}>FLUX is rendering your pool...</div>
+          <div style={{ height: 6, background: "#e2e8f0", borderRadius: 3, overflow: "hidden", marginBottom: 8 }}>
             <div style={{ height: "100%", width: `${progress}%`, background: "linear-gradient(90deg,#7c3aed,#a78bfa,#c9a84c)", borderRadius: 3, transition: "width 3s ease" }} />
           </div>
           <div style={{ fontSize: 12, color: "#64748b" }}>About 30-45 seconds — worth every one</div>
@@ -4436,27 +4436,27 @@ function QuickRender({ len, wid, shape, finishId, colorId, entries, hardscapes, 
       {error && !rendering && (
         <div style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 12, padding: 14 }}>
           <div style={{ fontSize: 13, color: "#ef4444", fontWeight: 600, marginBottom: 8 }}>⚠️ {error}</div>
-          <button onClick={renderNow} style={{ padding: "8px 16px", borderRadius: 8, background: "rgba(124,58,237,0.15)", border: "1px solid rgba(124,58,237,0.3)", color: "#a78bfa", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>Try Again</button>
+          <button onClick={renderNow} style={{ padding: "8px 16px", borderRadius: 8, background: "rgba(124,58,237,0.15)", border: "1px solid rgba(124,58,237,0.3)", color: "#7c3aed", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>Try Again</button>
         </div>
       )}
 
       {/* Result */}
       {rendered && !rendering && (
-        <div style={{ background: "#111827", border: "2px solid rgba(201,168,76,0.4)", borderRadius: 16, overflow: "hidden", boxShadow: "0 8px 40px rgba(201,168,76,0.15)" }}>
+        <div style={{ background: "#ffffff", border: "2px solid rgba(201,168,76,0.4)", borderRadius: 16, overflow: "hidden", boxShadow: "0 8px 40px rgba(201,168,76,0.15)" }}>
           <div style={{ position: "relative" }}>
             <img src={rendered} alt="Pool rendering" style={{ width: "100%", display: "block" }} />
             <div style={{ position: "absolute", top: 10, left: 10, background: "rgba(201,168,76,0.95)", borderRadius: 8, padding: "5px 12px", fontSize: 11, fontWeight: 800, color: "#0a0f1e" }}>⚡ QUICK RENDER — Pool Craft Pro</div>
           </div>
           {aiNote && (
             <div style={{ padding: "14px 16px", background: "rgba(201,168,76,0.06)", borderTop: "1px solid rgba(201,168,76,0.15)" }}>
-              <div style={{ fontSize: 10, color: "#c9a84c", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>🤖 AI Designer Note</div>
-              <div style={{ fontSize: 13, color: "#94a3b8", lineHeight: 1.65, fontStyle: "italic" }}>{aiNote}</div>
+              <div style={{ fontSize: 10,color:"#a8873a", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>🤖 AI Designer Note</div>
+              <div style={{ fontSize: 13, color: "#475569", lineHeight: 1.65, fontStyle: "italic" }}>{aiNote}</div>
             </div>
           )}
           <div style={{ padding: 14, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-            <button onClick={() => { setRendered(null); setProgress(0); setTimeout(renderNow, 80); }} style={{ padding: 11, borderRadius: 10, border: "1px solid rgba(124,58,237,0.3)", background: "rgba(124,58,237,0.1)", color: "#a78bfa", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>🔄 New</button>
+            <button onClick={() => { setRendered(null); setProgress(0); setTimeout(renderNow, 80); }} style={{ padding: 11, borderRadius: 10, border: "1px solid rgba(124,58,237,0.3)", background: "rgba(124,58,237,0.1)", color: "#7c3aed", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>🔄 New</button>
             <a href={rendered} download="poolcraft-quick-render.jpg" style={{ padding: 11, borderRadius: 10, border: "1px solid rgba(34,197,94,0.3)", background: "rgba(34,197,94,0.1)", color: "#22c55e", fontWeight: 700, fontSize: 12, textDecoration: "none", textAlign: "center", display: "block" }}>⬇️ Save</a>
-            <button onClick={() => { if (navigator.share) navigator.share({ title: "Pool Design", text: "Your pool design from Pool Craft Pro", files: [] }); }} style={{ padding: 11, borderRadius: 10, border: "1px solid rgba(201,168,76,0.3)", background: "rgba(201,168,76,0.1)", color: "#c9a84c", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>📤 Share</button>
+            <button onClick={() => { if (navigator.share) navigator.share({ title: "Pool Design", text: "Your pool design from Pool Craft Pro", files: [] }); }} style={{ padding: 11, borderRadius: 10, border: "1px solid rgba(201,168,76,0.3)", background: "rgba(201,168,76,0.1)",color:"#a8873a", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>📤 Share</button>
           </div>
         </div>
       )}
@@ -4559,30 +4559,30 @@ function BuildTracker({ projectName, clientName, clientEmail, clientPhone, revie
         <button onClick={() => setShowClientView(false)} style={{ background: "none", border: "none", color: "#64748b", fontSize: 20, cursor: "pointer" }}>←</button>
         <div>
           <div style={{ fontFamily: "Georgia,serif", fontWeight: 900, fontSize: 14, letterSpacing: "1px" }}>
-            <span style={{ color: "#e2e8f0" }}>POOL </span><span style={{ color: "#c9a84c" }}>CRAFT </span><span style={{ color: "#e2e8f0" }}>PRO</span>
+            <span style={{ color: "#0f172a" }}>POOL </span><span style={{color:"#a8873a" }}>CRAFT </span><span style={{ color: "#0f172a" }}>PRO</span>
           </div>
           <div style={{ fontSize: 11, color: "#64748b" }}>Client Progress View — {clientName || projectName}</div>
         </div>
       </div>
       <div style={{ background: "linear-gradient(135deg,#0f1e3d,#1a2f5e)", borderRadius: 16, padding: 20, marginBottom: 16, textAlign: "center" }}>
-        <div style={{ fontSize: 36, fontWeight: 900, color: "#c9a84c", marginBottom: 4 }}>{pct}%</div>
-        <div style={{ fontSize: 13, color: "#94a3b8", marginBottom: 14 }}>Your pool is {pct}% complete</div>
-        <div style={{ height: 8, background: "#1e293b", borderRadius: 4, overflow: "hidden" }}>
+        <div style={{ fontSize: 36, fontWeight: 900,color:"#a8873a", marginBottom: 4 }}>{pct}%</div>
+        <div style={{ fontSize: 13, color: "#475569", marginBottom: 14 }}>Your pool is {pct}% complete</div>
+        <div style={{ height: 8, background: "#e2e8f0", borderRadius: 4, overflow: "hidden" }}>
           <div style={{ height: "100%", width: `${pct}%`, background: "linear-gradient(90deg,#c9a84c,#e8c96a)", borderRadius: 4, transition: "width 0.5s" }} />
         </div>
-        {nextPhase && <div style={{ marginTop: 14, fontSize: 12, color: "#94a3b8" }}>Next: <strong style={{ color: "#c9a84c" }}>{nextPhase.label}</strong></div>}
+        {nextPhase && <div style={{ marginTop: 14, fontSize: 12, color: "#475569" }}>Next: <strong style={{color:"#a8873a" }}>{nextPhase.label}</strong></div>}
       </div>
       {BUILD_PHASES.map(p => {
         const done = !!phases[p.id];
         const isCurrent = !done && p.id === nextPhase?.id;
         return (
           <div key={p.id} style={{ display: "flex", gap: 12, alignItems: "flex-start", marginBottom: 12, opacity: done || isCurrent ? 1 : 0.4 }}>
-            <div style={{ width: 32, height: 32, borderRadius: "50%", background: done ? "linear-gradient(135deg,#c9a84c,#a8873a)" : isCurrent ? "rgba(201,168,76,0.2)" : "#1e293b", border: isCurrent ? "2px solid #c9a84c" : "none", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>{done ? "✓" : p.icon}</div>
+            <div style={{ width: 32, height: 32, borderRadius: "50%", background: done ? "linear-gradient(135deg,#c9a84c,#a8873a)" : isCurrent ? "rgba(201,168,76,0.2)" : "#e2e8f0", border: isCurrent ? "2px solid #c9a84c" : "none", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>{done ? "✓" : p.icon}</div>
             <div style={{ flex: 1, paddingTop: 4 }}>
-              <div style={{ fontSize: 13, fontWeight: done ? 700 : 600, color: done ? "#c9a84c" : isCurrent ? "#e2e8f0" : "#64748b" }}>{p.label}</div>
+              <div style={{ fontSize: 13, fontWeight: done ? 700 : 600, color: done ? "#c9a84c" : isCurrent ? "#0f172a" : "#64748b" }}>{p.label}</div>
               {done && <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>Completed {formatDate(phases[p.id]?.completedAt)}</div>}
-              {isCurrent && <div style={{ fontSize: 11, color: "#c9a84c", marginTop: 2 }}>⚡ In Progress</div>}
-              {notes[p.id] && <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 4, lineHeight: 1.5 }}>📝 {notes[p.id]}</div>}
+              {isCurrent && <div style={{ fontSize: 11,color:"#a8873a", marginTop: 2 }}>⚡ In Progress</div>}
+              {notes[p.id] && <div style={{ fontSize: 11, color: "#475569", marginTop: 4, lineHeight: 1.5 }}>📝 {notes[p.id]}</div>}
             </div>
           </div>
         );
@@ -4591,12 +4591,12 @@ function BuildTracker({ projectName, clientName, clientEmail, clientPhone, revie
       {pct === 100 && (reviewLinks.google || reviewLinks.yelp || reviewLinks.referral) && (
         <div style={{ marginTop: 8, background: "linear-gradient(135deg,rgba(201,168,76,0.15),rgba(168,135,58,0.08))", border: "1px solid rgba(201,168,76,0.3)", borderRadius: 16, padding: 18, textAlign: "center" }}>
           <div style={{ fontSize: 28, marginBottom: 8 }}>🎉</div>
-          <div style={{ fontSize: 15, fontWeight: 800, color: "#c9a84c", marginBottom: 6 }}>Your pool is complete!</div>
-          <div style={{ fontSize: 12, color: "#94a3b8", marginBottom: 14, lineHeight: 1.6 }}>If you loved working with us, a quick review means the world — and helps other families find us too.</div>
+          <div style={{ fontSize: 15, fontWeight: 800,color:"#a8873a", marginBottom: 6 }}>Your pool is complete!</div>
+          <div style={{ fontSize: 12, color: "#475569", marginBottom: 14, lineHeight: 1.6 }}>If you loved working with us, a quick review means the world — and helps other families find us too.</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {reviewLinks.google && <a href={reviewLinks.google} target="_blank" rel="noopener noreferrer" style={{ padding: "12px", borderRadius: 10, background: "rgba(201,168,76,0.15)", border: "1px solid rgba(201,168,76,0.35)", color: "#c9a84c", fontWeight: 700, fontSize: 13, textDecoration: "none" }}>⭐ Leave a Google Review</a>}
-            {reviewLinks.yelp && <a href={reviewLinks.yelp} target="_blank" rel="noopener noreferrer" style={{ padding: "12px", borderRadius: 10, background: "rgba(201,168,76,0.15)", border: "1px solid rgba(201,168,76,0.35)", color: "#c9a84c", fontWeight: 700, fontSize: 13, textDecoration: "none" }}>⭐ Leave a Yelp Review</a>}
-            {reviewLinks.referral && <a href={reviewLinks.referral} target="_blank" rel="noopener noreferrer" style={{ padding: "12px", borderRadius: 10, background: "rgba(201,168,76,0.1)", border: "1px solid rgba(201,168,76,0.25)", color: "#94a3b8", fontWeight: 700, fontSize: 13, textDecoration: "none" }}>👋 Know someone who wants a pool? Refer them here</a>}
+            {reviewLinks.google && <a href={reviewLinks.google} target="_blank" rel="noopener noreferrer" style={{ padding: "12px", borderRadius: 10, background: "rgba(201,168,76,0.15)", border: "1px solid rgba(201,168,76,0.35)",color:"#a8873a", fontWeight: 700, fontSize: 13, textDecoration: "none" }}>⭐ Leave a Google Review</a>}
+            {reviewLinks.yelp && <a href={reviewLinks.yelp} target="_blank" rel="noopener noreferrer" style={{ padding: "12px", borderRadius: 10, background: "rgba(201,168,76,0.15)", border: "1px solid rgba(201,168,76,0.35)",color:"#a8873a", fontWeight: 700, fontSize: 13, textDecoration: "none" }}>⭐ Leave a Yelp Review</a>}
+            {reviewLinks.referral && <a href={reviewLinks.referral} target="_blank" rel="noopener noreferrer" style={{ padding: "12px", borderRadius: 10, background: "rgba(201,168,76,0.1)", border: "1px solid rgba(201,168,76,0.25)", color: "#475569", fontWeight: 700, fontSize: 13, textDecoration: "none" }}>👋 Know someone who wants a pool? Refer them here</a>}
           </div>
         </div>
       )}
@@ -4608,31 +4608,31 @@ function BuildTracker({ projectName, clientName, clientEmail, clientPhone, revie
       {/* Header */}
       <div style={{ background: "linear-gradient(135deg,rgba(74,122,181,0.15),rgba(26,47,94,0.1))", border: "1px solid rgba(74,122,181,0.3)", borderRadius: 16, padding: 16 }}>
         <div style={{ fontSize: 15, fontWeight: 800, color: "#7ab0e8", marginBottom: 4 }}>🏗️ Build Tracker — {projectName}</div>
-        <div style={{ fontSize: 12, color: "#94a3b8", marginBottom: 12, lineHeight: 1.6 }}>Track every construction phase and share real-time progress with your client. Reduces client anxiety, reduces calls, closes more referrals.</div>
+        <div style={{ fontSize: 12, color: "#475569", marginBottom: 12, lineHeight: 1.6 }}>Track every construction phase and share real-time progress with your client. Reduces client anxiety, reduces calls, closes more referrals.</div>
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           <div style={{ flex: 1 }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
-              <span style={{ fontSize: 12, color: "#94a3b8" }}>{completed} of {BUILD_PHASES.length} phases complete</span>
-              <span style={{ fontSize: 13, fontWeight: 800, color: "#c9a84c" }}>{pct}%</span>
+              <span style={{ fontSize: 12, color: "#475569" }}>{completed} of {BUILD_PHASES.length} phases complete</span>
+              <span style={{ fontSize: 13, fontWeight: 800,color:"#a8873a" }}>{pct}%</span>
             </div>
-            <div style={{ height: 8, background: "#1e293b", borderRadius: 4, overflow: "hidden" }}>
+            <div style={{ height: 8, background: "#e2e8f0", borderRadius: 4, overflow: "hidden" }}>
               <div style={{ height: "100%", width: `${pct}%`, background: "linear-gradient(90deg,#c9a84c,#e8c96a)", borderRadius: 4, transition: "width 0.4s" }} />
             </div>
           </div>
-          <button onClick={() => setShowClientView(true)} style={{ padding: "8px 14px", borderRadius: 10, border: "1px solid rgba(201,168,76,0.35)", background: "rgba(201,168,76,0.1)", color: "#c9a84c", fontSize: 12, fontWeight: 700, cursor: "pointer", flexShrink: 0 }}>👤 Client View</button>
+          <button onClick={() => setShowClientView(true)} style={{ padding: "8px 14px", borderRadius: 10, border: "1px solid rgba(201,168,76,0.35)", background: "rgba(201,168,76,0.1)",color:"#a8873a", fontSize: 12, fontWeight: 700, cursor: "pointer", flexShrink: 0 }}>👤 Client View</button>
         </div>
         {clientEmail && <div style={{ marginTop: 10, fontSize: 11, color: "#64748b" }}>💡 Share the Client View link with {clientName || clientEmail} so they can check progress anytime</div>}
         {pct === 100 && (
           (reviewLinks.google || reviewLinks.yelp || reviewLinks.referral)
             ? <div style={{ marginTop: 10, fontSize: 11, color: "#22c55e" }}>🎉 Project complete — the Client View now shows your review & referral links.</div>
-            : <div style={{ marginTop: 10, fontSize: 11, color: "#f59e0b" }}>🎉 Project complete — add your Google/Yelp/referral links in Settings to prompt the client for a review right here.</div>
+            : <div style={{ marginTop: 10, fontSize: 11, color: "#b45309" }}>🎉 Project complete — add your Google/Yelp/referral links in Settings to prompt the client for a review right here.</div>
         )}
         <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid rgba(74,122,181,0.2)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
           <div>
-            <div style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 600 }}>📱 Text client on each phase update</div>
+            <div style={{ fontSize: 12, color: "#0f172a", fontWeight: 600 }}>📱 Text client on each phase update</div>
             <div style={{ fontSize: 10, color: "#64748b", marginTop: 2 }}>{clientPhone ? `Sends to ${clientPhone}` : "Add a client phone number to enable this"}</div>
           </div>
-          <button onClick={toggleSms} disabled={!clientPhone} style={{ width: 44, height: 24, borderRadius: 12, border: "none", cursor: clientPhone ? "pointer" : "not-allowed", background: smsEnabled && clientPhone ? "#06b6d4" : "#334155", position: "relative", transition: "background 0.2s", flexShrink: 0, opacity: clientPhone ? 1 : 0.5 }}>
+          <button onClick={toggleSms} disabled={!clientPhone} style={{ width: 44, height: 24, borderRadius: 12, border: "none", cursor: clientPhone ? "pointer" : "not-allowed", background: smsEnabled && clientPhone ? "#06b6d4" : "#cbd5e1", position: "relative", transition: "background 0.2s", flexShrink: 0, opacity: clientPhone ? 1 : 0.5 }}>
             <span style={{ position: "absolute", top: 3, left: smsEnabled && clientPhone ? 22 : 3, width: 18, height: 18, borderRadius: "50%", background: "white", transition: "left 0.2s" }} />
           </button>
         </div>
@@ -4644,24 +4644,24 @@ function BuildTracker({ projectName, clientName, clientEmail, clientPhone, revie
         const done = !!phases[p.id];
         const isNext = !done && BUILD_PHASES.slice(0, i).every(prev => phases[prev.id]);
         return (
-          <div key={p.id} style={{ background: "#111827", border: `1px solid ${done ? "rgba(201,168,76,0.3)" : isNext ? "rgba(74,122,181,0.3)" : "#1e293b"}`, borderRadius: 12, padding: 14, opacity: done || isNext ? 1 : 0.65 }}>
+          <div key={p.id} style={{ background: "#ffffff", border: `1px solid ${done ? "rgba(201,168,76,0.3)" : isNext ? "rgba(74,122,181,0.3)" : "#e2e8f0"}`, borderRadius: 12, padding: 14, opacity: done || isNext ? 1 : 0.65 }}>
             <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-              <button onClick={() => togglePhase(p.id)} style={{ width: 32, height: 32, borderRadius: "50%", border: `2px solid ${done ? "#c9a84c" : isNext ? "#7ab0e8" : "#334155"}`, background: done ? "rgba(201,168,76,0.15)" : "#1e293b", color: done ? "#c9a84c" : "#64748b", fontSize: 14, cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <button onClick={() => togglePhase(p.id)} style={{ width: 32, height: 32, borderRadius: "50%", border: `2px solid ${done ? "#c9a84c" : isNext ? "#7ab0e8" : "#cbd5e1"}`, background: done ? "rgba(201,168,76,0.15)" : "#e2e8f0", color: done ? "#c9a84c" : "#64748b", fontSize: 14, cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 {done ? "✓" : p.icon}
               </button>
               <div style={{ flex: 1 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
-                  <div style={{ fontWeight: 700, fontSize: 13, color: done ? "#c9a84c" : isNext ? "#7ab0e8" : "#94a3b8" }}>{p.label}</div>
+                  <div style={{ fontWeight: 700, fontSize: 13, color: done ? "#c9a84c" : isNext ? "#7ab0e8" : "#475569" }}>{p.label}</div>
                   <div style={{ fontSize: 10, color: "#64748b", flexShrink: 0 }}>{p.days}</div>
                 </div>
                 <div style={{ fontSize: 11, color: "#64748b", marginTop: 3, lineHeight: 1.5 }}>{p.detail}</div>
                 {done && <div style={{ fontSize: 10, color: "#a8873a", marginTop: 4 }}>✓ Completed {formatDate(phases[p.id]?.completedAt)}</div>}
-                {notes[p.id] && <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 6, padding: "6px 10px", background: "#0f172a", borderRadius: 8 }}>📝 {notes[p.id]}</div>}
+                {notes[p.id] && <div style={{ fontSize: 11, color: "#475569", marginTop: 6, padding: "6px 10px", background: "#f8fafc", borderRadius: 8 }}>📝 {notes[p.id]}</div>}
                 {editingNote === p.id ? (
                   <div style={{ marginTop: 8, display: "flex", gap: 6 }}>
-                    <input autoFocus value={noteInput} onChange={e => setNoteInput(e.target.value)} onKeyDown={e => e.key === "Enter" && saveNote(p.id)} placeholder="Add a note for this phase..." style={{ flex: 1, background: "#1e293b", border: "1px solid #334155", borderRadius: 8, padding: "7px 10px", color: "#e2e8f0", fontSize: 12, outline: "none" }} />
-                    <button onClick={() => saveNote(p.id)} style={{ padding: "7px 12px", borderRadius: 8, background: "rgba(201,168,76,0.15)", border: "1px solid rgba(201,168,76,0.3)", color: "#c9a84c", fontWeight: 700, fontSize: 11, cursor: "pointer" }}>Save</button>
-                    <button onClick={() => { setEditingNote(null); setNoteInput(""); }} style={{ padding: "7px 10px", borderRadius: 8, border: "1px solid #334155", background: "#1e293b", color: "#64748b", fontSize: 11, cursor: "pointer" }}>✕</button>
+                    <input autoFocus value={noteInput} onChange={e => setNoteInput(e.target.value)} onKeyDown={e => e.key === "Enter" && saveNote(p.id)} placeholder="Add a note for this phase..." style={{ flex: 1, background: "#e2e8f0", border: "1px solid #cbd5e1", borderRadius: 8, padding: "7px 10px", color: "#0f172a", fontSize: 12, outline: "none" }} />
+                    <button onClick={() => saveNote(p.id)} style={{ padding: "7px 12px", borderRadius: 8, background: "rgba(201,168,76,0.15)", border: "1px solid rgba(201,168,76,0.3)",color:"#a8873a", fontWeight: 700, fontSize: 11, cursor: "pointer" }}>Save</button>
+                    <button onClick={() => { setEditingNote(null); setNoteInput(""); }} style={{ padding: "7px 10px", borderRadius: 8, border: "1px solid #cbd5e1", background: "#e2e8f0", color: "#64748b", fontSize: 11, cursor: "pointer" }}>✕</button>
                   </div>
                 ) : (
                   <button onClick={() => { setEditingNote(p.id); setNoteInput(notes[p.id] || ""); }} style={{ marginTop: 6, fontSize: 10, color: "#64748b", background: "none", border: "none", cursor: "pointer", padding: 0 }}>{notes[p.id] ? "✏️ Edit note" : "+ Add note"}</button>
@@ -4791,14 +4791,14 @@ function AuthScreen({ onAuth }) {
             </div>
           </div>
           <div style={{ fontSize:24, fontWeight:900, letterSpacing:"2px", fontFamily:"Georgia,serif" }}>
-            <span style={{ color:"#e2e8f0" }}>POOL </span><span style={{ color:"#c9a84c" }}>CRAFT </span><span style={{ color:"#e2e8f0" }}>PRO</span>
+            <span style={{ color:"#0f172a" }}>POOL </span><span style={{color:"#a8873a" }}>CRAFT </span><span style={{ color:"#0f172a" }}>PRO</span>
           </div>
           <div style={{ fontSize:11, color:"#8a9ab5", letterSpacing:"2px", textTransform:"uppercase", marginTop:6 }}>Design Pools. Craft Outdoor Living.</div>
         </div>
 
         {/* Card */}
-        <div style={{ background:"#111827", border:"1px solid #1e293b", borderRadius:20, padding:28, boxShadow:"0 20px 60px rgba(0,0,0,0.5)" }}>
-          <div style={{ fontSize:18, fontWeight:800, color:"#e2e8f0", marginBottom:4 }}>
+        <div style={{ background:"#ffffff", border:"1px solid #e2e8f0", borderRadius:20, padding:28, boxShadow:"0 20px 60px rgba(0,0,0,0.5)" }}>
+          <div style={{ fontSize:18, fontWeight:800, color:"#0f172a", marginBottom:4 }}>
             {mode==="login" ? "Sign In" : mode==="signup" ? "Create Account" : "Reset Password"}
           </div>
           <div style={{ fontSize:13, color:"#64748b", marginBottom:24 }}>
@@ -4808,37 +4808,37 @@ function AuthScreen({ onAuth }) {
           {mode==="signup" && (
             <div style={{ marginBottom:14 }}>
               <div style={{ fontSize:12, color:"#64748b", marginBottom:6 }}>Full Name</div>
-              <input value={name} onChange={e=>setName(e.target.value)} placeholder="Your name" style={{ width:"100%", background:"#1e293b", border:"1px solid #334155", borderRadius:10, padding:"11px 14px", color:"#e2e8f0", fontSize:14, outline:"none", boxSizing:"border-box" }}/>
+              <input value={name} onChange={e=>setName(e.target.value)} placeholder="Your name" style={{ width:"100%", background:"#e2e8f0", border:"1px solid #cbd5e1", borderRadius:10, padding:"11px 14px", color:"#0f172a", fontSize:14, outline:"none", boxSizing:"border-box" }}/>
             </div>
           )}
 
           <div style={{ marginBottom:14 }}>
             <div style={{ fontSize:12, color:"#64748b", marginBottom:6 }}>Email Address</div>
-            <input type="email" value={email} onChange={e=>setEmail(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleSubmit()} placeholder="you@example.com" style={{ width:"100%", background:"#1e293b", border:"1px solid #334155", borderRadius:10, padding:"11px 14px", color:"#e2e8f0", fontSize:14, outline:"none", boxSizing:"border-box" }}/>
+            <input type="email" value={email} onChange={e=>setEmail(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleSubmit()} placeholder="you@example.com" style={{ width:"100%", background:"#e2e8f0", border:"1px solid #cbd5e1", borderRadius:10, padding:"11px 14px", color:"#0f172a", fontSize:14, outline:"none", boxSizing:"border-box" }}/>
           </div>
 
           {mode!=="reset" && (
             <div style={{ marginBottom:20 }}>
               <div style={{ fontSize:12, color:"#64748b", marginBottom:6 }}>Password</div>
-              <input type="password" value={password} onChange={e=>setPassword(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleSubmit()} placeholder={mode==="signup"?"Min 8 characters":"Your password"} style={{ width:"100%", background:"#1e293b", border:"1px solid #334155", borderRadius:10, padding:"11px 14px", color:"#e2e8f0", fontSize:14, outline:"none", boxSizing:"border-box" }}/>
+              <input type="password" value={password} onChange={e=>setPassword(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleSubmit()} placeholder={mode==="signup"?"Min 8 characters":"Your password"} style={{ width:"100%", background:"#e2e8f0", border:"1px solid #cbd5e1", borderRadius:10, padding:"11px 14px", color:"#0f172a", fontSize:14, outline:"none", boxSizing:"border-box" }}/>
             </div>
           )}
 
           {error && <div style={{ marginBottom:14, padding:"10px 14px", background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.25)", borderRadius:10, fontSize:13, color:"#ef4444" }}>⚠️ {error}</div>}
           {success && <div style={{ marginBottom:14, padding:"10px 14px", background:"rgba(34,197,94,0.1)", border:"1px solid rgba(34,197,94,0.25)", borderRadius:10, fontSize:13, color:"#22c55e" }}>✅ {success}</div>}
 
-          <button onClick={handleSubmit} disabled={loading} style={{ width:"100%", padding:14, borderRadius:12, border:"none", background:loading?"#1e293b":`linear-gradient(135deg,#c9a84c,#a8873a)`, color:loading?"#64748b":"#0a0f1e", fontWeight:800, fontSize:15, cursor:loading?"not-allowed":"pointer" }}>
+          <button onClick={handleSubmit} disabled={loading} style={{ width:"100%", padding:14, borderRadius:12, border:"none", background:loading?"#e2e8f0":`linear-gradient(135deg,#c9a84c,#a8873a)`, color:loading?"#64748b":"#0a0f1e", fontWeight:800, fontSize:15, cursor:loading?"not-allowed":"pointer" }}>
             {loading ? "Please wait..." : mode==="login" ? "Sign In" : mode==="signup" ? "Create Account" : "Send Reset Link"}
           </button>
 
           <div style={{ marginTop:20, display:"flex", flexDirection:"column", gap:10, alignItems:"center" }}>
-            {mode==="login" && <button onClick={()=>{setMode("signup");setError(null);}} style={{ background:"none", border:"none", color:"#c9a84c", fontSize:13, cursor:"pointer" }}>Don't have an account? Sign up free</button>}
-            {mode==="signup" && <button onClick={()=>{setMode("login");setError(null);}} style={{ background:"none", border:"none", color:"#c9a84c", fontSize:13, cursor:"pointer" }}>Already have an account? Sign in</button>}
+            {mode==="login" && <button onClick={()=>{setMode("signup");setError(null);}} style={{ background:"none", border:"none",color:"#a8873a", fontSize:13, cursor:"pointer" }}>Don't have an account? Sign up free</button>}
+            {mode==="signup" && <button onClick={()=>{setMode("login");setError(null);}} style={{ background:"none", border:"none",color:"#a8873a", fontSize:13, cursor:"pointer" }}>Already have an account? Sign in</button>}
             {mode==="login" && <button onClick={()=>{setMode("reset");setError(null);}} style={{ background:"none", border:"none", color:"#64748b", fontSize:12, cursor:"pointer" }}>Forgot password?</button>}
             {mode==="reset" && <button onClick={()=>{setMode("login");setError(null);}} style={{ background:"none", border:"none", color:"#64748b", fontSize:12, cursor:"pointer" }}>← Back to sign in</button>}
           </div>
         </div>
-        <div style={{ textAlign:"center", marginTop:16, fontSize:11, color:"#334155" }}>
+        <div style={{ textAlign:"center", marginTop:16, fontSize:11, color:"#94a3b8" }}>
           By signing up you agree to our <a href="/privacy" style={{ color:"#64748b" }}>Privacy Policy</a> and <a href="/terms" style={{ color:"#64748b" }}>Terms of Service</a>
         </div>
       </div>
@@ -5044,7 +5044,7 @@ export default function PoolCraftPro() {
   if (authLoading) return (
     <div style={{ minHeight:"100vh", background:"#0a0f1e", display:"flex", alignItems:"center", justifyContent:"center" }}>
       <div style={{ textAlign:"center" }}>
-        <div style={{ fontFamily:"Georgia,serif", fontSize:20, fontWeight:900, letterSpacing:"2px", color:"#c9a84c", marginBottom:16 }}>POOL CRAFT PRO</div>
+        <div style={{ fontFamily:"Georgia,serif", fontSize:20, fontWeight:900, letterSpacing:"2px",color:"#a8873a", marginBottom:16 }}>POOL CRAFT PRO</div>
         <div style={{ color:"#64748b", fontSize:13 }}>Loading...</div>
       </div>
     </div>
@@ -5133,12 +5133,12 @@ export default function PoolCraftPro() {
     catch(err) { setParcelStatus("error"); }
   };
 
-  const card = {background:"#111827",border:"1px solid #1e293b",borderRadius:16,padding:18};
+  const card = {background:"#ffffff",border:"1px solid #e2e8f0",borderRadius:16,padding:18};
   const sectionTitle = {fontSize:11,color:"#06b6d4",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:12};
-  const chip = (active,color="#06b6d4")=>({padding:"8px 14px",borderRadius:20,border:`2px solid ${active?color:"#334155"}`,background:active?`${color}22`:"#1e293b",color:active?color:"#94a3b8",cursor:"pointer",fontSize:12,fontWeight:600,transition:"all 0.15s"});
+  const chip = (active,color="#06b6d4")=>({padding:"8px 14px",borderRadius:20,border:`2px solid ${active?color:"#cbd5e1"}`,background:active?`${color}22`:"#e2e8f0",color:active?color:"#475569",cursor:"pointer",fontSize:12,fontWeight:600,transition:"all 0.15s"});
 
   return (
-    <div style={{fontFamily:"'Inter',system-ui,sans-serif",background:"#0b1120",minHeight:"100vh",color:"#e2e8f0"}}>
+    <div style={{fontFamily:"'Inter',system-ui,sans-serif",background:"#ffffff",minHeight:"100vh",color:"#0f172a"}}>
       {showSplash && <SplashScreen onDone={completeSplash} />}
       {showShare && <ShareDesign projectName={projectName} clientName={clientName} clientEmail={clientEmail} clientPhone={clientPhone} shape={shape} len={len} wid={wid} depthId={depthId} finishId={finishId} colorId={colorId} entries={entries} hardscapes={hardscapes} materials={materials} onClose={()=>setShowShare(false)} />}
       {showOnboarding && <OnboardingModal onComplete={completeOnboarding} onSeePricing={()=>{ completeOnboarding(); setTab(11); }} userMode={userMode} setUserMode={setUserMode} setLen={setLen} setWid={setWid} setShape={setShape} setDepthId={setDepthId} setFinishId={setFinishId} />}
@@ -5146,27 +5146,27 @@ export default function PoolCraftPro() {
 
       {showSaveDialog && (
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",zIndex:998,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
-          <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:16,padding:24,width:"100%",maxWidth:380}}>
-            <div style={{fontSize:15,fontWeight:800,color:"#e2e8f0",marginBottom:16}}>💾 {projectId?"Update":"Save"} Project</div>
+          <div style={{background:"#ffffff",border:"1px solid #e2e8f0",borderRadius:16,padding:24,width:"100%",maxWidth:380}}>
+            <div style={{fontSize:15,fontWeight:800,color:"#0f172a",marginBottom:16}}>💾 {projectId?"Update":"Save"} Project</div>
             <input value={saveNameInput} onChange={e=>setSaveNameInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&saveProject()}
               placeholder="Project name e.g. Smith Residence Pool"
-              style={{width:"100%",background:"#1e293b",border:"1px solid #334155",borderRadius:10,padding:"11px 14px",color:"#e2e8f0",fontSize:14,outline:"none",boxSizing:"border-box",marginBottom:10}} />
+              style={{width:"100%",background:"#e2e8f0",border:"1px solid #cbd5e1",borderRadius:10,padding:"11px 14px",color:"#0f172a",fontSize:14,outline:"none",boxSizing:"border-box",marginBottom:10}} />
             <input value={saveClientInput} onChange={e=>setSaveClientInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&saveProject()}
               placeholder="Client name (optional) e.g. John & Mary Smith"
-              style={{width:"100%",background:"#1e293b",border:"1px solid #334155",borderRadius:10,padding:"11px 14px",color:"#e2e8f0",fontSize:14,outline:"none",boxSizing:"border-box",marginBottom:saveShowContactFields?10:12}} />
+              style={{width:"100%",background:"#e2e8f0",border:"1px solid #cbd5e1",borderRadius:10,padding:"11px 14px",color:"#0f172a",fontSize:14,outline:"none",boxSizing:"border-box",marginBottom:saveShowContactFields?10:12}} />
             {saveShowContactFields ? (
               <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:12}}>
                 <input type="email" value={saveClientEmailInput} onChange={e=>setSaveClientEmailInput(e.target.value)} placeholder="Client email (optional)"
-                  style={{width:"100%",background:"#1e293b",border:"1px solid #334155",borderRadius:10,padding:"10px 14px",color:"#e2e8f0",fontSize:13,outline:"none",boxSizing:"border-box"}} />
+                  style={{width:"100%",background:"#e2e8f0",border:"1px solid #cbd5e1",borderRadius:10,padding:"10px 14px",color:"#0f172a",fontSize:13,outline:"none",boxSizing:"border-box"}} />
                 <input type="tel" value={saveClientPhoneInput} onChange={e=>setSaveClientPhoneInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&saveProject()} placeholder="Client phone (optional)"
-                  style={{width:"100%",background:"#1e293b",border:"1px solid #334155",borderRadius:10,padding:"10px 14px",color:"#e2e8f0",fontSize:13,outline:"none",boxSizing:"border-box"}} />
+                  style={{width:"100%",background:"#e2e8f0",border:"1px solid #cbd5e1",borderRadius:10,padding:"10px 14px",color:"#0f172a",fontSize:13,outline:"none",boxSizing:"border-box"}} />
               </div>
             ) : (
               <button onClick={()=>setSaveShowContactFields(true)} style={{background:"none",border:"none",color:"#06b6d4",fontSize:11,fontWeight:600,cursor:"pointer",padding:0,marginBottom:12}}>+ Add client email or phone (lets you share designs directly)</button>
             )}
             <div style={{fontSize:11,color:"#64748b",marginBottom:14}}>{len}'x{wid}' {POOL_SHAPES.find(s=>s.id===shape)?.label} - {materials.gallons.toLocaleString()} gal - {Object.keys(entries).length} features</div>
             <div style={{display:"flex",gap:8}}>
-              <button onClick={()=>setShowSaveDialog(false)} style={{flex:1,padding:"11px",borderRadius:10,border:"1px solid #334155",background:"#1e293b",color:"#94a3b8",fontWeight:700,fontSize:13,cursor:"pointer"}}>Cancel</button>
+              <button onClick={()=>setShowSaveDialog(false)} style={{flex:1,padding:"11px",borderRadius:10,border:"1px solid #cbd5e1",background:"#e2e8f0",color:"#475569",fontWeight:700,fontSize:13,cursor:"pointer"}}>Cancel</button>
               <button onClick={saveProject} disabled={savingInProgress} style={{flex:2,padding:"11px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#22c55e,#16a34a)",color:"white",fontWeight:800,fontSize:13,cursor:savingInProgress?"not-allowed":"pointer",opacity:savingInProgress?0.7:1}}>{savingInProgress?"Saving...":"Save Project"}</button>
             </div>
           </div>
@@ -5177,16 +5177,16 @@ export default function PoolCraftPro() {
 
       {unsavedConfirm && (
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.78)",zIndex:1001,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
-          <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:16,padding:24,width:"100%",maxWidth:380}}>
+          <div style={{background:"#ffffff",border:"1px solid #e2e8f0",borderRadius:16,padding:24,width:"100%",maxWidth:380}}>
             <div style={{fontSize:32,marginBottom:10}}>⚠️</div>
-            <div style={{fontSize:15,fontWeight:800,color:"#e2e8f0",marginBottom:8}}>You have unsaved changes</div>
-            <div style={{fontSize:13,color:"#94a3b8",lineHeight:1.6,marginBottom:18}}>{projectName} has edits that haven't been saved yet. If you continue, those changes will be lost.</div>
+            <div style={{fontSize:15,fontWeight:800,color:"#0f172a",marginBottom:8}}>You have unsaved changes</div>
+            <div style={{fontSize:13,color:"#475569",lineHeight:1.6,marginBottom:18}}>{projectName} has edits that haven't been saved yet. If you continue, those changes will be lost.</div>
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
               <button onClick={async ()=>{ const action=unsavedConfirm; setUnsavedConfirm(null); await saveProject(); if(action) action(); }}
                 style={{padding:"12px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#22c55e,#16a34a)",color:"white",fontWeight:800,fontSize:13,cursor:"pointer"}}>💾 Save, Then Continue</button>
               <button onClick={()=>{ const action=unsavedConfirm; setUnsavedConfirm(null); if(action) action(); }}
                 style={{padding:"12px",borderRadius:10,border:"1px solid rgba(239,68,68,0.4)",background:"rgba(239,68,68,0.12)",color:"#ef4444",fontWeight:700,fontSize:13,cursor:"pointer"}}>Discard Changes & Continue</button>
-              <button onClick={()=>setUnsavedConfirm(null)} style={{padding:"12px",borderRadius:10,border:"1px solid #334155",background:"#1e293b",color:"#94a3b8",fontWeight:700,fontSize:13,cursor:"pointer"}}>Cancel</button>
+              <button onClick={()=>setUnsavedConfirm(null)} style={{padding:"12px",borderRadius:10,border:"1px solid #cbd5e1",background:"#e2e8f0",color:"#475569",fontWeight:700,fontSize:13,cursor:"pointer"}}>Cancel</button>
             </div>
           </div>
         </div>
@@ -5210,12 +5210,12 @@ export default function PoolCraftPro() {
           </div>
           <div style={{flex:1,minWidth:0}}>
             <div style={{fontWeight:900,fontSize:15,letterSpacing:"1.5px",fontFamily:"Georgia,serif",lineHeight:1.1}}>
-              <span style={{color:"#dde6f0"}}>POOL </span><span style={{color:"#c9a84c"}}>CRAFT </span><span style={{color:"#dde6f0"}}>PRO</span>
+              <span style={{color:"#dde6f0"}}>POOL </span><span style={{color:"#a8873a"}}>CRAFT </span><span style={{color:"#dde6f0"}}>PRO</span>
             </div>
             <div style={{fontSize:11,color:"#8a9ab5",display:"flex",alignItems:"center",gap:5,flexWrap:"wrap",marginTop:2}}>
               <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:160}}>{clientName?`${clientName} · `:""}{projectName}</span>
               {(!projectId || isDirty) && (
-                <span style={{display:"inline-flex",alignItems:"center",gap:3,color:"#c9a84c",fontWeight:700,flexShrink:0}}>
+                <span style={{display:"inline-flex",alignItems:"center",gap:3,color:"#a8873a",fontWeight:700,flexShrink:0}}>
                   <span style={{width:5,height:5,borderRadius:"50%",background:"#c9a84c"}}></span>
                   {!projectId ? "unsaved" : "unsaved changes"}
                 </span>
@@ -5226,7 +5226,7 @@ export default function PoolCraftPro() {
             {userMode==="homeowner"?"🏠 HO":userMode==="designer"?"🎨 Design":"👷 Pro"}
           </div>
           {plan==="none" && (
-            <button onClick={()=>setTab(11)} style={{padding:"6px 10px",borderRadius:16,background:"rgba(201,168,76,0.12)",border:"1px solid rgba(201,168,76,0.35)",color:"#c9a84c",fontSize:10,fontWeight:700,cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}}>💰 See Pricing</button>
+            <button onClick={()=>setTab(11)} style={{padding:"6px 10px",borderRadius:16,background:"rgba(201,168,76,0.12)",border:"1px solid rgba(201,168,76,0.35)",color:"#a8873a",fontSize:10,fontWeight:700,cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}}>💰 See Pricing</button>
           )}
           {currentUser && !currentUser.guest && (
             <button onClick={signOut} style={{padding:"6px 10px",borderRadius:16,background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",fontSize:10,fontWeight:700,cursor:"pointer",flexShrink:0}}>Sign Out</button>
@@ -5235,40 +5235,40 @@ export default function PoolCraftPro() {
         {/* Demo mode banner */}
         {demoMode && (
           <div style={{background:"rgba(245,158,11,0.15)",border:"1px solid rgba(245,158,11,0.4)",borderRadius:10,padding:"8px 12px",marginBottom:8,display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
-            <div style={{fontSize:12,color:"#f59e0b",fontWeight:700}}>🎯 Demo Mode — Showing sample lagoon pool to client</div>
-            <button onClick={exitDemo} style={{padding:"4px 12px",borderRadius:10,background:"rgba(245,158,11,0.2)",border:"1px solid rgba(245,158,11,0.4)",color:"#f59e0b",fontSize:11,fontWeight:700,cursor:"pointer",flexShrink:0}}>Exit Demo</button>
+            <div style={{fontSize:12,color:"#b45309",fontWeight:700}}>🎯 Demo Mode — Showing sample lagoon pool to client</div>
+            <button onClick={exitDemo} style={{padding:"4px 12px",borderRadius:10,background:"rgba(245,158,11,0.2)",border:"1px solid rgba(245,158,11,0.4)",color:"#b45309",fontSize:11,fontWeight:700,cursor:"pointer",flexShrink:0}}>Exit Demo</button>
           </div>
         )}
         {/* Row 2: action buttons */}
         <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>
-          <button onClick={()=>withUnsavedCheck(startNewProject)} style={{padding:"7px 12px",minHeight:34,borderRadius:16,background:"rgba(201,168,76,0.1)",border:"1px solid rgba(201,168,76,0.3)",color:"#c9a84c",fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0}}>➕ New</button>
+          <button onClick={()=>withUnsavedCheck(startNewProject)} style={{padding:"7px 12px",minHeight:34,borderRadius:16,background:"rgba(201,168,76,0.1)",border:"1px solid rgba(201,168,76,0.3)",color:"#a8873a",fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0}}>➕ New</button>
           <button onClick={()=>{setSaveNameInput(projectName);setSaveClientInput(clientName||"");setSaveClientEmailInput(clientEmail||"");setSaveClientPhoneInput(clientPhone||"");setSaveShowContactFields(!!(clientEmail||clientPhone));setShowSaveDialog(true);}} style={{padding:"7px 12px",minHeight:34,borderRadius:16,background:"rgba(34,197,94,0.12)",border:"1px solid rgba(34,197,94,0.3)",color:"#22c55e",fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0}}>💾 Save</button>
           <button onClick={()=>setShowProjects(true)} style={{padding:"7px 12px",minHeight:34,borderRadius:16,background:"rgba(74,122,181,0.12)",border:"1px solid rgba(74,122,181,0.3)",color:"#7ab0e8",fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0}}>📂 Projects</button>
-          <button onClick={exportPDF} style={{padding:"7px 12px",minHeight:34,borderRadius:16,background:"rgba(201,168,76,0.1)",border:"1px solid rgba(201,168,76,0.25)",color:"#c9a84c",fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0}}>📄 PDF</button>
-          <button onClick={()=>setShowShare(true)} style={{padding:"7px 12px",minHeight:34,borderRadius:16,background:"rgba(167,139,250,0.12)",border:"1px solid rgba(167,139,250,0.25)",color:"#a78bfa",fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0}}>📤 Share</button>
-          {!demoMode && <button onClick={activateDemo} style={{padding:"7px 12px",minHeight:34,borderRadius:16,background:"rgba(245,158,11,0.1)",border:"1px solid rgba(245,158,11,0.25)",color:"#f59e0b",fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0}}>🎯 Demo</button>}
-          {wishlist.length>0&&<div style={{padding:"7px 10px",minHeight:34,display:"flex",alignItems:"center",borderRadius:16,background:"rgba(201,168,76,0.1)",border:"1px solid rgba(201,168,76,0.3)",fontSize:12,color:"#c9a84c",flexShrink:0}}>❤️ {wishlist.length}</div>}
+          <button onClick={exportPDF} style={{padding:"7px 12px",minHeight:34,borderRadius:16,background:"rgba(201,168,76,0.1)",border:"1px solid rgba(201,168,76,0.25)",color:"#a8873a",fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0}}>📄 PDF</button>
+          <button onClick={()=>setShowShare(true)} style={{padding:"7px 12px",minHeight:34,borderRadius:16,background:"rgba(167,139,250,0.12)",border:"1px solid rgba(167,139,250,0.25)",color:"#7c3aed",fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0}}>📤 Share</button>
+          {!demoMode && <button onClick={activateDemo} style={{padding:"7px 12px",minHeight:34,borderRadius:16,background:"rgba(245,158,11,0.1)",border:"1px solid rgba(245,158,11,0.25)",color:"#b45309",fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0}}>🎯 Demo</button>}
+          {wishlist.length>0&&<div style={{padding:"7px 10px",minHeight:34,display:"flex",alignItems:"center",borderRadius:16,background:"rgba(201,168,76,0.1)",border:"1px solid rgba(201,168,76,0.3)",fontSize:12,color:"#a8873a",flexShrink:0}}>❤️ {wishlist.length}</div>}
         </div>
         {/* Row 3: tab navigation (desktop) / swipe page indicator (mobile) */}
         {isMobile ? (
           <div style={{paddingBottom:12}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
               <button onClick={()=>swipeNav.goToOffset(-1)} disabled={navTabIndex<=0} aria-label="Previous page"
-                style={{width:40,height:40,borderRadius:20,border:"1px solid rgba(201,168,76,0.3)",background:"rgba(201,168,76,0.08)",color:navTabIndex<=0?"#334155":"#c9a84c",fontSize:20,fontWeight:800,cursor:navTabIndex<=0?"default":"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>‹</button>
+                style={{width:40,height:40,borderRadius:20,border:"1px solid rgba(201,168,76,0.3)",background:"rgba(201,168,76,0.08)",color:navTabIndex<=0?"#cbd5e1":"#c9a84c",fontSize:20,fontWeight:800,cursor:navTabIndex<=0?"default":"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>‹</button>
               <div style={{textAlign:"center",flex:1,minWidth:0}}>
-                <div style={{fontSize:17,fontWeight:900,color:"#e2e8f0",letterSpacing:"0.01em",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{currentNavTab.icon} {currentNavTab.label}</div>
-                <div style={{fontSize:10,color:"#5a6a80",fontWeight:700,marginTop:2,letterSpacing:"0.05em"}}>{navTabIndex+1} OF {NAV_TABS.length}</div>
+                <div style={{fontSize:17,fontWeight:900,color:"#0f172a",letterSpacing:"0.01em",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{currentNavTab.icon} {currentNavTab.label}</div>
+                <div style={{fontSize:10,color:"#94a3b8",fontWeight:700,marginTop:2,letterSpacing:"0.05em"}}>{navTabIndex+1} OF {NAV_TABS.length}</div>
               </div>
               <button onClick={()=>swipeNav.goToOffset(1)} disabled={navTabIndex>=NAV_TABS.length-1} aria-label="Next page"
-                style={{width:40,height:40,borderRadius:20,border:"1px solid rgba(201,168,76,0.3)",background:"rgba(201,168,76,0.08)",color:navTabIndex>=NAV_TABS.length-1?"#334155":"#c9a84c",fontSize:20,fontWeight:800,cursor:navTabIndex>=NAV_TABS.length-1?"default":"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>›</button>
+                style={{width:40,height:40,borderRadius:20,border:"1px solid rgba(201,168,76,0.3)",background:"rgba(201,168,76,0.08)",color:navTabIndex>=NAV_TABS.length-1?"#cbd5e1":"#c9a84c",fontSize:20,fontWeight:800,cursor:navTabIndex>=NAV_TABS.length-1?"default":"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>›</button>
             </div>
             <div style={{display:"flex",gap:3,marginTop:10}}>
-              {NAV_TABS.map((t,i)=>(<div key={t.id} style={{flex:1,height:3,borderRadius:2,background:i<=navTabIndex?"#c9a84c":"#1e293b",transition:"background 0.2s"}}/>))}
+              {NAV_TABS.map((t,i)=>(<div key={t.id} style={{flex:1,height:3,borderRadius:2,background:i<=navTabIndex?"#c9a84c":"#e2e8f0",transition:"background 0.2s"}}/>))}
             </div>
           </div>
         ) : (
           <div style={{display:"flex",overflowX:"auto",gap:2}}>
-            {NAV_TABS.map(t=>(<button key={t.id} onClick={()=>setTab(t.id)} style={{whiteSpace:"nowrap",padding:"12px 12px",minHeight:44,fontSize:11,fontWeight:700,border:"none",cursor:"pointer",borderRadius:"8px 8px 0 0",background:tab===t.id?"#060a14":"transparent",color:tab===t.id?"#c9a84c":"#5a6a80",borderBottom:tab===t.id?"2px solid #c9a84c":"2px solid transparent"}}>{t.icon} {t.label}</button>))}
+            {NAV_TABS.map(t=>(<button key={t.id} onClick={()=>setTab(t.id)} style={{whiteSpace:"nowrap",padding:"12px 12px",minHeight:44,fontSize:11,fontWeight:700,border:"none",cursor:"pointer",borderRadius:"8px 8px 0 0",background:tab===t.id?"#060a14":"transparent",color:tab===t.id?"#c9a84c":"#94a3b8",borderBottom:tab===t.id?"2px solid #c9a84c":"2px solid transparent"}}>{t.icon} {t.label}</button>))}
           </div>
         )}
       </div>
@@ -5303,7 +5303,7 @@ export default function PoolCraftPro() {
                 <div key={f.label} style={card}>
                   <div style={{...sectionTitle,marginBottom:8}}>{f.label}</div>
                   <input type="number" inputMode="numeric" value={f.val} min={f.min} max={f.max} onChange={handleChange} onBlur={handleBlur}
-                    style={{width:"100%",background:"#1e293b",border:`1px solid ${outOfRange?"#ef4444":"#334155"}`,borderRadius:10,padding:"10px 12px",color:outOfRange?"#ef4444":"#06b6d4",fontSize:20,fontWeight:800,outline:"none",boxSizing:"border-box"}}/>
+                    style={{width:"100%",background:"#e2e8f0",border:`1px solid ${outOfRange?"#ef4444":"#cbd5e1"}`,borderRadius:10,padding:"10px 12px",color:outOfRange?"#ef4444":"#06b6d4",fontSize:20,fontWeight:800,outline:"none",boxSizing:"border-box"}}/>
                   <input type="range" min={f.min} max={f.max} value={Math.max(f.min,Math.min(f.max,f.val))} onChange={handleChange} style={{width:"100%",marginTop:8,accentColor:"#c9a84c"}}/>
                   {outOfRange && <div style={{fontSize:11,color:"#ef4444",marginTop:6}}>Valid range is {f.min}-{f.max} ft - will snap back when you tap away</div>}
                 </div>
@@ -5312,7 +5312,7 @@ export default function PoolCraftPro() {
           </div>
           <div style={card}>
             <div style={sectionTitle}>Depth Profile</div>
-            {DEPTHS.map(d=>(<button key={d.id} onClick={()=>setDepthId(d.id)} style={{display:"block",width:"100%",textAlign:"left",padding:"11px 14px",marginBottom:6,borderRadius:10,border:`2px solid ${depthId===d.id?"#06b6d4":"#334155"}`,background:depthId===d.id?"rgba(6,182,212,0.08)":"#1e293b",color:depthId===d.id?"#e2e8f0":"#94a3b8",cursor:"pointer"}}><div style={{fontWeight:700,fontSize:13}}>{depthId===d.id?"✓ ":""}{d.label}</div><div style={{fontSize:11,color:"#64748b",marginTop:3}}>{d.desc}</div></button>))}
+            {DEPTHS.map(d=>(<button key={d.id} onClick={()=>setDepthId(d.id)} style={{display:"block",width:"100%",textAlign:"left",padding:"11px 14px",marginBottom:6,borderRadius:10,border:`2px solid ${depthId===d.id?"#06b6d4":"#cbd5e1"}`,background:depthId===d.id?"rgba(6,182,212,0.08)":"#e2e8f0",color:depthId===d.id?"#0f172a":"#475569",cursor:"pointer"}}><div style={{fontWeight:700,fontSize:13}}>{depthId===d.id?"✓ ":""}{d.label}</div><div style={{fontSize:11,color:"#64748b",marginTop:3}}>{d.desc}</div></button>))}
           </div>
           <div style={card}>
             <div style={sectionTitle}>Interior Finish</div>
@@ -5321,7 +5321,7 @@ export default function PoolCraftPro() {
           </div>
           <div style={card}>
             <div style={sectionTitle}>Water Color</div>
-            <div style={{display:"flex",flexWrap:"wrap",gap:10}}>{POOL_COLORS.map(c=>(<button key={c.id} onClick={()=>setColorId(c.id)} style={{padding:"6px 12px",borderRadius:20,border:`2px solid ${colorId===c.id?"#fff":"#334155"}`,background:c.hex,color:["#e8f4f8","#d4a76a"].includes(c.hex)?"#1e293b":"#fff",cursor:"pointer",fontSize:12,fontWeight:700,opacity:colorId===c.id?1:0.65,transition:"all 0.15s"}}>{c.label}</button>))}</div>
+            <div style={{display:"flex",flexWrap:"wrap",gap:10}}>{POOL_COLORS.map(c=>(<button key={c.id} onClick={()=>setColorId(c.id)} style={{padding:"6px 12px",borderRadius:20,border:`2px solid ${colorId===c.id?"#fff":"#cbd5e1"}`,background:c.hex,color:["#e8f4f8","#d4a76a"].includes(c.hex)?"#0f172a":"#fff",cursor:"pointer",fontSize:12,fontWeight:700,opacity:colorId===c.id?1:0.65,transition:"all 0.15s"}}>{c.label}</button>))}</div>
           </div>
 
           <div style={card}>
@@ -5344,7 +5344,7 @@ export default function PoolCraftPro() {
         {tab===13&&<HowItWorksTab onSubscribeClick={()=>setTab(11)} />}
 
         {tab===1&&<>
-          <div style={{fontSize:13,color:"#94a3b8",padding:"4px 0 8px"}}>Tap any feature to learn more and add it to your pool design.</div>
+          <div style={{fontSize:13,color:"#475569",padding:"4px 0 8px"}}>Tap any feature to learn more and add it to your pool design.</div>
           {ENTRY_FEATURES.map(ef=>(<FeatureCard key={ef.id} feature={ef} active={!!entries[ef.id]} onToggle={()=>toggleEntry(ef.id)} />))}
           {Object.keys(entries).length > 0 && (
             <div style={{background:"linear-gradient(135deg,rgba(6,182,212,0.1),rgba(2,132,199,0.06))",border:"1px solid rgba(6,182,212,0.25)",borderRadius:12,padding:14,marginTop:4}}>
@@ -5362,18 +5362,18 @@ export default function PoolCraftPro() {
             <div style={sectionTitle}>📍 Property Lookup</div>
             <div style={{fontSize:12,color:"#64748b",marginBottom:10}}>Enter an address to pull parcel data - lot size, zoning & setbacks - for permit planning.</div>
             <div style={{display:"flex",gap:8}}>
-              <input type="text" placeholder="123 Main St, City, State" value={address} onChange={e=>setAddress(e.target.value)} onKeyDown={e=>e.key==="Enter"&&lookupAddress()} style={{flex:1,background:"#1e293b",border:"1px solid #334155",borderRadius:10,padding:"10px 14px",color:"#e2e8f0",fontSize:14,outline:"none"}}/>
+              <input type="text" placeholder="123 Main St, City, State" value={address} onChange={e=>setAddress(e.target.value)} onKeyDown={e=>e.key==="Enter"&&lookupAddress()} style={{flex:1,background:"#e2e8f0",border:"1px solid #cbd5e1",borderRadius:10,padding:"10px 14px",color:"#0f172a",fontSize:14,outline:"none"}}/>
               <button onClick={lookupAddress} disabled={parcelStatus==="loading"} style={{padding:"10px 16px",borderRadius:10,background:"linear-gradient(135deg,#06b6d4,#0284c7)",border:"none",color:"white",fontWeight:700,fontSize:13,cursor:"pointer",flexShrink:0,opacity:parcelStatus==="loading"?0.6:1}}>{parcelStatus==="loading"?"⏳":"Search"}</button>
             </div>
             {parcelStatus==="found"&&parcelData&&(
               <div style={{marginTop:12,background:"rgba(6,182,212,0.08)",border:"1px solid rgba(6,182,212,0.2)",borderRadius:12,padding:14}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
                   <div style={{fontSize:12,color:"#06b6d4",fontWeight:700}}>✅ Parcel Found - {parcelData.address}</div>
-                  <div style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:parcelData.source==="regrid"?"rgba(34,197,94,0.15)":"rgba(245,158,11,0.15)",border:`1px solid ${parcelData.source==="regrid"?"rgba(34,197,94,0.3)":"rgba(245,158,11,0.3)"}`,color:parcelData.source==="regrid"?"#22c55e":"#f59e0b",fontWeight:700}}>{parcelData.source==="regrid"?"🟢 Live Regrid Data":"🟡 Estimated"}</div>
+                  <div style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:parcelData.source==="regrid"?"rgba(34,197,94,0.15)":"rgba(245,158,11,0.15)",border:`1px solid ${parcelData.source==="regrid"?"rgba(34,197,94,0.3)":"rgba(245,158,11,0.3)"}`,color:parcelData.source==="regrid"?"#22c55e":"#b45309",fontWeight:700}}>{parcelData.source==="regrid"?"🟢 Live Regrid Data":"🟡 Estimated"}</div>
                 </div>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
                   {[{label:"Parcel / APN",val:parcelData.parcel},{label:"Lot Size",val:parcelData.lot_size},{label:"Lot Sq Ft",val:parcelData.lot_sqft},{label:"Zoning",val:parcelData.zoning},{label:"Front Setback",val:parcelData.setback_front},{label:"Rear Setback",val:parcelData.setback_rear},{label:"Side Setback",val:parcelData.setback_side},{label:"Pool Setback",val:parcelData.pool_setback}].map(r=>(
-                    <div key={r.label} style={{background:"#1e293b",borderRadius:8,padding:"8px 10px"}}><div style={{fontSize:10,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em"}}>{r.label}</div><div style={{fontSize:13,fontWeight:700,color:"#e2e8f0",marginTop:2}}>{r.val}</div></div>
+                    <div key={r.label} style={{background:"#e2e8f0",borderRadius:8,padding:"8px 10px"}}><div style={{fontSize:10,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em"}}>{r.label}</div><div style={{fontSize:13,fontWeight:700,color:"#0f172a",marginTop:2}}>{r.val}</div></div>
                   ))}
                 </div>
               </div>
@@ -5384,13 +5384,13 @@ export default function PoolCraftPro() {
         {tab===4&&<>
           <div style={{background:"linear-gradient(135deg,rgba(6,182,212,0.15),rgba(2,132,199,0.1))",border:"1px solid rgba(6,182,212,0.3)",borderRadius:14,padding:16}}>
             <div style={{fontSize:12,color:"#06b6d4",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em"}}>Pool Summary</div>
-            <div style={{fontSize:15,fontWeight:700,color:"#e2e8f0",marginTop:4}}>{POOL_SHAPES.find(s=>s.id===shape)?.label} - {len}' x {wid}'</div>
-            <div style={{fontSize:12,color:"#94a3b8",marginTop:3}}>{materials.gallons.toLocaleString()} gallons - {POOL_FINISHES.find(f=>f.id===finishId)?.label}</div>
+            <div style={{fontSize:15,fontWeight:700,color:"#0f172a",marginTop:4}}>{POOL_SHAPES.find(s=>s.id===shape)?.label} - {len}' x {wid}'</div>
+            <div style={{fontSize:12,color:"#475569",marginTop:3}}>{materials.gallons.toLocaleString()} gallons - {POOL_FINISHES.find(f=>f.id===finishId)?.label}</div>
           </div>
           {[{label:"Excavation",val:materials.excavation,note:"Includes 20% over-dig"},{label:"Gunite / Shotcrete",val:materials.gunite,note:"4 inch shell thickness"},{label:"Rebar",val:materials.rebar,note:"#3 rebar - 20 ft sticks - 12 inch on center grid - includes 15% lap splice"},{label:"Gravel Base",val:materials.gravel,note:"3/4 inch crushed stone 4 inch bed"},{label:"PVC Plumbing",val:materials.plumbing,note:"2 inch & 3 inch schedule 40"},{label:"Coping",val:materials.coping,note:"Bond beam perimeter"},{label:"Waterline Tile",val:materials.tile,note:"6 inch tile band"},{label:"Interior Finish",val:materials.finish,note:POOL_FINISHES.find(f=>f.id===finishId)?.label}].map(row=>(
-            <div key={row.label} style={{background:"#111827",border:"1px solid #1e293b",borderRadius:12,padding:"13px 16px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div key={row.label} style={{background:"#ffffff",border:"1px solid #e2e8f0",borderRadius:12,padding:"13px 16px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
               <div><div style={{fontWeight:600,fontSize:14}}>{row.label}</div><div style={{fontSize:12,color:"#64748b",marginTop:2}}>{row.note}</div></div>
-              <div style={{fontWeight:800,fontSize:16,color:"#06b6d4"}}>{row.val}</div>
+              <div style={{fontWeight:800,fontSize:16,color:"#0e7490"}}>{row.val}</div>
             </div>
           ))}
 
@@ -5402,49 +5402,49 @@ export default function PoolCraftPro() {
               <div style={{flex:"1 1 160px"}}>
                 <div style={{fontSize:10,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:4}}>Finish Type</div>
                 <select value={plasterFinishType} onChange={(e)=>{ const id=e.target.value; setPlasterFinishType(id); setPlasterCoveragePerBag(PLASTER_COVERAGE_PRESETS[id]); }}
-                  style={{width:"100%",background:"#1e293b",border:"1px solid #334155",borderRadius:8,padding:"9px 10px",color:"#e2e8f0",fontSize:13,outline:"none",boxSizing:"border-box"}}>
+                  style={{width:"100%",background:"#e2e8f0",border:"1px solid #cbd5e1",borderRadius:8,padding:"9px 10px",color:"#0f172a",fontSize:13,outline:"none",boxSizing:"border-box"}}>
                   {PLASTER_FINISH_OPTIONS.map(o=>(<option key={o.id} value={o.id}>{o.label}</option>))}
                 </select>
               </div>
               <div style={{flex:"1 1 160px"}}>
                 <div style={{fontSize:10,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:4}}>Coverage per Bag (sq ft)</div>
                 <input type="number" min="1" value={plasterCoveragePerBag} onChange={(e)=>setPlasterCoveragePerBag(Math.max(1,Number(e.target.value)||1))}
-                  style={{width:"100%",background:"#1e293b",border:"1px solid #334155",borderRadius:8,padding:"9px 10px",color:"#e2e8f0",fontSize:13,outline:"none",boxSizing:"border-box"}}/>
+                  style={{width:"100%",background:"#e2e8f0",border:"1px solid #cbd5e1",borderRadius:8,padding:"9px 10px",color:"#0f172a",fontSize:13,outline:"none",boxSizing:"border-box"}}/>
               </div>
               <div style={{flex:"1 1 160px"}}>
-                <div style={{fontSize:10,color:"#f59e0b",textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:4,fontWeight:700}}>Cost per Bag ($) - Required</div>
+                <div style={{fontSize:10,color:"#b45309",textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:4,fontWeight:700}}>Cost per Bag ($) - Required</div>
                 <input type="number" min="0" step="0.01" value={plasterCostPerBag} onChange={(e)=>setPlasterCostPerBag(e.target.value)} placeholder="Enter your supplier's price"
-                  style={{width:"100%",background:"#1e293b",border:`1px solid ${plasterCalc.hasCost?"#334155":"rgba(245,158,11,0.5)"}`,borderRadius:8,padding:"9px 10px",color:"#e2e8f0",fontSize:13,outline:"none",boxSizing:"border-box"}}/>
+                  style={{width:"100%",background:"#e2e8f0",border:`1px solid ${plasterCalc.hasCost?"#cbd5e1":"rgba(245,158,11,0.5)"}`,borderRadius:8,padding:"9px 10px",color:"#0f172a",fontSize:13,outline:"none",boxSizing:"border-box"}}/>
               </div>
               <div style={{flex:"1 1 160px"}}>
                 <div style={{fontSize:10,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:4}}>Waste Factor (%)</div>
                 <input type="number" min="0" max="100" value={plasterWasteFactor} onChange={(e)=>setPlasterWasteFactor(Math.max(0,Number(e.target.value)||0))}
-                  style={{width:"100%",background:"#1e293b",border:"1px solid #334155",borderRadius:8,padding:"9px 10px",color:"#e2e8f0",fontSize:13,outline:"none",boxSizing:"border-box"}}/>
+                  style={{width:"100%",background:"#e2e8f0",border:"1px solid #cbd5e1",borderRadius:8,padding:"9px 10px",color:"#0f172a",fontSize:13,outline:"none",boxSizing:"border-box"}}/>
               </div>
             </div>
 
             <div style={{display:"grid",gridTemplateColumns:plasterCalc.hasCost?"1fr 1fr 1fr":"1fr 1fr",gap:8,marginBottom:10}}>
-              <div style={{background:"#1e293b",borderRadius:8,padding:"9px 10px",textAlign:"center"}}>
+              <div style={{background:"#e2e8f0",borderRadius:8,padding:"9px 10px",textAlign:"center"}}>
                 <div style={{fontSize:10,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:4}}>Surface Area</div>
-                <div style={{fontSize:16,fontWeight:800,color:"#e2e8f0"}}>{Math.round(plasterCalc.surfaceAreaSqFt).toLocaleString()} sq ft</div>
+                <div style={{fontSize:16,fontWeight:800,color:"#0f172a"}}>{Math.round(plasterCalc.surfaceAreaSqFt).toLocaleString()} sq ft</div>
               </div>
-              <div style={{background:"#1e293b",borderRadius:8,padding:"9px 10px",textAlign:"center"}}>
+              <div style={{background:"#e2e8f0",borderRadius:8,padding:"9px 10px",textAlign:"center"}}>
                 <div style={{fontSize:10,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:4}}>Bags Needed</div>
                 <div style={{fontSize:16,fontWeight:800,color:"#06b6d4"}}>{plasterCalc.bagsNeeded.toLocaleString()}</div>
               </div>
               {plasterCalc.hasCost && (
-                <div style={{background:"#1e293b",borderRadius:8,padding:"9px 10px",textAlign:"center"}}>
+                <div style={{background:"#e2e8f0",borderRadius:8,padding:"9px 10px",textAlign:"center"}}>
                   <div style={{fontSize:10,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:4}}>Total Material Cost</div>
                   <div style={{fontSize:16,fontWeight:800,color:"#22c55e"}}>${plasterCalc.totalMaterialCost.toLocaleString(undefined,{maximumFractionDigits:2})}</div>
                 </div>
               )}
             </div>
 
-            <div style={{fontSize:12,color:"#64748b",fontFamily:"monospace",background:"#0f172a",border:"1px solid #1e293b",borderRadius:8,padding:"8px 12px"}}>
+            <div style={{fontSize:12,color:"#64748b",fontFamily:"monospace",background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:8,padding:"8px 12px"}}>
               {Math.round(plasterCalc.surfaceAreaSqFt).toLocaleString()} sq ft × {(1+plasterCalc.waste/100).toFixed(2)} waste factor ÷ {plasterCalc.coverage} sq ft/bag = {plasterCalc.bagsNeeded} bags
             </div>
             {!plasterCalc.hasCost && (
-              <div style={{marginTop:8,fontSize:11,color:"#f59e0b"}}>Enter a cost per bag above to calculate total material cost - it'll automatically feed into the Cost Estimator and Quote Builder's Interior Finish line item.</div>
+              <div style={{marginTop:8,fontSize:11,color:"#b45309"}}>Enter a cost per bag above to calculate total material cost - it'll automatically feed into the Cost Estimator and Quote Builder's Interior Finish line item.</div>
             )}
           </div>
         </>}
@@ -5457,7 +5457,7 @@ export default function PoolCraftPro() {
             <div style={{display:"flex",gap:8,marginBottom:16}}>
               {EQUIPMENT_BRANDS.map(b=>(
                 <button key={b.id} onClick={()=>{ setEquipmentBrand(b.id); try{localStorage.setItem("pc_equip_brand",b.id);}catch{} }}
-                  style={{flex:1,padding:"10px 0",borderRadius:10,border:`2px solid ${equipmentBrand===b.id?"#06b6d4":"#334155"}`,background:equipmentBrand===b.id?"rgba(6,182,212,0.1)":"#1e293b",color:equipmentBrand===b.id?"#06b6d4":"#94a3b8",cursor:"pointer",fontSize:13,fontWeight:700}}>
+                  style={{flex:1,padding:"10px 0",borderRadius:10,border:`2px solid ${equipmentBrand===b.id?"#06b6d4":"#cbd5e1"}`,background:equipmentBrand===b.id?"rgba(6,182,212,0.1)":"#e2e8f0",color:equipmentBrand===b.id?"#06b6d4":"#475569",cursor:"pointer",fontSize:13,fontWeight:700}}>
                   {b.label}
                 </button>
               ))}
@@ -5466,32 +5466,32 @@ export default function PoolCraftPro() {
             {[{label:"🔥 Include Heater",key:"heater"},{label:"💧 Water Features",key:"waterFeature"}].map(o=>(
               <div key={o.key} style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
                 <span style={{fontSize:14}}>{o.label}</span>
-                <button onClick={()=>setExtras(p=>({...p,[o.key]:!p[o.key]}))} style={{width:44,height:24,borderRadius:12,border:"none",cursor:"pointer",background:extras[o.key]?"#06b6d4":"#334155",position:"relative",transition:"background 0.2s",flexShrink:0}}><span style={{position:"absolute",top:3,left:extras[o.key]?22:3,width:18,height:18,borderRadius:"50%",background:"white",transition:"left 0.2s"}}/></button>
+                <button onClick={()=>setExtras(p=>({...p,[o.key]:!p[o.key]}))} style={{width:44,height:24,borderRadius:12,border:"none",cursor:"pointer",background:extras[o.key]?"#06b6d4":"#cbd5e1",position:"relative",transition:"background 0.2s",flexShrink:0}}><span style={{position:"absolute",top:3,left:extras[o.key]?22:3,width:18,height:18,borderRadius:"50%",background:"white",transition:"left 0.2s"}}/></button>
               </div>
             ))}
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
               <span style={{fontSize:14}}>🧂 Sanitization</span>
-              <div style={{display:"flex",gap:6}}>{["salt","chlorine"].map(sv=>(<button key={sv} onClick={()=>setExtras(p=>({...p,sanitization:sv}))} style={{padding:"5px 12px",borderRadius:8,border:`2px solid ${extras.sanitization===sv?"#06b6d4":"#334155"}`,background:extras.sanitization===sv?"rgba(6,182,212,0.1)":"#1e293b",color:extras.sanitization===sv?"#06b6d4":"#94a3b8",cursor:"pointer",fontSize:12,fontWeight:700,textTransform:"capitalize"}}>{sv}</button>))}</div>
+              <div style={{display:"flex",gap:6}}>{["salt","chlorine"].map(sv=>(<button key={sv} onClick={()=>setExtras(p=>({...p,sanitization:sv}))} style={{padding:"5px 12px",borderRadius:8,border:`2px solid ${extras.sanitization===sv?"#06b6d4":"#cbd5e1"}`,background:extras.sanitization===sv?"rgba(6,182,212,0.1)":"#e2e8f0",color:extras.sanitization===sv?"#06b6d4":"#475569",cursor:"pointer",fontSize:12,fontWeight:700,textTransform:"capitalize"}}>{sv}</button>))}</div>
             </div>
           </div>
           <div style={{background:"rgba(6,182,212,0.1)",border:"1px solid rgba(6,182,212,0.25)",borderRadius:12,padding:"10px 14px",fontSize:13,color:"#06b6d4",fontWeight:600}}>Equipment sized for {materials.gallons.toLocaleString()} gallon pool</div>
           {equipment.map(eq=>(
-            <div key={eq.label} style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,overflow:"hidden"}}>
+            <div key={eq.label} style={{background:"#ffffff",border:"1px solid #e2e8f0",borderRadius:14,overflow:"hidden"}}>
               <div style={{padding:"14px 16px 10px"}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
-                  <div style={{flex:1,minWidth:0}}><div style={{fontSize:10,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:3}}>{eq.label}</div><div style={{fontWeight:700,fontSize:14,color:"#e2e8f0",lineHeight:1.3}}>{eq.model}</div></div>
-                  <div style={{background:"#1e293b",borderRadius:8,padding:"3px 10px",fontSize:10,color:"#94a3b8",fontFamily:"monospace",flexShrink:0,marginLeft:10}}>SKU: {eq.sku}</div>
+                  <div style={{flex:1,minWidth:0}}><div style={{fontSize:10,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:3}}>{eq.label}</div><div style={{fontWeight:700,fontSize:14,color:"#0f172a",lineHeight:1.3}}>{eq.model}</div></div>
+                  <div style={{background:"#e2e8f0",borderRadius:8,padding:"3px 10px",fontSize:10,color:"#475569",fontFamily:"monospace",flexShrink:0,marginLeft:10}}>SKU: {eq.sku}</div>
                 </div>
-                <div style={{fontSize:12,color:"#64748b",lineHeight:1.5}}>{eq.note}{eq.qtyNote && <span style={{color:"#f59e0b",fontWeight:700}}> - {eq.qtyNote}</span>}</div>
+                <div style={{fontSize:12,color:"#64748b",lineHeight:1.5}}>{eq.note}{eq.qtyNote && <span style={{color:"#b45309",fontWeight:700}}> - {eq.qtyNote}</span>}</div>
               </div>
               {(eq.asin || eq.query) && (<a href={equipBuyLink(eq.asin, eq.query)} target="_blank" rel="noopener noreferrer" style={{display:"flex", alignItems:"center", justifyContent:"space-between", padding:"10px 16px", background:"linear-gradient(135deg,rgba(255,153,0,0.15),rgba(255,120,0,0.08))", borderTop:"1px solid rgba(255,153,0,0.2)", textDecoration:"none", gap:10}}>
-                <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:16}}>📦</span><div><div style={{fontSize:12,fontWeight:700,color:"#ff9900"}}>Buy on Amazon</div><div style={{fontSize:10,color:"#64748b"}}>You earn {eq.earn} affiliate commission</div></div></div>
-                <span style={{color:"#ff9900",fontSize:16}}>→</span>
+                <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:16}}>📦</span><div><div style={{fontSize:12,fontWeight:700,color:"#c2720a"}}>Buy on Amazon</div><div style={{fontSize:10,color:"#64748b"}}>You earn {eq.earn} affiliate commission</div></div></div>
+                <span style={{color:"#c2720a",fontSize:16}}>→</span>
               </a>)}
             </div>
           ))}
           <div style={{background:"rgba(255,153,0,0.06)",border:"1px solid rgba(255,153,0,0.2)",borderRadius:12,padding:12,textAlign:"center"}}>
-            <div style={{fontSize:12,color:"#ff9900",fontWeight:700,marginBottom:3}}>💰 Earn 3-8% on every {EQUIPMENT_BRANDS.find(b=>b.id===equipmentBrand)?.label} purchase</div>
+            <div style={{fontSize:12,color:"#c2720a",fontWeight:700,marginBottom:3}}>💰 Earn 3-8% on every {EQUIPMENT_BRANDS.find(b=>b.id===equipmentBrand)?.label} purchase</div>
             <div style={{fontSize:11,color:"#64748b"}}>All equipment links are pre-tagged with your Amazon affiliate ID.</div>
           </div>
         </>}
@@ -5501,36 +5501,36 @@ export default function PoolCraftPro() {
         {tab===7&&<>
           <div style={card}>
             <div style={sectionTitle}>Guide Mode</div>
-            <div style={{display:"flex",gap:8}}>{[{id:"contractor",label:"👷 Contractor"},{id:"diy",label:"🏠 Homeowner DIY"}].map(m=>(<button key={m.id} onClick={()=>setGuideMode(m.id)} style={{flex:1,padding:"10px 0",borderRadius:10,border:`2px solid ${guideMode===m.id?"#06b6d4":"#334155"}`,background:guideMode===m.id?"rgba(6,182,212,0.1)":"#1e293b",color:guideMode===m.id?"#06b6d4":"#94a3b8",cursor:"pointer",fontSize:13,fontWeight:700}}>{m.label}</button>))}</div>
-            {guideMode==="diy"&&<div style={{marginTop:12,padding:"10px 12px",background:"rgba(245,158,11,0.1)",border:"1px solid rgba(245,158,11,0.3)",borderRadius:10,fontSize:12,color:"#f59e0b"}}>⚠️ DIY pool building requires permits in all US states. Structural concrete & electrical must pass inspection.</div>}
+            <div style={{display:"flex",gap:8}}>{[{id:"contractor",label:"👷 Contractor"},{id:"diy",label:"🏠 Homeowner DIY"}].map(m=>(<button key={m.id} onClick={()=>setGuideMode(m.id)} style={{flex:1,padding:"10px 0",borderRadius:10,border:`2px solid ${guideMode===m.id?"#06b6d4":"#cbd5e1"}`,background:guideMode===m.id?"rgba(6,182,212,0.1)":"#e2e8f0",color:guideMode===m.id?"#06b6d4":"#475569",cursor:"pointer",fontSize:13,fontWeight:700}}>{m.label}</button>))}</div>
+            {guideMode==="diy"&&<div style={{marginTop:12,padding:"10px 12px",background:"rgba(245,158,11,0.1)",border:"1px solid rgba(245,158,11,0.3)",borderRadius:10,fontSize:12,color:"#b45309"}}>⚠️ DIY pool building requires permits in all US states. Structural concrete & electrical must pass inspection.</div>}
           </div>
           {STEP_GUIDE.map((phase,i)=>(
-            <div key={i} style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,overflow:"hidden"}}>
+            <div key={i} style={{background:"#ffffff",border:"1px solid #e2e8f0",borderRadius:14,overflow:"hidden"}}>
               <div style={{background:"linear-gradient(135deg,rgba(6,182,212,0.15),rgba(2,132,199,0.08))",padding:"12px 16px",display:"flex",alignItems:"center",gap:12}}>
                 <div style={{width:36,height:36,borderRadius:10,background:"rgba(6,182,212,0.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>{phase.icon}</div>
-                <div style={{flex:1}}><div style={{fontSize:10,color:"#06b6d4",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em"}}>{phase.phase}</div><div style={{fontWeight:700,fontSize:15,color:"#e2e8f0"}}>{phase.title}</div></div>
-                <div style={{fontSize:11,color:"#64748b",background:"#1e293b",padding:"3px 10px",borderRadius:20}}>⏱ {phase.days}</div>
+                <div style={{flex:1}}><div style={{fontSize:10,color:"#06b6d4",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em"}}>{phase.phase}</div><div style={{fontWeight:700,fontSize:15,color:"#0f172a"}}>{phase.title}</div></div>
+                <div style={{fontSize:11,color:"#64748b",background:"#e2e8f0",padding:"3px 10px",borderRadius:20}}>⏱ {phase.days}</div>
               </div>
-              <div style={{padding:"12px 16px"}}>{phase.steps.map((step,j)=>(<div key={j} style={{display:"flex",gap:10,marginBottom:9}}><span style={{minWidth:20,height:20,borderRadius:"50%",background:"rgba(6,182,212,0.15)",color:"#06b6d4",fontSize:10,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{j+1}</span><span style={{fontSize:13,color:"#94a3b8",lineHeight:1.5}}>{step}</span></div>))}</div>
+              <div style={{padding:"12px 16px"}}>{phase.steps.map((step,j)=>(<div key={j} style={{display:"flex",gap:10,marginBottom:9}}><span style={{minWidth:20,height:20,borderRadius:"50%",background:"rgba(6,182,212,0.15)",color:"#06b6d4",fontSize:10,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{j+1}</span><span style={{fontSize:13,color:"#475569",lineHeight:1.5}}>{step}</span></div>))}</div>
             </div>
           ))}
         </>}
 
         {tab===8&&<>
           <div style={{background:"linear-gradient(135deg,rgba(245,158,11,0.18),rgba(217,119,6,0.1))",border:"1px solid rgba(245,158,11,0.35)",borderRadius:16,padding:16}}>
-            <div style={{fontSize:14,fontWeight:800,color:"#f59e0b"}}>💰 Affiliate Shopping - You Earn on Every Purchase</div>
-            <div style={{fontSize:12,color:"#94a3b8",marginTop:4}}>Add your affiliate IDs in Settings and every product link below is tagged automatically.</div>
+            <div style={{fontSize:14,fontWeight:800,color:"#b45309"}}>💰 Affiliate Shopping - You Earn on Every Purchase</div>
+            <div style={{fontSize:12,color:"#475569",marginTop:4}}>Add your affiliate IDs in Settings and every product link below is tagged automatically.</div>
           </div>
-          <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:4}}>{SHOP_CATEGORIES.map(cat=>(<button key={cat.id} onClick={()=>setShopCat(cat.id)} style={{whiteSpace:"nowrap",padding:"10px 16px",minHeight:40,borderRadius:20,border:`2px solid ${shopCat===cat.id?"#06b6d4":"#334155"}`,background:shopCat===cat.id?"rgba(6,182,212,0.1)":"#111827",color:shopCat===cat.id?"#06b6d4":"#94a3b8",cursor:"pointer",fontSize:12,fontWeight:600}}>{cat.icon} {cat.label}</button>))}</div>
+          <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:4}}>{SHOP_CATEGORIES.map(cat=>(<button key={cat.id} onClick={()=>setShopCat(cat.id)} style={{whiteSpace:"nowrap",padding:"10px 16px",minHeight:40,borderRadius:20,border:`2px solid ${shopCat===cat.id?"#06b6d4":"#cbd5e1"}`,background:shopCat===cat.id?"rgba(6,182,212,0.1)":"#ffffff",color:shopCat===cat.id?"#06b6d4":"#475569",cursor:"pointer",fontSize:12,fontWeight:600}}>{cat.icon} {cat.label}</button>))}</div>
           {activeCat?.products.map(product=>{
-            const rc=RETAILER_COLORS[product.retailer]||{bg:"rgba(100,116,139,0.1)",border:"rgba(100,116,139,0.3)",text:"#94a3b8"};
+            const rc=RETAILER_COLORS[product.retailer]||{bg:"rgba(100,116,139,0.1)",border:"rgba(100,116,139,0.3)",text:"#475569"};
             const saved=wishlist.includes(product.name);
             return(
-              <div key={product.name} style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:16}}>
+              <div key={product.name} style={{background:"#ffffff",border:"1px solid #e2e8f0",borderRadius:14,padding:16}}>
                 <div style={{display:"flex",gap:12,alignItems:"flex-start"}}>
-                  <div style={{width:50,height:50,borderRadius:10,background:"#1e293b",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>{product.img}</div>
+                  <div style={{width:50,height:50,borderRadius:10,background:"#e2e8f0",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>{product.img}</div>
                   <div style={{flex:1,minWidth:0}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}><div style={{fontSize:14,fontWeight:600,color:"#e2e8f0",lineHeight:1.3}}>{product.name}</div><button onClick={()=>toggleWishlist(product.name)} style={{background:"none",border:"none",cursor:"pointer",fontSize:20,flexShrink:0,padding:10,margin:-10,minWidth:44,minHeight:44,display:"flex",alignItems:"center",justifyContent:"center"}}>{saved?"❤️":"🤍"}</button></div>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}><div style={{fontSize:14,fontWeight:600,color:"#0f172a",lineHeight:1.3}}>{product.name}</div><button onClick={()=>toggleWishlist(product.name)} style={{background:"none",border:"none",cursor:"pointer",fontSize:20,flexShrink:0,padding:10,margin:-10,minWidth:44,minHeight:44,display:"flex",alignItems:"center",justifyContent:"center"}}>{saved?"❤️":"🤍"}</button></div>
                     <div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:8}}><span style={{padding:"2px 9px",borderRadius:20,background:rc.bg,border:`1px solid ${rc.border}`,color:rc.text,fontSize:11,fontWeight:700}}>{product.retailer}</span><span style={{padding:"2px 9px",borderRadius:20,background:"rgba(6,182,212,0.1)",border:"1px solid rgba(6,182,212,0.2)",color:"#06b6d4",fontSize:11,fontWeight:600}}>{product.badge}</span><span style={{fontSize:11,color:"#64748b"}}>Earn: {product.earn}</span></div>
                   </div>
                 </div>
@@ -5539,9 +5539,9 @@ export default function PoolCraftPro() {
             );
           })}
           {wishlist.length>0&&(
-            <div style={{background:"#111827",border:"1px solid rgba(245,158,11,0.3)",borderRadius:14,padding:16}}>
-              <div style={{fontSize:13,fontWeight:700,color:"#f59e0b",marginBottom:10}}>❤️ Saved Items ({wishlist.length})</div>
-              {wishlist.map(item=>(<div key={item} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 0",borderBottom:"1px solid #1e293b"}}><span style={{fontSize:13,color:"#94a3b8"}}>{item}</span><button onClick={()=>toggleWishlist(item)} style={{background:"none",border:"none",cursor:"pointer",color:"#64748b",fontSize:12,padding:"8px 4px",minHeight:36}}>Remove</button></div>))}
+            <div style={{background:"#ffffff",border:"1px solid rgba(245,158,11,0.3)",borderRadius:14,padding:16}}>
+              <div style={{fontSize:13,fontWeight:700,color:"#b45309",marginBottom:10}}>❤️ Saved Items ({wishlist.length})</div>
+              {wishlist.map(item=>(<div key={item} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 0",borderBottom:"1px solid #e2e8f0"}}><span style={{fontSize:13,color:"#475569"}}>{item}</span><button onClick={()=>toggleWishlist(item)} style={{background:"none",border:"none",cursor:"pointer",color:"#64748b",fontSize:12,padding:"8px 4px",minHeight:36}}>Remove</button></div>))}
             </div>
           )}
         </>}
