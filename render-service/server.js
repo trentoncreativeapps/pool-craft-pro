@@ -1,4 +1,8 @@
-import "dotenv/config";
+// Plain "dotenv/config" only auto-loads a file literally named ".env" - this
+// project's convention (matching the root app) is ".env.local", so load that
+// explicitly instead.
+import dotenv from "dotenv";
+dotenv.config({ path: ".env.local" });
 import express from "express";
 import cors from "cors";
 import { fal } from "@fal-ai/client";
