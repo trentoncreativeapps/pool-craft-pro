@@ -5312,29 +5312,6 @@ export default function PoolCraftPro() {
           </div>
 
           <div style={card}>
-            <div style={sectionTitle}>📍 Property Lookup & Pool Placement</div>
-            <div style={{fontSize:12,color:"#64748b",marginBottom:10}}>Enter an address to pull parcel data, then drag the pool to its correct position for permit planning.</div>
-            <div style={{display:"flex",gap:8}}>
-              <input type="text" placeholder="123 Main St, City, State" value={address} onChange={e=>setAddress(e.target.value)} onKeyDown={e=>e.key==="Enter"&&lookupAddress()} style={{flex:1,background:"#1e293b",border:"1px solid #334155",borderRadius:10,padding:"10px 14px",color:"#e2e8f0",fontSize:14,outline:"none"}}/>
-              <button onClick={lookupAddress} disabled={parcelStatus==="loading"} style={{padding:"10px 16px",borderRadius:10,background:"linear-gradient(135deg,#06b6d4,#0284c7)",border:"none",color:"white",fontWeight:700,fontSize:13,cursor:"pointer",flexShrink:0,opacity:parcelStatus==="loading"?0.6:1}}>{parcelStatus==="loading"?"⏳":"Search"}</button>
-            </div>
-            {parcelStatus==="found"&&parcelData&&<>
-              <div style={{marginTop:12,background:"rgba(6,182,212,0.08)",border:"1px solid rgba(6,182,212,0.2)",borderRadius:12,padding:14}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                  <div style={{fontSize:12,color:"#06b6d4",fontWeight:700}}>✅ Parcel Found - {parcelData.address}</div>
-                  <div style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:parcelData.source==="regrid"?"rgba(34,197,94,0.15)":"rgba(245,158,11,0.15)",border:`1px solid ${parcelData.source==="regrid"?"rgba(34,197,94,0.3)":"rgba(245,158,11,0.3)"}`,color:parcelData.source==="regrid"?"#22c55e":"#f59e0b",fontWeight:700}}>{parcelData.source==="regrid"?"🟢 Live Regrid Data":"🟡 Estimated"}</div>
-                </div>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-                  {[{label:"Parcel / APN",val:parcelData.parcel},{label:"Lot Size",val:parcelData.lot_size},{label:"Lot Sq Ft",val:parcelData.lot_sqft},{label:"Zoning",val:parcelData.zoning},{label:"Front Setback",val:parcelData.setback_front},{label:"Rear Setback",val:parcelData.setback_rear},{label:"Side Setback",val:parcelData.setback_side},{label:"Pool Setback",val:parcelData.pool_setback}].map(r=>(
-                    <div key={r.label} style={{background:"#1e293b",borderRadius:8,padding:"8px 10px"}}><div style={{fontSize:10,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em"}}>{r.label}</div><div style={{fontSize:13,fontWeight:700,color:"#e2e8f0",marginTop:2}}>{r.val}</div></div>
-                  ))}
-                </div>
-              </div>
-              {showMap&&<button onClick={()=>setTab(3)} style={{marginTop:12,width:"100%",padding:"12px",borderRadius:10,background:"linear-gradient(135deg,#06b6d4,#0284c7)",border:"none",color:"white",fontWeight:700,fontSize:13,cursor:"pointer"}}>🗺️ Open Site Plan Tab to Place Your Pool</button>}
-            </>}
-          </div>
-
-          <div style={card}>
             <div style={sectionTitle}>☁️ Cloud Sync</div>
             <CloudSyncPanel />
           </div>
@@ -5355,7 +5332,30 @@ export default function PoolCraftPro() {
 
         {tab===2&&<HardscapeDesigner hardscapes={hardscapes} toggleHardscape={toggleHardscape} setHSQty={setHSQty} dailyRenders={dailyRenders} dailyLimit={DAILY_RENDER_LIMIT} bumpDailyRender={bumpDailyRender} />}
 
-        {tab===3&&<SitePlanMap poolLen={len} poolWid={wid} poolShape={shape} poolColor={poolColor.hex} initialAddress={address} />}
+        {tab===3&&<>
+          <SitePlanMap poolLen={len} poolWid={wid} poolShape={shape} poolColor={poolColor.hex} initialAddress={address} />
+          <div style={card}>
+            <div style={sectionTitle}>📍 Property Lookup</div>
+            <div style={{fontSize:12,color:"#64748b",marginBottom:10}}>Enter an address to pull parcel data - lot size, zoning & setbacks - for permit planning.</div>
+            <div style={{display:"flex",gap:8}}>
+              <input type="text" placeholder="123 Main St, City, State" value={address} onChange={e=>setAddress(e.target.value)} onKeyDown={e=>e.key==="Enter"&&lookupAddress()} style={{flex:1,background:"#1e293b",border:"1px solid #334155",borderRadius:10,padding:"10px 14px",color:"#e2e8f0",fontSize:14,outline:"none"}}/>
+              <button onClick={lookupAddress} disabled={parcelStatus==="loading"} style={{padding:"10px 16px",borderRadius:10,background:"linear-gradient(135deg,#06b6d4,#0284c7)",border:"none",color:"white",fontWeight:700,fontSize:13,cursor:"pointer",flexShrink:0,opacity:parcelStatus==="loading"?0.6:1}}>{parcelStatus==="loading"?"⏳":"Search"}</button>
+            </div>
+            {parcelStatus==="found"&&parcelData&&(
+              <div style={{marginTop:12,background:"rgba(6,182,212,0.08)",border:"1px solid rgba(6,182,212,0.2)",borderRadius:12,padding:14}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                  <div style={{fontSize:12,color:"#06b6d4",fontWeight:700}}>✅ Parcel Found - {parcelData.address}</div>
+                  <div style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:parcelData.source==="regrid"?"rgba(34,197,94,0.15)":"rgba(245,158,11,0.15)",border:`1px solid ${parcelData.source==="regrid"?"rgba(34,197,94,0.3)":"rgba(245,158,11,0.3)"}`,color:parcelData.source==="regrid"?"#22c55e":"#f59e0b",fontWeight:700}}>{parcelData.source==="regrid"?"🟢 Live Regrid Data":"🟡 Estimated"}</div>
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                  {[{label:"Parcel / APN",val:parcelData.parcel},{label:"Lot Size",val:parcelData.lot_size},{label:"Lot Sq Ft",val:parcelData.lot_sqft},{label:"Zoning",val:parcelData.zoning},{label:"Front Setback",val:parcelData.setback_front},{label:"Rear Setback",val:parcelData.setback_rear},{label:"Side Setback",val:parcelData.setback_side},{label:"Pool Setback",val:parcelData.pool_setback}].map(r=>(
+                    <div key={r.label} style={{background:"#1e293b",borderRadius:8,padding:"8px 10px"}}><div style={{fontSize:10,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em"}}>{r.label}</div><div style={{fontSize:13,fontWeight:700,color:"#e2e8f0",marginTop:2}}>{r.val}</div></div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </>}
 
         {tab===4&&<>
           <div style={{background:"linear-gradient(135deg,rgba(6,182,212,0.15),rgba(2,132,199,0.1))",border:"1px solid rgba(6,182,212,0.3)",borderRadius:14,padding:16}}>
