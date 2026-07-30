@@ -4954,6 +4954,12 @@ export default function PoolCraftPro() {
   const [savedToastMsg, setSavedToastMsg] = useState("✅ Project saved!");
   const [savingInProgress, setSavingInProgress] = useState(false);
   const [demoMode, setDemoMode] = useState(false);
+  const [updateAvailable, setUpdateAvailable] = useState(false);
+  useEffect(() => {
+    const onUpdate = () => setUpdateAvailable(true);
+    window.addEventListener("pcp-update-available", onUpdate);
+    return () => window.removeEventListener("pcp-update-available", onUpdate);
+  }, []);
 
   const [showSplash, setShowSplash] = useState(() => { try { return !localStorage.getItem("pc_launched"); } catch { return true; } });
   const [showShare, setShowShare] = useState(false);
@@ -5174,6 +5180,13 @@ export default function PoolCraftPro() {
       )}
 
       {savedToast && (<div style={{position:"fixed",bottom:24,left:"50%",transform:"translateX(-50%)",background:"rgba(34,197,94,0.95)",borderRadius:20,padding:"10px 20px",fontSize:13,fontWeight:700,color:"white",zIndex:9999,boxShadow:"0 4px 20px rgba(0,0,0,0.4)",whiteSpace:"nowrap"}}>{savedToastMsg}</div>)}
+
+      {updateAvailable && (
+        <div style={{position:"fixed",bottom:24,left:"50%",transform:"translateX(-50%)",background:"#0a0f1e",border:"1px solid rgba(201,168,76,0.4)",borderRadius:20,padding:"10px 12px 10px 18px",fontSize:13,fontWeight:700,color:"#e2e8f0",zIndex:9999,boxShadow:"0 4px 20px rgba(0,0,0,0.4)",display:"flex",alignItems:"center",gap:12,whiteSpace:"nowrap"}}>
+          🔄 New version available
+          <button onClick={()=>window.location.reload()} style={{padding:"6px 14px",borderRadius:14,border:"none",background:"linear-gradient(135deg,#c9a84c,#a8873a)",color:"#0a0f1e",fontWeight:800,fontSize:12,cursor:"pointer"}}>Refresh</button>
+        </div>
+      )}
 
       {unsavedConfirm && (
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.78)",zIndex:1001,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
