@@ -9,6 +9,9 @@ import { buildPoolPolygon } from "./lib/poolShapes.js";
 import SchematicView from "./SchematicView.jsx";
 import { PLANS } from "../api/_plans.js";
 
+// PLANS prices are stored in cents (Stripe's unit) - divide by 100 before display.
+const fmtUSD = (cents) => (cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 // Escapes free-text values (client names, addresses, etc.) before they're interpolated
 // into an HTML string passed to document.write() for printable exports.
 const escapeHtml = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
@@ -3715,7 +3718,7 @@ function SettingsScreen({ userMode, setUserMode, onSwitchMode, plan, ownPlan, se
                 return (
                   <div key={p.id} style={{padding:"14px",borderRadius:10,border:`2px solid ${isCurrent?"#22c55e":"#1e293b"}`,background:isCurrent?"rgba(34,197,94,0.06)":"#0f172a"}}>
                     <div style={{fontSize:13,fontWeight:800,color:isCurrent?"#22c55e":"#e2e8f0"}}>{PLANS[p.id].name}{isCurrent?" ✓":""}</div>
-                    <div style={{fontSize:20,fontWeight:800,color:"#e2e8f0",marginTop:4}}>${price}<span style={{fontSize:11,color:"#64748b",fontWeight:400}}>/{billingInterval==="year"?"yr":"mo"}</span></div>
+                    <div style={{fontSize:20,fontWeight:800,color:"#e2e8f0",marginTop:4}}>${fmtUSD(price)}<span style={{fontSize:11,color:"#64748b",fontWeight:400}}>/{billingInterval==="year"?"yr":"mo"}</span></div>
                     <div style={{fontSize:11,color:"#64748b",marginTop:2,marginBottom:10}}>{p.renders} renders / day</div>
                     <button onClick={()=>startCheckout(p.id, 1)} disabled={isCurrent||billingLoading}
                       style={{width:"100%",padding:"9px",borderRadius:8,background:isCurrent?"#1e293b":"linear-gradient(135deg,#7c3aed,#5b21b6)",border:"none",color:isCurrent?"#64748b":"white",fontWeight:700,fontSize:12,cursor:isCurrent||billingLoading?"not-allowed":"pointer"}}>
@@ -3734,7 +3737,7 @@ function SettingsScreen({ userMode, setUserMode, onSwitchMode, plan, ownPlan, se
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,flexWrap:"wrap"}}>
                 <div>
                   <div style={{fontSize:13,fontWeight:800,color:plan==="team"?"#22c55e":"#e2e8f0"}}>👥 {PLANS.team.name} — for contractor shops{plan==="team"?" ✓":""}</div>
-                  <div style={{fontSize:11,color:"#64748b",marginTop:2}}>${billingInterval==="year"?PLANS.team.year:PLANS.team.month}/seat/{billingInterval==="year"?"yr":"mo"} · {PLANS.team.dailyLimitPerSeat} renders/day per seat</div>
+                  <div style={{fontSize:11,color:"#64748b",marginTop:2}}>${fmtUSD(billingInterval==="year"?PLANS.team.year:PLANS.team.month)}/seat/{billingInterval==="year"?"yr":"mo"} · {PLANS.team.dailyLimitPerSeat} renders/day per seat</div>
                 </div>
                 <div style={{display:"flex",alignItems:"center",gap:8}}>
                   <span style={{fontSize:11,color:"#64748b"}}>Seats</span>
@@ -3745,8 +3748,8 @@ function SettingsScreen({ userMode, setUserMode, onSwitchMode, plan, ownPlan, se
               </div>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:10,gap:10}}>
                 <div style={{fontSize:16,fontWeight:800,color:"#e2e8f0"}}>
-                  ${((billingInterval==="year"?PLANS.team.year:PLANS.team.month)*teamSeats).toLocaleString()}
-                  <span style={{fontSize:11,color:"#64748b",fontWeight:400}}>/{billingInterval==="year"?"yr":"mo"} total ({teamSeats} × ${billingInterval==="year"?PLANS.team.year:PLANS.team.month})</span>
+                  ${fmtUSD((billingInterval==="year"?PLANS.team.year:PLANS.team.month)*teamSeats)}
+                  <span style={{fontSize:11,color:"#64748b",fontWeight:400}}>/{billingInterval==="year"?"yr":"mo"} total ({teamSeats} × ${fmtUSD(billingInterval==="year"?PLANS.team.year:PLANS.team.month)})</span>
                 </div>
                 <button onClick={()=>startCheckout("team", teamSeats)} disabled={plan==="team"||billingLoading}
                   style={{padding:"9px 16px",borderRadius:8,background:plan==="team"?"#1e293b":"linear-gradient(135deg,#7c3aed,#5b21b6)",border:"none",color:plan==="team"?"#64748b":"white",fontWeight:700,fontSize:12,cursor:plan==="team"||billingLoading?"not-allowed":"pointer",flexShrink:0}}>
