@@ -4,7 +4,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
 import "@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css";
 import * as turf from "@turf/turf";
-import { generateSchematic, polygonBounds } from "./lib/schematicEngine.js";
+import { generateSchematic, polygonBounds, computePlumbingRuns } from "./lib/schematicEngine.js";
 import { buildPoolPolygon } from "./lib/poolShapes.js";
 import SchematicView from "./SchematicView.jsx";
 import { PLANS } from "../api/_plans.js";
@@ -532,7 +532,7 @@ function useIsMobile() {
 // Elements with their own drag/scroll gestures (map pan, 3D-preview rotate,
 // mask-paint canvas, sliders, the tab bar's own horizontal scroll) opt out of
 // page-swipe so a page doesn't flip while someone's mid-gesture on one of those.
-const SWIPE_IGNORE_SELECTOR = "canvas, .mapboxgl-map, input[type=range], input, textarea, select, button, a, [data-swipe-ignore]";
+const SWIPE_IGNORE_SELECTOR = "canvas, svg, .mapboxgl-map, input[type=range], input, textarea, select, button, a, [data-swipe-ignore]";
 function useSwipeNav(tab, setTab) {
   const startRef = useRef(null);
   const armedRef = useRef(false);
@@ -2483,7 +2483,7 @@ function poolStateToSchematicInput(shape, len, wid, depthId) {
   return { polygon, depthZones, equipmentPad };
 }
 
-function SchematicTab({ poolLen, poolWid, poolShape, depthId }) {
+function SchematicTab({ poolLen, poolWid, poolShape, depthId, overrides={}, setOverrides=()=>{} }) {
   const [rebarSpacingIn, setRebarSpacingIn] = useState(12);
   const [skimmerAreaSqFt, setSkimmerAreaSqFt] = useState(500);
   const [returnMin, setReturnMin] = useState(8);
@@ -2503,10 +2503,34 @@ function SchematicTab({ poolLen, poolWid, poolShape, depthId }) {
     returnOffsetFt: 3,
   }), [rebarSpacingIn, skimmerAreaSqFt, returnMin, returnMax]);
 
-  const schematic = useMemo(() => {
+  const autoSchematic = useMemo(() => {
     try { return generateSchematic({ polygon, depthZones, equipmentPad }, config); }
     catch (err) { console.error("SchematicTab: generateSchematic failed", err); return null; }
   }, [polygon, depthZones, equipmentPad, config]);
+
+  // Every builder runs plumbing a little differently, so the auto-placed
+  // layout above is a starting point - overrides (dragged in the SVG below)
+  // replace individual fixture positions by index, then plumbingRuns is
+  // regenerated from those so the drawn pipe always ends at wherever the
+  // fixture actually is now, not its original auto-computed spot.
+  const schematic = useMemo(() => {
+    if (!autoSchematic) return null;
+    const skimmers = autoSchematic.skimmers.map((p, i) => overrides.skimmers?.[i] ?? p);
+    const returns = autoSchematic.returns.map((p, i) => overrides.returns?.[i] ?? p);
+    const mainDrain = overrides.mainDrain ?? autoSchematic.mainDrain;
+    const plumbingRuns = equipmentPad ? computePlumbingRuns(equipmentPad, { skimmers, returns, mainDrain }) : [];
+    return { ...autoSchematic, skimmers, returns, mainDrain, plumbingRuns };
+  }, [autoSchematic, overrides, equipmentPad]);
+
+  const hasOverrides = Object.keys(overrides.skimmers||{}).length > 0 || Object.keys(overrides.returns||{}).length > 0 || !!overrides.mainDrain;
+
+  const dragFixture = (kind, index, point) => {
+    setOverrides(prev => {
+      if (kind === "mainDrain") return { ...prev, mainDrain: point };
+      return { ...prev, [kind]: { ...(prev[kind]||{}), [index]: point } };
+    });
+  };
+  const resetLayout = () => setOverrides({});
 
   const totalRebarLinFt = useMemo(() => {
     if (!schematic) return 0;
@@ -2581,8 +2605,13 @@ function SchematicTab({ poolLen, poolWid, poolShape, depthId }) {
         </div>
       )}
 
-      <div ref={svgWrapRef}>
-        <SchematicView polygon={polygon} schematic={schematic} equipmentPad={equipmentPad} />
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:8 }}>
+        <div style={{ fontSize: 11, color: "#64748b" }}>🖐️ Drag any skimmer, return, or the main drain to match how you actually run plumbing on this project.</div>
+        {hasOverrides && <button onClick={resetLayout} style={{ flexShrink:0, padding:"6px 12px", borderRadius:8, background:"#e2e8f0", border:"1px solid #cbd5e1", color:"#475569", fontWeight:700, fontSize:11, cursor:"pointer" }}>↺ Reset Layout</button>}
+      </div>
+
+      <div ref={svgWrapRef} data-swipe-ignore>
+        <SchematicView polygon={polygon} schematic={schematic} equipmentPad={equipmentPad} onDragFixture={dragFixture} />
       </div>
 
       <button onClick={exportPdf} disabled={!schematic}
@@ -4873,6 +4902,12 @@ export default function PoolCraftPro() {
   const [parcelData, setParcelData] = useState(null);
   const [showMap, setShowMap] = useState(false);
   const [localRates, setLocalRates] = useState({ multiplier:1, laborMultiplier:1 });
+  // Manual drag adjustments to the schematic's auto-placed skimmers/returns/main
+  // drain, keyed by index (e.g. {skimmers:{0:{x,y}}, returns:{...}, mainDrain:{x,y}}).
+  // Builders each run plumbing differently, so the auto-generated layout is a
+  // starting point, not gospel - this lets it be corrected per-project and
+  // saved like everything else, instead of resetting every time it's reopened.
+  const [schematicOverrides, setSchematicOverrides] = useState({});
   const [plasterFinishType, setPlasterFinishType] = useState("plaster");
   const [plasterCoveragePerBag, setPlasterCoveragePerBag] = useState(PLASTER_COVERAGE_PRESETS.plaster);
   const [plasterCostPerBag, setPlasterCostPerBag] = useState("");
@@ -4991,8 +5026,8 @@ export default function PoolCraftPro() {
   const lastSavedSnapshot = useRef(null);
   const designSnapshot = useMemo(() => JSON.stringify({
     shape, len, wid, depthId, finishId, colorId, entries, hardscapes, extras, address, localRates,
-    clientName, clientEmail, clientPhone, projectName,
-  }), [shape, len, wid, depthId, finishId, colorId, entries, hardscapes, extras, address, localRates, clientName, clientEmail, clientPhone, projectName]);
+    clientName, clientEmail, clientPhone, projectName, schematicOverrides,
+  }), [shape, len, wid, depthId, finishId, colorId, entries, hardscapes, extras, address, localRates, clientName, clientEmail, clientPhone, projectName, schematicOverrides]);
   const isDirty = lastSavedSnapshot.current !== null && lastSavedSnapshot.current !== designSnapshot;
   const markSnapshotClean = () => { lastSavedSnapshot.current = designSnapshot; };
   useEffect(() => { if (lastSavedSnapshot.current === null) markSnapshotClean(); }, []); // eslint-disable-line
@@ -5076,6 +5111,7 @@ export default function PoolCraftPro() {
       clientEmail: saveClientEmailInput.trim() || clientEmail || null,
       clientPhone: saveClientPhoneInput.trim() || clientPhone || null,
       shape, len, wid, depthId, finishId, colorId, entries, hardscapes, extras, address, localRates,
+      schematicOverrides,
       gallons: materials.gallons,
       entryCount: Object.keys(entries).length,
       hardscapeCount: Object.keys(hardscapes).filter(k=>hardscapes[k]!=null).length,
@@ -5106,6 +5142,7 @@ export default function PoolCraftPro() {
     setExtras(p.extras||{heater:true,sanitization:"salt",waterFeature:false});
     setLocalRates(p.localRates||{multiplier:1,laborMultiplier:1});
     setAddress(p.address||""); setProjectName(p.name||"My Pool Project");
+    setSchematicOverrides(p.schematicOverrides||{});
     setShowProjects(false); setTab(0);
     setTimeout(markSnapshotClean, 0);
   };
@@ -5117,6 +5154,7 @@ export default function PoolCraftPro() {
     setExtras({heater:true,sanitization:"salt",waterFeature:false});
     setLocalRates({multiplier:1,laborMultiplier:1});
     setAddress(""); setParcelData(null); setParcelStatus(null); setShowMap(false);
+    setSchematicOverrides({});
     setBgPhoto(null); setTab(0);
     setTimeout(markSnapshotClean, 0);
   };
@@ -5509,7 +5547,7 @@ export default function PoolCraftPro() {
           </div>
         </>}
 
-        {tab===12&&<SchematicTab poolLen={len} poolWid={wid} poolShape={shape} depthId={depthId} />}
+        {tab===12&&<SchematicTab poolLen={len} poolWid={wid} poolShape={shape} depthId={depthId} overrides={schematicOverrides} setOverrides={setSchematicOverrides} />}
 
         {tab===7&&<>
           <div style={card}>
