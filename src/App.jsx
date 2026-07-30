@@ -500,8 +500,8 @@ const RETAILER_COLORS = {
 };
 
 const NAV_TABS=[
-  {id:0,label:"Design",icon:"🏊"},
   {id:13,label:"How It Works",icon:"✨"},
+  {id:0,label:"Design",icon:"🏊"},
   {id:1,label:"Entry & Features",icon:"🏖️"},
   {id:2,label:"Hardscapes",icon:"🧱"},
   {id:3,label:"Site Plan",icon:"🗺️"},
@@ -719,6 +719,18 @@ function CloudSyncPanel() {
   const [testResult, setTestResult] = useState(null);
   const [showSql, setShowSql] = useState(false);
   const connected = !!(cfg.url && cfg.key);
+  // The app ships with cloud sync already configured server-side (VITE_SUPABASE_URL) -
+  // customers never set this up themselves, so don't show them raw infra details or
+  // a "Disconnect" control for something they didn't connect in the first place.
+  const isManaged = typeof SUPABASE_URL !== "undefined" && !!SUPABASE_URL;
+  if (isManaged) {
+    return (
+      <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
+        <div style={{fontSize:13,fontWeight:800,color:"#22c55e"}}>✅ Your projects sync automatically</div>
+        <div style={{fontSize:12,color:"#64748b",marginTop:4,lineHeight:1.5}}>Saved designs follow you across your phone, tablet, and desktop - nothing to set up.</div>
+      </div>
+    );
+  }
 
   const save = async () => {
     const url = urlInput.trim(), key = keyInput.trim();
@@ -864,7 +876,7 @@ function RegridKeyPanel() {
   }
   return (
     <div style={{marginTop:8,padding:"10px 12px",background:"rgba(100,116,139,0.08)",border:"1px dashed #334155",borderRadius:8}}>
-      <div style={{fontSize:11,color:"#94a3b8",marginBottom:6}}>Currently using estimated parcel data. Add a Regrid API key (regrid.com) before launch for real lot size, zoning & setbacks.</div>
+      <div style={{fontSize:11,color:"#94a3b8",marginBottom:6}}>Currently showing an estimated parcel outline. Add a free Regrid API key (regrid.com) for your real lot size, zoning & setbacks.</div>
       <div style={{display:"flex",gap:6}}>
         <input type="password" value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&save()} placeholder="Paste Regrid API key..." style={{flex:1,background:"#1e293b",border:"1px solid #334155",borderRadius:6,padding:"6px 10px",color:"#e2e8f0",fontSize:11,outline:"none"}}/>
         <button onClick={save} disabled={!input.trim()} style={{padding:"6px 12px",borderRadius:6,background:input.trim()?"rgba(34,197,94,0.15)":"#1e293b",border:"1px solid rgba(34,197,94,0.3)",color:input.trim()?"#22c55e":"#64748b",fontSize:11,fontWeight:700,cursor:input.trim()?"pointer":"not-allowed"}}>Save</button>
@@ -1217,8 +1229,16 @@ async function fetchParcelPolygon(lat, lng) {
   // sits near the front edge, matching where a geocoded address typically falls.
   const parcelCenter = turf.destination([lng, lat], estDepthFt / 2, 0, { units: "feet" }).geometry.coordinates;
   const rect = buildRectPolygon(parcelCenter, estDepthFt, estWidthFt, 0);
+  // Without real building-footprint data we can't know where the house actually
+  // sits, so the guessed rectangle's dead-center (which the "regrid" branch uses
+  // as its default) is as likely to land on the house as in the yard. A backyard
+  // pool is typically well behind the house, so start further back - at ~70% of
+  // the estimated depth from the street-facing point - as a better first guess;
+  // dragging it into place against the real photo is still expected either way.
+  const poolHint = turf.destination([lng, lat], estDepthFt * 0.7, 0, { units: "feet" }).geometry.coordinates;
   return {
     polygon: rect,
+    poolHint,
     attrs: {
       parcel: "—",
       lot_size: `${(estSqFt / 43560).toFixed(2)} acres (estimated)`,
@@ -2249,7 +2269,7 @@ function SitePlanMap({ poolLen, poolWid, poolShape, poolColor, initialAddress })
         setParcelAttrs(result.attrs);
         setParcelSource(result.source);
         setRotationDeg(0);
-        setPoolCenter(turf.centroid(result.polygon).geometry.coordinates);
+        setPoolCenter(result.poolHint || turf.centroid(result.polygon).geometry.coordinates);
       } catch (err) {
         if (!ignore) setParcelError(err.message || "Couldn't load parcel data");
       } finally {
@@ -4828,7 +4848,7 @@ function AuthScreen({ onAuth }) {
 export default function PoolCraftPro() {
   const { user, session, authLoading, signOut, refreshUser } = useAuth();
   const [authedUser, setAuthedUser] = useState(null);
-  const [tab, setTab] = useState(0);
+  const [tab, setTab] = useState(13); // land on "How It Works" first
   const isMobile = useIsMobile();
   const swipeNav = useSwipeNav(tab, setTab);
   const navTabIndex = NAV_TABS.findIndex(t => t.id === tab);
@@ -5495,7 +5515,7 @@ export default function PoolCraftPro() {
         {tab===8&&<>
           <div style={{background:"linear-gradient(135deg,rgba(245,158,11,0.18),rgba(217,119,6,0.1))",border:"1px solid rgba(245,158,11,0.35)",borderRadius:16,padding:16}}>
             <div style={{fontSize:14,fontWeight:800,color:"#f59e0b"}}>💰 Affiliate Shopping - You Earn on Every Purchase</div>
-            <div style={{fontSize:12,color:"#94a3b8",marginTop:4}}>All links are pre-tagged with your affiliate ID. Replace placeholders with your real IDs before launch.</div>
+            <div style={{fontSize:12,color:"#94a3b8",marginTop:4}}>Add your affiliate IDs in Settings and every product link below is tagged automatically.</div>
           </div>
           <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:4}}>{SHOP_CATEGORIES.map(cat=>(<button key={cat.id} onClick={()=>setShopCat(cat.id)} style={{whiteSpace:"nowrap",padding:"10px 16px",minHeight:40,borderRadius:20,border:`2px solid ${shopCat===cat.id?"#06b6d4":"#334155"}`,background:shopCat===cat.id?"rgba(6,182,212,0.1)":"#111827",color:shopCat===cat.id?"#06b6d4":"#94a3b8",cursor:"pointer",fontSize:12,fontWeight:600}}>{cat.icon} {cat.label}</button>))}</div>
           {activeCat?.products.map(product=>{
