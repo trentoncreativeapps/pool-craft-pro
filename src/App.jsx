@@ -500,8 +500,8 @@ const RETAILER_COLORS = {
 };
 
 const NAV_TABS=[
-  {id:13,label:"How It Works",icon:"✨"},
   {id:0,label:"Design",icon:"🏊"},
+  {id:13,label:"How It Works",icon:"✨"},
   {id:1,label:"Entry & Features",icon:"🏖️"},
   {id:2,label:"Hardscapes",icon:"🧱"},
   {id:3,label:"Site Plan",icon:"🗺️"},
@@ -2983,7 +2983,7 @@ function ShareDesign({ projectName, clientName, clientEmail, clientPhone, shape,
 }
 
 // ─── ONBOARDING ───────────────────────────────────────────────────────────────
-function OnboardingModal({ onComplete, userMode, setUserMode, setLen, setWid, setShape, setDepthId, setFinishId }) {
+function OnboardingModal({ onComplete, onSeePricing, userMode, setUserMode, setLen, setWid, setShape, setDepthId, setFinishId }) {
   const [step, setStep] = useState(0);
   const [demoLen, setDemoLen] = useState(30);
   const [demoWid, setDemoWid] = useState(15);
@@ -3019,7 +3019,21 @@ function OnboardingModal({ onComplete, userMode, setUserMode, setLen, setWid, se
         </div>
       </div>
     )},
-    // Step 1: Who are you
+    // Step 1: How it works
+    { icon:"✨", title:"Here's what you can do", subtitle:"One tool instead of three separate ones", content:(
+      <div style={{display:"flex",flexDirection:"column",gap:8}}>
+        {HOW_IT_WORKS_SECTIONS.map(s=>(
+          <div key={s.title} style={{background:"#0f172a",border:"1px solid #1e293b",borderRadius:12,padding:"11px 14px",display:"flex",gap:12,alignItems:"flex-start"}}>
+            <div style={{fontSize:20,flexShrink:0,width:26,textAlign:"center"}}>{s.icon}</div>
+            <div>
+              <div style={{fontSize:13,fontWeight:700,color:"#e2e8f0",marginBottom:2}}>{s.title}</div>
+              <div style={{fontSize:12,color:"#64748b",lineHeight:1.5}}>{s.body}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    )},
+    // Step 2: Who are you
     { icon:"👤", title:"Who's designing today?", subtitle:"We'll tailor the experience for you", content:(
       <div style={{display:"flex",flexDirection:"column",gap:10}}>
         {[{id:"contractor",icon:"👷",title:"Pool Contractor / Builder",desc:"Full technical detail — specs, permits, client quotes, build tracking"},{id:"homeowner",icon:"🏠",title:"Homeowner / DIY",desc:"Guided visual design — easy material lists, contractor comparison"},{id:"designer",icon:"🎨",title:"Landscape Designer",desc:"Visual design focus — yard planning, hardscapes, AI renderings"}].map(m=>(
@@ -3072,22 +3086,6 @@ function OnboardingModal({ onComplete, userMode, setUserMode, setLen, setWid, se
         <div style={{background:"rgba(34,197,94,0.08)",border:"1px solid rgba(34,197,94,0.2)",borderRadius:10,padding:10,fontSize:12,color:"#22c55e",display:"flex",gap:8,alignItems:"center"}}>
           <span>✓</span><span>Your {demoLen}′×{demoWid}′ {POOL_SHAPES.find(s=>s.id===demoShape)?.label} pool is ready — click Next to apply these settings</span>
         </div>
-      </div>
-    )},
-    // Step 3: Cloud sync
-    { icon:"☁️", title:"Sync across all devices", subtitle:"Optional — set up later anytime from Settings", content:(
-      <div style={{display:"flex",flexDirection:"column",gap:12}}>
-        <div style={{background:"rgba(34,197,94,0.08)",border:"1px solid rgba(34,197,94,0.2)",borderRadius:12,padding:16}}>
-          <div style={{fontSize:13,fontWeight:700,color:"#22c55e",marginBottom:6}}>☁️ Cloud Sync via Supabase (Free)</div>
-          <div style={{fontSize:12,color:"#94a3b8",lineHeight:1.7}}>By default, projects save only to this device. Connect a free Supabase database (5 minutes, one time) and your projects follow you to any iPhone, iPad, or computer.</div>
-        </div>
-        <div style={{background:"#0f172a",border:"1px solid #1e293b",borderRadius:12,padding:14,fontSize:12,color:"#64748b",lineHeight:1.7}}>
-          <div style={{fontWeight:700,color:"#94a3b8",marginBottom:6}}>To set up cloud sync:</div>
-          {["Go to supabase.com — create a free project","Run the setup SQL (in your Settings tab → Cloud Sync)","Paste your project URL and anon key in Settings"].map((s,i)=>(
-            <div key={i} style={{display:"flex",gap:8,marginBottom:4}}><span style={{color:"#c9a84c",flexShrink:0}}>{i+1}.</span>{s}</div>
-          ))}
-        </div>
-        <div style={{fontSize:12,color:"#64748b",textAlign:"center"}}>You can skip this now and set it up later from the Settings tab ⚙️</div>
       </div>
     )},
     // Step 4: Ready
@@ -3147,7 +3145,10 @@ function OnboardingModal({ onComplete, userMode, setUserMode, setLen, setWid, se
             {isLast ? "Start Designing 🏊" : step === 2 ? "Apply My Pool →" : "Next →"}
           </button>
         </div>
-        {!isLast && <div style={{textAlign:"center",paddingBottom:16,flexShrink:0}}><button onClick={()=>{ try{localStorage.setItem("pc_onboarded","1");}catch{} onComplete(); }} style={{background:"none",border:"none",color:"#334155",fontSize:12,cursor:"pointer"}}>Skip setup</button></div>}
+        <div style={{display:"flex",justifyContent:"center",gap:16,paddingBottom:16,flexShrink:0}}>
+          <button onClick={onSeePricing} style={{background:"none",border:"none",color:"#c9a84c",fontSize:12,fontWeight:700,cursor:"pointer"}}>💰 See Plans &amp; Pricing →</button>
+          {!isLast && <button onClick={()=>{ try{localStorage.setItem("pc_onboarded","1");}catch{} onComplete(); }} style={{background:"none",border:"none",color:"#334155",fontSize:12,cursor:"pointer"}}>Skip setup</button>}
+        </div>
       </div>
     </div>
   );
@@ -4848,7 +4849,7 @@ function AuthScreen({ onAuth }) {
 export default function PoolCraftPro() {
   const { user, session, authLoading, signOut, refreshUser } = useAuth();
   const [authedUser, setAuthedUser] = useState(null);
-  const [tab, setTab] = useState(13); // land on "How It Works" first
+  const [tab, setTab] = useState(0);
   const isMobile = useIsMobile();
   const swipeNav = useSwipeNav(tab, setTab);
   const navTabIndex = NAV_TABS.findIndex(t => t.id === tab);
@@ -5140,7 +5141,7 @@ export default function PoolCraftPro() {
     <div style={{fontFamily:"'Inter',system-ui,sans-serif",background:"#0b1120",minHeight:"100vh",color:"#e2e8f0"}}>
       {showSplash && <SplashScreen onDone={completeSplash} />}
       {showShare && <ShareDesign projectName={projectName} clientName={clientName} clientEmail={clientEmail} clientPhone={clientPhone} shape={shape} len={len} wid={wid} depthId={depthId} finishId={finishId} colorId={colorId} entries={entries} hardscapes={hardscapes} materials={materials} onClose={()=>setShowShare(false)} />}
-      {showOnboarding && <OnboardingModal onComplete={completeOnboarding} userMode={userMode} setUserMode={setUserMode} setLen={setLen} setWid={setWid} setShape={setShape} setDepthId={setDepthId} setFinishId={setFinishId} />}
+      {showOnboarding && <OnboardingModal onComplete={completeOnboarding} onSeePricing={()=>{ completeOnboarding(); setTab(11); }} userMode={userMode} setUserMode={setUserMode} setLen={setLen} setWid={setWid} setShape={setShape} setDepthId={setDepthId} setFinishId={setFinishId} />}
       {showProjects && <ProjectManager currentProjectId={projectId} onLoad={(p)=>withUnsavedCheck(()=>loadProject(p))} onClose={()=>setShowProjects(false)} />}
 
       {showSaveDialog && (
@@ -5224,6 +5225,9 @@ export default function PoolCraftPro() {
           <div onClick={()=>setShowOnboarding(true)} style={{padding:"6px 10px",borderRadius:16,background:userMode==="homeowner"?"rgba(34,197,94,0.15)":userMode==="designer"?"rgba(201,168,76,0.15)":"rgba(74,122,181,0.2)",border:`1px solid ${userMode==="homeowner"?"rgba(34,197,94,0.3)":userMode==="designer"?"rgba(201,168,76,0.35)":"rgba(74,122,181,0.4)"}`,fontSize:10,color:userMode==="homeowner"?"#22c55e":userMode==="designer"?"#c9a84c":"#7ab0e8",fontWeight:700,cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}}>
             {userMode==="homeowner"?"🏠 HO":userMode==="designer"?"🎨 Design":"👷 Pro"}
           </div>
+          {plan==="none" && (
+            <button onClick={()=>setTab(11)} style={{padding:"6px 10px",borderRadius:16,background:"rgba(201,168,76,0.12)",border:"1px solid rgba(201,168,76,0.35)",color:"#c9a84c",fontSize:10,fontWeight:700,cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}}>💰 See Pricing</button>
+          )}
           {currentUser && !currentUser.guest && (
             <button onClick={signOut} style={{padding:"6px 10px",borderRadius:16,background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.2)",color:"#ef4444",fontSize:10,fontWeight:700,cursor:"pointer",flexShrink:0}}>Sign Out</button>
           )}
