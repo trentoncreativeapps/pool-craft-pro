@@ -1024,8 +1024,15 @@ function Pool3D({ poolLen, poolWid, poolShape, poolColor, depthId, entries, fini
 }
 
 // ─── SITE PLAN GEOMETRY HELPERS (Mapbox GL + Regrid + Turf.js) ────────────────
+// Shared token (VITE_MAPBOX_TOKEN) makes Site Plan work out of the box for every
+// customer; a token saved locally in Settings overrides it, for a contractor who
+// wants to use their own Mapbox account instead (e.g. to track their own usage).
 function getMapboxToken() {
-  try { return localStorage.getItem("pc_mapbox_token") || ""; } catch { return ""; }
+  try {
+    const override = localStorage.getItem("pc_mapbox_token");
+    if (override) return override;
+  } catch {}
+  return import.meta.env.VITE_MAPBOX_TOKEN || "";
 }
 function setMapboxTokenStorage(token) {
   try {
@@ -3798,9 +3805,9 @@ function SettingsScreen({ userMode, setUserMode, onSwitchMode, plan, ownPlan, se
       {/* Maps & Parcel */}
       <div style={{background:"#111827",border:"1px solid #1e293b",borderRadius:14,padding:14}}>
         <div style={{fontSize:12,fontWeight:700,color:"#06b6d4",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4}}>🛰️ Site Plan Map</div>
-        <div style={{fontSize:11,color:"#64748b",marginBottom:10}}>The Site Plan tab's interactive map runs on your own free Mapbox account.</div>
-        <KeyRow label="Mapbox Access Token" value={mapboxToken} setValue={setMapboxToken} storageKey="pc_mapbox_token" placeholder="Paste Mapbox public token (pk....)" isSet={!!mapboxToken}
-          hint="Required to show the interactive Site Plan map. Free at mapbox.com — grab a public token from your account's Tokens page."/>
+        <div style={{fontSize:11,color:"#64748b",marginBottom:10}}>The Site Plan tab's interactive map works out of the box - no setup needed. Only paste your own Mapbox token below if you'd rather track usage on your own free Mapbox account instead.</div>
+        <KeyRow label="Mapbox Access Token (optional override)" value={mapboxToken} setValue={setMapboxToken} storageKey="pc_mapbox_token" placeholder="Paste your own Mapbox public token (pk....)" isSet={!!mapboxToken}
+          hint="Optional - leave blank to use the built-in map. Free at mapbox.com if you want your own token instead."/>
         <KeyRow label="Regrid API Key (Parcel Data)" value={regridKey} setValue={setRegridKey} storageKey="pc_regrid_key" placeholder="Paste Regrid key..." isSet={!!regridKey}
           hint="Optional — enables real parcel boundary geometry, lot size, zoning & setback data. Sign up at regrid.com. App works with an estimated rectangular parcel until this is set."/>
       </div>
