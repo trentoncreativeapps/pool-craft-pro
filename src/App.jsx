@@ -22,18 +22,22 @@ const RENDER_SERVICE_URL = import.meta.env.VITE_RENDER_SERVICE_URL || "http://lo
 
 // fal.ai bills FLUX by megapixel, rounded UP to the next whole megapixel - so an
 // unresized phone photo (often 10-12+ MP) can cost 10x a properly capped one.
-// Capping the longest edge to 1024px keeps virtually every backyard photo under
-// 1 true megapixel, landing in the cheapest $0.03/render tier instead of $0.06+.
-const RENDER_MAX_DIMENSION = 1024;
-function resizeImageFile(file, maxDim = RENDER_MAX_DIMENSION) {
+// Capping by total pixel AREA (not just the longest edge) guarantees every
+// photo lands under 1 true megapixel - the cheapest $0.03/render tier -
+// regardless of aspect ratio; a longest-edge-only cap would still let a
+// square photo round up to the $0.06 tier.
+const RENDER_MAX_PIXELS = 950_000;
+function scaledDims(w, h, maxPixels = RENDER_MAX_PIXELS) {
+  const scale = Math.min(1, Math.sqrt(maxPixels / (w * h)));
+  return { w: Math.round(w * scale), h: Math.round(h * scale) };
+}
+function resizeImageFile(file) {
   return new Promise((resolve, reject) => {
     const objectUrl = URL.createObjectURL(file);
     const img = new Image();
     img.onload = () => {
       URL.revokeObjectURL(objectUrl);
-      const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
-      const w = Math.round(img.width * scale);
-      const h = Math.round(img.height * scale);
+      const { w, h } = scaledDims(img.width, img.height);
       const canvas = document.createElement("canvas");
       canvas.width = w; canvas.height = h;
       canvas.getContext("2d").drawImage(img, 0, 0, w, h);
@@ -4187,11 +4191,10 @@ function QuickRender({ len, wid, shape, finishId, colorId, entries, hardscapes, 
   const capturePhoto = () => {
     if (!videoRef.current) return;
     const vw = videoRef.current.videoWidth, vh = videoRef.current.videoHeight;
-    const scale = Math.min(1, RENDER_MAX_DIMENSION / Math.max(vw, vh));
+    const { w, h } = scaledDims(vw, vh);
     const canvas = document.createElement("canvas");
-    canvas.width = Math.round(vw * scale);
-    canvas.height = Math.round(vh * scale);
-    canvas.getContext("2d").drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+    canvas.width = w; canvas.height = h;
+    canvas.getContext("2d").drawImage(videoRef.current, 0, 0, w, h);
     const dataUrl = canvas.toDataURL("image/jpeg", 0.88);
     setPhoto(dataUrl); stopCamera(); setRendered(null); setError(null);
   };
