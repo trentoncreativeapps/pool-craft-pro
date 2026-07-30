@@ -516,6 +516,62 @@ const NAV_TABS=[
   {id:11,label:"Settings",icon:"🔧"},
 ];
 
+// Mobile/tablet gets swipe-only paging (no tab bar); desktop keeps the tab bar
+// and gains swipe/trackpad as a shortcut alongside it.
+const MOBILE_BREAKPOINT = 880;
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" && window.innerWidth <= MOBILE_BREAKPOINT);
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth <= MOBILE_BREAKPOINT);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+  return isMobile;
+}
+
+// Elements with their own drag/scroll gestures (map pan, 3D-preview rotate,
+// mask-paint canvas, sliders, the tab bar's own horizontal scroll) opt out of
+// page-swipe so a page doesn't flip while someone's mid-gesture on one of those.
+const SWIPE_IGNORE_SELECTOR = "canvas, .mapboxgl-map, input[type=range], input, textarea, select, button, a, [data-swipe-ignore]";
+function useSwipeNav(tab, setTab) {
+  const startRef = useRef(null);
+  const armedRef = useRef(false);
+
+  const goToOffset = (dir) => {
+    const idx = NAV_TABS.findIndex(t => t.id === tab);
+    if (idx === -1) return;
+    const nextIdx = idx + dir;
+    if (nextIdx < 0 || nextIdx >= NAV_TABS.length) return;
+    setTab(NAV_TABS[nextIdx].id);
+  };
+
+  const onTouchStart = (e) => {
+    const t = e.touches[0];
+    armedRef.current = !e.target.closest(SWIPE_IGNORE_SELECTOR);
+    startRef.current = { x: t.clientX, y: t.clientY, time: Date.now() };
+  };
+  const onTouchEnd = (e) => {
+    const start = startRef.current; startRef.current = null;
+    if (!start || !armedRef.current) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - start.x, dy = t.clientY - start.y;
+    const elapsed = Date.now() - start.time;
+    if (elapsed > 700 || Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    goToOffset(dx < 0 ? 1 : -1);
+  };
+  // Trackpad horizontal scroll, for desktop users without a touchscreen.
+  const wheelLockRef = useRef(0);
+  const onWheel = (e) => {
+    if (e.target.closest(SWIPE_IGNORE_SELECTOR)) return;
+    if (Math.abs(e.deltaX) < 40 || Math.abs(e.deltaX) < Math.abs(e.deltaY) * 1.5) return;
+    const now = Date.now();
+    if (now - wheelLockRef.current < 500) return; // debounce - one page per gesture
+    wheelLockRef.current = now;
+    goToOffset(e.deltaX > 0 ? 1 : -1);
+  };
+
+  return { onTouchStart, onTouchEnd, onWheel, goToOffset };
+}
 
 // ─── CLOUD STORAGE (Supabase) — optional, falls back to localStorage ─────────
 // To activate: create a free project at supabase.com, then paste your
@@ -4773,6 +4829,10 @@ export default function PoolCraftPro() {
   const { user, session, authLoading, signOut, refreshUser } = useAuth();
   const [authedUser, setAuthedUser] = useState(null);
   const [tab, setTab] = useState(0);
+  const isMobile = useIsMobile();
+  const swipeNav = useSwipeNav(tab, setTab);
+  const navTabIndex = NAV_TABS.findIndex(t => t.id === tab);
+  const currentNavTab = NAV_TABS[navTabIndex] || NAV_TABS[0];
   const [shape, setShape] = useState("rectangle");
   const [len, setLen] = useState(30);
   const [wid, setWid] = useState(15);
@@ -5165,13 +5225,31 @@ export default function PoolCraftPro() {
           {!demoMode && <button onClick={activateDemo} style={{padding:"7px 12px",minHeight:34,borderRadius:16,background:"rgba(245,158,11,0.1)",border:"1px solid rgba(245,158,11,0.25)",color:"#f59e0b",fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0}}>🎯 Demo</button>}
           {wishlist.length>0&&<div style={{padding:"7px 10px",minHeight:34,display:"flex",alignItems:"center",borderRadius:16,background:"rgba(201,168,76,0.1)",border:"1px solid rgba(201,168,76,0.3)",fontSize:12,color:"#c9a84c",flexShrink:0}}>❤️ {wishlist.length}</div>}
         </div>
-        {/* Row 3: tab navigation */}
-        <div style={{display:"flex",overflowX:"auto",gap:2}}>
-          {NAV_TABS.map(t=>(<button key={t.id} onClick={()=>setTab(t.id)} style={{whiteSpace:"nowrap",padding:"12px 12px",minHeight:44,fontSize:11,fontWeight:700,border:"none",cursor:"pointer",borderRadius:"8px 8px 0 0",background:tab===t.id?"#060a14":"transparent",color:tab===t.id?"#c9a84c":"#5a6a80",borderBottom:tab===t.id?"2px solid #c9a84c":"2px solid transparent"}}>{t.icon} {t.label}</button>))}
-        </div>
+        {/* Row 3: tab navigation (desktop) / swipe page indicator (mobile) */}
+        {isMobile ? (
+          <div style={{paddingBottom:12}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
+              <button onClick={()=>swipeNav.goToOffset(-1)} disabled={navTabIndex<=0} aria-label="Previous page"
+                style={{width:40,height:40,borderRadius:20,border:"1px solid rgba(201,168,76,0.3)",background:"rgba(201,168,76,0.08)",color:navTabIndex<=0?"#334155":"#c9a84c",fontSize:20,fontWeight:800,cursor:navTabIndex<=0?"default":"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>‹</button>
+              <div style={{textAlign:"center",flex:1,minWidth:0}}>
+                <div style={{fontSize:17,fontWeight:900,color:"#e2e8f0",letterSpacing:"0.01em",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{currentNavTab.icon} {currentNavTab.label}</div>
+                <div style={{fontSize:10,color:"#5a6a80",fontWeight:700,marginTop:2,letterSpacing:"0.05em"}}>{navTabIndex+1} OF {NAV_TABS.length}</div>
+              </div>
+              <button onClick={()=>swipeNav.goToOffset(1)} disabled={navTabIndex>=NAV_TABS.length-1} aria-label="Next page"
+                style={{width:40,height:40,borderRadius:20,border:"1px solid rgba(201,168,76,0.3)",background:"rgba(201,168,76,0.08)",color:navTabIndex>=NAV_TABS.length-1?"#334155":"#c9a84c",fontSize:20,fontWeight:800,cursor:navTabIndex>=NAV_TABS.length-1?"default":"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>›</button>
+            </div>
+            <div style={{display:"flex",gap:3,marginTop:10}}>
+              {NAV_TABS.map((t,i)=>(<div key={t.id} style={{flex:1,height:3,borderRadius:2,background:i<=navTabIndex?"#c9a84c":"#1e293b",transition:"background 0.2s"}}/>))}
+            </div>
+          </div>
+        ) : (
+          <div style={{display:"flex",overflowX:"auto",gap:2}}>
+            {NAV_TABS.map(t=>(<button key={t.id} onClick={()=>setTab(t.id)} style={{whiteSpace:"nowrap",padding:"12px 12px",minHeight:44,fontSize:11,fontWeight:700,border:"none",cursor:"pointer",borderRadius:"8px 8px 0 0",background:tab===t.id?"#060a14":"transparent",color:tab===t.id?"#c9a84c":"#5a6a80",borderBottom:tab===t.id?"2px solid #c9a84c":"2px solid transparent"}}>{t.icon} {t.label}</button>))}
+          </div>
+        )}
       </div>
 
-      <div style={{padding:"16px 14px",maxWidth:820,margin:"0 auto",display:"flex",flexDirection:"column",gap:14}}>
+      <div onTouchStart={swipeNav.onTouchStart} onTouchEnd={swipeNav.onTouchEnd} onWheel={swipeNav.onWheel} style={{padding:"16px 14px",maxWidth:820,margin:"0 auto",display:"flex",flexDirection:"column",gap:14}}>
 
         {tab===0&&<>
           <div style={card}>
@@ -5450,7 +5528,7 @@ export default function PoolCraftPro() {
       </div>
 
       {/* Quote Builder + Timeline slide up from Cost Estimator tab */}
-      {tab===5&&<div style={{padding:"0 14px 14px",maxWidth:820,margin:"0 auto",display:"flex",flexDirection:"column",gap:14}}>
+      {tab===5&&<div onTouchStart={swipeNav.onTouchStart} onTouchEnd={swipeNav.onTouchEnd} onWheel={swipeNav.onWheel} style={{padding:"0 14px 14px",maxWidth:820,margin:"0 auto",display:"flex",flexDirection:"column",gap:14}}>
         <QuoteBuilder shape={shape} len={len} wid={wid} depthId={depthId} finishId={finishId} entries={entries} hardscapes={hardscapes} extras={extras} localRates={localRates} projectName={projectName} clientName={clientName} plasterConfig={plasterConfig} financingLinks={financingLinks} />
         <BuildTimeline shape={shape} len={len} wid={wid} depthId={depthId} entries={entries} hardscapes={hardscapes} />
       </div>}
