@@ -49,7 +49,21 @@ function resizeImageFile(file) {
 }
 
 // ─── AFFILIATE LINKS ──────────────────────────────────────────────────────────
-const AFFILIATE_TAGS = { amazon: "YOURTAG-20", homedepot: "YOUR_HD_TAG", lowes: "YOUR_LOWES_TAG", wayfair: "YOUR_WAYFAIR_TAG" };
+// Product links below are built once at module load using these tags - reading
+// the saved value here (rather than hardcoding the placeholder) means every
+// past-session save takes effect on the next full page load. Settings prompts
+// for an explicit reload right after saving so a change takes effect the same
+// session too, instead of leaving already-built links silently stale until
+// the user happens to revisit later.
+function getSavedAffiliateTag(storageKey, fallback) {
+  try { return localStorage.getItem(storageKey) || fallback; } catch { return fallback; }
+}
+const AFFILIATE_TAGS = {
+  amazon: getSavedAffiliateTag("pc_tag_amazon", "YOURTAG-20"),
+  homedepot: getSavedAffiliateTag("pc_tag_hd", "YOUR_HD_TAG"),
+  lowes: "YOUR_LOWES_TAG",
+  wayfair: "YOUR_WAYFAIR_TAG",
+};
 const hdLink = (q) => `https://www.homedepot.com/s/${encodeURIComponent(q)}?cm_mmc=afl-ir-${AFFILIATE_TAGS.homedepot}`;
 const lowesLink = (q) => `https://www.lowes.com/search?searchTerm=${encodeURIComponent(q)}&affid=${AFFILIATE_TAGS.lowes}`;
 const wayfairLink = (q) => `https://www.wayfair.com/keyword.php?keyword=${encodeURIComponent(q)}&refid=${AFFILIATE_TAGS.wayfair}`;
@@ -3776,10 +3790,16 @@ function SettingsScreen({ userMode, setUserMode, onSwitchMode, plan, ownPlan, se
   const [amazonTag, setAmazonTag] = useState(()=>{ try{return localStorage.getItem("pc_tag_amazon")||AFFILIATE_TAGS.amazon;}catch{return AFFILIATE_TAGS.amazon;} });
   const [hdTag, setHdTag] = useState(()=>{ try{return localStorage.getItem("pc_tag_hd")||AFFILIATE_TAGS.homedepot;}catch{return AFFILIATE_TAGS.homedepot;} });
   const [saved, setSaved] = useState(null);
+  // Product links for Shop/Equipment are built once at module load from
+  // AFFILIATE_TAGS, so a tag saved mid-session won't reach those already-built
+  // links until the page reloads - surface that plainly instead of leaving
+  // the "✅ Active" badge implying it already took effect everywhere.
+  const [tagNeedsReload, setTagNeedsReload] = useState(false);
 
   const save = (field, value, storageKey) => {
     try { localStorage.setItem(storageKey, value.trim()); } catch {}
     setSaved(field); setTimeout(()=>setSaved(null), 1800);
+    if (storageKey === "pc_tag_amazon" || storageKey === "pc_tag_hd") setTagNeedsReload(true);
   };
 
   const KeyRow = ({ label, value, setValue, storageKey, placeholder, hint, isSet }) => (
@@ -3928,9 +3948,15 @@ function SettingsScreen({ userMode, setUserMode, onSwitchMode, plan, ownPlan, se
       {/* Affiliate Tags */}
       <div style={{background:"#ffffff",border:"1px solid #e2e8f0",borderRadius:14,padding:14}}>
         <div style={{fontSize:12,fontWeight:700,color:"#b45309",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4}}>💰 Affiliate Tags — Your Revenue</div>
-        <div style={{fontSize:11,color:"#64748b",marginBottom:10}}>Replace the placeholders below with your real affiliate IDs. Every product link in the app includes your tag automatically.</div>
+        <div style={{fontSize:11,color:"#64748b",marginBottom:10}}>Replace the placeholders below with your real affiliate IDs, then reload the page - every product link in the app is built once at startup, so a saved tag only reaches them after a reload.</div>
         <KeyRow label="Amazon Associates Tag" value={amazonTag} setValue={setAmazonTag} storageKey="pc_tag_amazon" placeholder="yourname-20" isSet={!amazonTag.includes("YOURTAG")} hint="Sign up at affiliate-program.amazon.com"/>
         <KeyRow label="Home Depot Affiliate Tag" value={hdTag} setValue={setHdTag} storageKey="pc_tag_hd" placeholder="Your HD tag" isSet={!hdTag.includes("YOUR_HD")} hint="Sign up at homedepot.com/affiliate"/>
+        {tagNeedsReload && (
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,marginTop:4,padding:"10px 12px",background:"rgba(180,83,9,0.08)",border:"1px solid rgba(180,83,9,0.25)",borderRadius:10}}>
+            <div style={{fontSize:12,color:"#b45309",fontWeight:600}}>Reload to apply your new tag to every product link</div>
+            <button onClick={()=>window.location.reload()} style={{flexShrink:0,padding:"7px 14px",borderRadius:8,background:"linear-gradient(135deg,#b45309,#92400e)",border:"none",color:"white",fontWeight:700,fontSize:12,cursor:"pointer"}}>Reload Now</button>
+          </div>
+        )}
       </div>
 
       {/* Financing Partners */}
