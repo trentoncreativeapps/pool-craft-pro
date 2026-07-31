@@ -49,21 +49,41 @@ function resizeImageFile(file) {
 }
 
 // ─── AFFILIATE LINKS ──────────────────────────────────────────────────────────
-// Product links below are built once at module load using these tags - reading
-// the saved value here (rather than hardcoding the placeholder) means every
-// past-session save takes effect on the next full page load. Settings prompts
-// for an explicit reload right after saving so a change takes effect the same
-// session too, instead of leaving already-built links silently stale until
-// the user happens to revisit later.
+// Shared platform defaults (same "built-in, works for every customer out of
+// the box" pattern already used for Mapbox/fal.ai) - a contractor can still
+// paste their OWN tag in Settings to override it and earn commission
+// themselves instead. Product links below are built once at module load, so
+// reading localStorage here (rather than hardcoding the placeholder) means a
+// saved override from a past session takes effect on the next full page
+// load; Settings prompts for an explicit reload right after saving so it
+// takes effect the same session too.
+const AMAZON_SHARED_DEFAULT = "poolcraftpro-20";
+const HD_SHARED_DEFAULT = "YOUR_HD_TAG";
 function getSavedAffiliateTag(storageKey, fallback) {
   try { return localStorage.getItem(storageKey) || fallback; } catch { return fallback; }
 }
 const AFFILIATE_TAGS = {
-  amazon: getSavedAffiliateTag("pc_tag_amazon", "YOURTAG-20"),
-  homedepot: getSavedAffiliateTag("pc_tag_hd", "YOUR_HD_TAG"),
+  amazon: getSavedAffiliateTag("pc_tag_amazon", AMAZON_SHARED_DEFAULT),
+  homedepot: getSavedAffiliateTag("pc_tag_hd", HD_SHARED_DEFAULT),
   lowes: "YOUR_LOWES_TAG",
   wayfair: "YOUR_WAYFAIR_TAG",
 };
+// Whether the CURRENT tag is a contractor's own override rather than the
+// shared platform default - only then does "you earn X%" commission
+// messaging actually describe THEM; otherwise the commission goes to the
+// platform account, not the person looking at the screen, so that copy
+// should stay hidden rather than imply money that isn't theirs.
+function hasOwnAmazonTag() {
+  try { const v = localStorage.getItem("pc_tag_amazon"); return !!(v && v.trim() && v !== AMAZON_SHARED_DEFAULT); } catch { return false; }
+}
+function hasOwnHdTag() {
+  try { const v = localStorage.getItem("pc_tag_hd"); return !!(v && v.trim() && v !== HD_SHARED_DEFAULT); } catch { return false; }
+}
+function hasOwnTagForRetailer(retailer) {
+  if (retailer === "Amazon") return hasOwnAmazonTag();
+  if (retailer === "Home Depot") return hasOwnHdTag();
+  return false; // Lowe's/Wayfair have no per-contractor override yet
+}
 const hdLink = (q) => `https://www.homedepot.com/s/${encodeURIComponent(q)}?cm_mmc=afl-ir-${AFFILIATE_TAGS.homedepot}`;
 const lowesLink = (q) => `https://www.lowes.com/search?searchTerm=${encodeURIComponent(q)}&affid=${AFFILIATE_TAGS.lowes}`;
 const wayfairLink = (q) => `https://www.wayfair.com/keyword.php?keyword=${encodeURIComponent(q)}&refid=${AFFILIATE_TAGS.wayfair}`;
@@ -73,6 +93,17 @@ const amazonLink = (asin) => `https://www.amazon.com/dp/${asin}?tag=${AFFILIATE_
 // guessed product-detail link could.
 const amazonSearchLink = (q) => `https://www.amazon.com/s?k=${encodeURIComponent(q)}&tag=${AFFILIATE_TAGS.amazon}`;
 const equipBuyLink = (asin, query) => asin ? amazonLink(asin) : amazonSearchLink(query);
+// Amazon's legacy multi-item "add to cart" link - still functional today
+// (verified: redirects to sign-in then proceeds to add each item). Skips any
+// item without an ASIN rather than guessing, since an unverified ASIN here
+// would silently add the wrong product to someone's cart with no chance to
+// notice before checkout, unlike a single "Buy" link they can back out of.
+function amazonCartLink(items) {
+  const withAsin = items.filter((it) => it.asin);
+  if (withAsin.length === 0) return null;
+  const params = withAsin.map((it, i) => `ASIN.${i + 1}=${it.asin}&Quantity.${i + 1}=1`).join("&");
+  return `https://www.amazon.com/gp/aws/cart/add.html?${params}&AssociateTag=${AFFILIATE_TAGS.amazon}`;
+}
 
 const FINISH_LINKS = {
   plaster:    { name:"White Plaster Pool Finish 50lb Bag", retailer:"Amazon", link:amazonLink("B07PLASTER1"), earn:"3–8%" },
@@ -1704,7 +1735,7 @@ function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, fin
                     <div style={{fontSize:13,fontWeight:600,color:"#0f172a",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{item.name}</div>
                     <div style={{display:"flex",gap:6,marginTop:4,alignItems:"center"}}>
                       <span style={{padding:"2px 8px",borderRadius:20,background:rc.bg,border:`1px solid ${rc.border}`,color:rc.text,fontSize:10,fontWeight:700}}>{item.retailer}</span>
-                      <span style={{fontSize:10,color:"#64748b"}}>You earn {item.earn}</span>
+                      {hasOwnTagForRetailer(item.retailer) && <span style={{fontSize:10,color:"#64748b"}}>You earn {item.earn}</span>}
                     </div>
                   </div>
                   <span style={{fontSize:18,color:"#b45309",flexShrink:0}}>→</span>
@@ -5552,6 +5583,11 @@ export default function PoolCraftPro() {
             </div>
           </div>
           <div style={{background:"rgba(6,182,212,0.1)",border:"1px solid rgba(6,182,212,0.25)",borderRadius:12,padding:"10px 14px",fontSize:13,color:"#06b6d4",fontWeight:600}}>Equipment sized for {materials.gallons.toLocaleString()} gallon pool</div>
+          {amazonCartLink(equipment) && (
+            <a href={amazonCartLink(equipment)} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:"12px",borderRadius:12,background:"linear-gradient(135deg,#c2720a,#92400e)",color:"white",textDecoration:"none",fontWeight:700,fontSize:13}}>
+              🛒 Add This Whole Package to Amazon Cart
+            </a>
+          )}
           {equipment.map(eq=>(
             <div key={eq.label} style={{background:"#ffffff",border:"1px solid #e2e8f0",borderRadius:14,overflow:"hidden"}}>
               <div style={{padding:"14px 16px 10px"}}>
@@ -5562,14 +5598,17 @@ export default function PoolCraftPro() {
                 <div style={{fontSize:12,color:"#64748b",lineHeight:1.5}}>{eq.note}{eq.qtyNote && <span style={{color:"#b45309",fontWeight:700}}> - {eq.qtyNote}</span>}</div>
               </div>
               {(eq.asin || eq.query) && (<a href={equipBuyLink(eq.asin, eq.query)} target="_blank" rel="noopener noreferrer" style={{display:"flex", alignItems:"center", justifyContent:"space-between", padding:"10px 16px", background:"linear-gradient(135deg,rgba(255,153,0,0.15),rgba(255,120,0,0.08))", borderTop:"1px solid rgba(255,153,0,0.2)", textDecoration:"none", gap:10}}>
-                <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:16}}>📦</span><div><div style={{fontSize:12,fontWeight:700,color:"#c2720a"}}>Buy on Amazon</div><div style={{fontSize:10,color:"#64748b"}}>You earn {eq.earn} affiliate commission</div></div></div>
+                <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:16}}>📦</span><div><div style={{fontSize:12,fontWeight:700,color:"#c2720a"}}>Buy on Amazon</div>{hasOwnAmazonTag() && <div style={{fontSize:10,color:"#64748b"}}>You earn {eq.earn} affiliate commission</div>}</div></div>
                 <span style={{color:"#c2720a",fontSize:16}}>→</span>
+              </a>)}
+              {eq.sku && (<a href={amazonSearchLink(eq.sku)} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,padding:"8px 16px",borderTop:"1px solid #e2e8f0",textDecoration:"none",fontSize:11,color:"#64748b",fontWeight:600}}>
+                🔍 Not the right listing? Search Amazon for SKU {eq.sku}
               </a>)}
             </div>
           ))}
           <div style={{background:"rgba(255,153,0,0.06)",border:"1px solid rgba(255,153,0,0.2)",borderRadius:12,padding:12,textAlign:"center"}}>
-            <div style={{fontSize:12,color:"#c2720a",fontWeight:700,marginBottom:3}}>💰 Earn 3-8% on every {EQUIPMENT_BRANDS.find(b=>b.id===equipmentBrand)?.label} purchase</div>
-            <div style={{fontSize:11,color:"#64748b"}}>All equipment links are pre-tagged with your Amazon affiliate ID.</div>
+            {hasOwnAmazonTag() && <div style={{fontSize:12,color:"#c2720a",fontWeight:700,marginBottom:3}}>💰 Earn 3-8% on every {EQUIPMENT_BRANDS.find(b=>b.id===equipmentBrand)?.label} purchase</div>}
+            <div style={{fontSize:11,color:"#64748b"}}>Amazon links are tagged with {hasOwnAmazonTag()?"your":"the"} affiliate ID ({AFFILIATE_TAGS.amazon}).</div>
           </div>
         </>}
 
@@ -5595,8 +5634,8 @@ export default function PoolCraftPro() {
 
         {tab===8&&<>
           <div style={{background:"linear-gradient(135deg,rgba(245,158,11,0.18),rgba(217,119,6,0.1))",border:"1px solid rgba(245,158,11,0.35)",borderRadius:16,padding:16}}>
-            <div style={{fontSize:14,fontWeight:800,color:"#b45309"}}>💰 Affiliate Shopping - You Earn on Every Purchase</div>
-            <div style={{fontSize:12,color:"#475569",marginTop:4}}>Add your affiliate IDs in Settings and every product link below is tagged automatically.</div>
+            <div style={{fontSize:14,fontWeight:800,color:"#b45309"}}>🛍️ Shop Everything You Need</div>
+            <div style={{fontSize:12,color:"#475569",marginTop:4}}>Curated pool equipment, materials, and outdoor living products - opens directly on the retailer's site.</div>
           </div>
           <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:4}}>{SHOP_CATEGORIES.map(cat=>(<button key={cat.id} onClick={()=>setShopCat(cat.id)} style={{whiteSpace:"nowrap",padding:"10px 16px",minHeight:40,borderRadius:20,border:`2px solid ${shopCat===cat.id?"#06b6d4":"#cbd5e1"}`,background:shopCat===cat.id?"rgba(6,182,212,0.1)":"#ffffff",color:shopCat===cat.id?"#06b6d4":"#475569",cursor:"pointer",fontSize:12,fontWeight:600}}>{cat.icon} {cat.label}</button>))}</div>
           {activeCat?.products.map(product=>{
@@ -5608,7 +5647,7 @@ export default function PoolCraftPro() {
                   <div style={{width:50,height:50,borderRadius:10,background:"#e2e8f0",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>{product.img}</div>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}><div style={{fontSize:14,fontWeight:600,color:"#0f172a",lineHeight:1.3}}>{product.name}</div><button onClick={()=>toggleWishlist(product.name)} style={{background:"none",border:"none",cursor:"pointer",fontSize:20,flexShrink:0,padding:10,margin:-10,minWidth:44,minHeight:44,display:"flex",alignItems:"center",justifyContent:"center"}}>{saved?"❤️":"🤍"}</button></div>
-                    <div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:8}}><span style={{padding:"2px 9px",borderRadius:20,background:rc.bg,border:`1px solid ${rc.border}`,color:rc.text,fontSize:11,fontWeight:700}}>{product.retailer}</span><span style={{padding:"2px 9px",borderRadius:20,background:"rgba(6,182,212,0.1)",border:"1px solid rgba(6,182,212,0.2)",color:"#06b6d4",fontSize:11,fontWeight:600}}>{product.badge}</span><span style={{fontSize:11,color:"#64748b"}}>Earn: {product.earn}</span></div>
+                    <div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:8}}><span style={{padding:"2px 9px",borderRadius:20,background:rc.bg,border:`1px solid ${rc.border}`,color:rc.text,fontSize:11,fontWeight:700}}>{product.retailer}</span><span style={{padding:"2px 9px",borderRadius:20,background:"rgba(6,182,212,0.1)",border:"1px solid rgba(6,182,212,0.2)",color:"#06b6d4",fontSize:11,fontWeight:600}}>{product.badge}</span>{hasOwnTagForRetailer(product.retailer) && <span style={{fontSize:11,color:"#64748b"}}>Earn: {product.earn}</span>}</div>
                   </div>
                 </div>
                 <a href={product.link} target="_blank" rel="noopener noreferrer" style={{display:"block",marginTop:12,padding:"10px",borderRadius:10,background:"linear-gradient(135deg,rgba(6,182,212,0.18),rgba(2,132,199,0.12))",border:"1px solid rgba(6,182,212,0.3)",color:"#06b6d4",textDecoration:"none",fontSize:13,fontWeight:700,textAlign:"center"}}>Shop on {product.retailer} →</a>
