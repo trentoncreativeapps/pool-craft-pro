@@ -1770,6 +1770,8 @@ const FEATURE_DETAILS = {
 function FeatureCard({ feature, active, onToggle }) {
   const canvasRef = useRef(null);
   const [expanded, setExpanded] = useState(false);
+  const [photoFailed, setPhotoFailed] = useState(false);
+  const photoUrl = `/images/entry-features/${feature.id}.jpg`;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -1877,7 +1879,12 @@ function FeatureCard({ feature, active, onToggle }) {
   return (
     <div style={{background:"#ffffff",border:`2px solid ${active ? feature.color : "#e2e8f0"}`,borderRadius:16,overflow:"hidden",transition:"all 0.2s",boxShadow: active ? `0 0 20px ${feature.color}33` : "none"}}>
       <div style={{position:"relative", cursor:"pointer"}} onClick={()=>setExpanded(p=>!p)}>
-        <canvas ref={canvasRef} width={400} height={200} style={{width:"100%", display:"block", borderRadius:"14px 14px 0 0"}} />
+        {photoFailed
+          ? <canvas ref={canvasRef} width={400} height={200} style={{width:"100%", display:"block", borderRadius:"14px 14px 0 0"}} />
+          : <img src={photoUrl} alt={feature.label} onError={()=>setPhotoFailed(true)} style={{width:"100%", height:180, objectFit:"cover", display:"block", borderRadius:"14px 14px 0 0"}} />}
+        <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"20px 12px 8px",background:"linear-gradient(transparent, rgba(0,0,0,0.75))",borderRadius:"0 0 0 0"}}>
+          <div style={{color:feature.color,fontWeight:700,fontSize:13}}>{feature.icon} {feature.label}</div>
+        </div>
         <div style={{position:"absolute",top:8,right:8,background:"rgba(0,0,0,0.55)",borderRadius:6,padding:"3px 8px",fontSize:10,color:"rgba(255,255,255,0.75)"}}>{expanded ? "▲ Less" : "▼ Details"}</div>
       </div>
       <div style={{padding:"14px 16px"}}>
