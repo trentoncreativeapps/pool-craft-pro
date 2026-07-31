@@ -106,52 +106,52 @@ function amazonCartLink(items) {
 }
 
 const FINISH_LINKS = {
-  plaster:    { name:"White Plaster Pool Finish 50lb Bag", retailer:"Amazon", link:amazonLink("B07PLASTER1"), earn:"3–8%" },
-  pebble:     { name:"Pebble Tec Natural Stone Finish", retailer:"Amazon", link:amazonLink("B07PBTECEF"), earn:"3–8%" },
+  plaster:    { name:"White Plaster Pool Finish 50lb Bag", retailer:"Amazon", link:amazonSearchLink("white plaster pool finish 50lb bag"), earn:"3–8%" },
+  pebble:     { name:"Pebble Tec Natural Stone Finish", retailer:"Amazon", link:amazonSearchLink("Pebble Tec natural stone pool finish"), earn:"3–8%" },
   quartz:     { name:"Diamond Brite Quartz Pool Finish", retailer:"Home Depot", link:hdLink("diamond brite quartz pool finish"), earn:"2–8%" },
   tile:       { name:"Blue Glass Mosaic Pool Tile 4x4", retailer:"Home Depot", link:hdLink("blue glass mosaic pool tile"), earn:"2–8%" },
-  fiberglass: { name:"Fiberglass Pool Gelcoat Repair Kit", retailer:"Amazon", link:amazonLink("B08FGLSKIT"), earn:"3–8%" },
-  glass_bead: { name:"Glass Bead Pool Finish Bag", retailer:"Amazon", link:amazonLink("B09GLSBEAD"), earn:"3–8%" },
+  fiberglass: { name:"Fiberglass Pool Gelcoat Repair Kit", retailer:"Amazon", link:amazonSearchLink("fiberglass pool gelcoat repair kit"), earn:"3–8%" },
+  glass_bead: { name:"Glass Bead Pool Finish Bag", retailer:"Amazon", link:amazonSearchLink("glass bead pool finish bag"), earn:"3–8%" },
 };
 const COLOR_LINKS = {
   arctic:    { name:"Rust-Oleum Pool Paint Arctic White", retailer:"Home Depot", link:hdLink("rustoleum pool paint white"), earn:"2–8%" },
   caribbean: { name:"Pool Paint Caribbean Blue 1gal", retailer:"Lowe's", link:lowesLink("pool paint caribbean blue"), earn:"1–4%" },
-  tahoe:     { name:"In The Swim Tahoe Blue Pool Paint", retailer:"Amazon", link:amazonLink("B07TAHOEBL"), earn:"3–8%" },
-  midnight:  { name:"Epoxy Pool Paint Midnight Black", retailer:"Amazon", link:amazonLink("B08MIDNPNT"), earn:"3–8%" },
+  tahoe:     { name:"In The Swim Tahoe Blue Pool Paint", retailer:"Amazon", link:amazonSearchLink("In The Swim Tahoe blue pool paint"), earn:"3–8%" },
+  midnight:  { name:"Epoxy Pool Paint Midnight Black", retailer:"Amazon", link:amazonSearchLink("epoxy pool paint midnight black"), earn:"3–8%" },
   seafoam:   { name:"Pool Paint Seafoam Green 1gal", retailer:"Home Depot", link:hdLink("pool paint seafoam green"), earn:"2–8%" },
-  sandstone: { name:"Sundek Pool Deck Sandstone Coat", retailer:"Amazon", link:amazonLink("B07SNDSTN1"), earn:"3–8%" },
+  sandstone: { name:"Sundek Pool Deck Sandstone Coat", retailer:"Amazon", link:amazonSearchLink("Sundek pool deck sandstone coat"), earn:"3–8%" },
   slate:     { name:"Pool Paint Slate Grey Epoxy", retailer:"Lowe's", link:lowesLink("pool paint slate grey epoxy"), earn:"1–4%" },
-  sapphire:  { name:"Pool Paint Sapphire Blue Premium", retailer:"Amazon", link:amazonLink("B09SAPPHIR"), earn:"3–8%" },
+  sapphire:  { name:"Pool Paint Sapphire Blue Premium", retailer:"Amazon", link:amazonSearchLink("pool paint sapphire blue premium"), earn:"3–8%" },
 };
 const ENTRY_LINKS = {
-  beach_entry:    { name:"Beach Entry Pool Transition Kit", retailer:"Amazon", link:amazonLink("B07BEACHEK"), earn:"3–8%" },
+  beach_entry:    { name:"Beach Entry Pool Transition Kit", retailer:"Amazon", link:amazonSearchLink("beach entry pool transition kit"), earn:"3–8%" },
   baja_shelf:     { name:"Tanning Ledge Lounger (fits Baja shelf)", retailer:"Wayfair", link:wayfairLink("tanning ledge lounger baja shelf pool"), earn:"3–7%" },
   steps_corner:   { name:"Pool Step Handrail Stainless 60in", retailer:"Lowe's", link:lowesLink("pool step handrail stainless 60"), earn:"1–4%" },
   steps_end:      { name:"Pool Entry Step Nosing Tile", retailer:"Home Depot", link:hdLink("pool step nosing tile coping"), earn:"2–8%" },
-  steps_curved:   { name:"Roman Step Pool Coping Stone", retailer:"Amazon", link:amazonLink("B07ROMCOPE"), earn:"3–8%" },
+  steps_curved:   { name:"Roman Step Pool Coping Stone", retailer:"Amazon", link:amazonSearchLink("roman step pool coping stone"), earn:"3–8%" },
   swim_up_bar:    { name:"Outdoor Bar Stools Waterproof Set 4", retailer:"Wayfair", link:wayfairLink("waterproof outdoor bar stools pool"), earn:"3–7%" },
-  infinity_edge:  { name:"Infinity Edge Catch Basin Kit", retailer:"Amazon", link:amazonLink("B08INFEDGE"), earn:"3–8%" },
-  spa_attached:   { name:"Spa Blower 1.5HP Air Injector", retailer:"Amazon", link:amazonLink("B07SPABLWR"), earn:"3–8%" },
+  infinity_edge:  { name:"Infinity Edge Catch Basin Kit", retailer:"Amazon", link:amazonSearchLink("infinity edge pool catch basin kit"), earn:"3–8%" },
+  spa_attached:   { name:"Spa Blower 1.5HP Air Injector", retailer:"Amazon", link:amazonSearchLink("spa blower 1.5 HP air injector"), earn:"3–8%" },
   grotto:         { name:"Natural Fieldstone Rock Kit Waterfall", retailer:"Home Depot", link:hdLink("natural fieldstone waterfall rock kit"), earn:"2–8%" },
-  diving_rock:    { name:"Duraflex Diving Board 6ft with Base", retailer:"Amazon", link:amazonLink("B07DIVBRD6"), earn:"3–8%" },
+  diving_rock:    { name:"Duraflex Diving Board 6ft with Base", retailer:"Amazon", link:amazonSearchLink("Duraflex diving board 6ft with base"), earn:"3–8%" },
   sun_shelf_umbrella: { name:"9ft Cantilever Pool Umbrella w/ Sleeve", retailer:"Wayfair", link:wayfairLink("cantilever umbrella pool shelf sleeve"), earn:"3–7%" },
-  splash_pad:     { name:"Splash Pad Water Play Mat Kids", retailer:"Amazon", link:amazonLink("B09SPLSHPD"), earn:"3–8%" },
+  splash_pad:     { name:"Splash Pad Water Play Mat Kids", retailer:"Amazon", link:amazonSearchLink("splash pad water play mat kids"), earn:"3–8%" },
 };
 const HARDSCAPE_LINKS = {
   concrete_deck:   { name:"Quikrete 5000 Concrete Mix 80lb", retailer:"Home Depot", link:hdLink("quikrete 5000 concrete mix 80lb"), earn:"2–8%" },
   travertine:      { name:"Travertine Pool Coping 12x24 Silver", retailer:"Home Depot", link:hdLink("travertine pool coping 12x24"), earn:"2–8%" },
-  cool_deck:       { name:"Kool Deck Pool Deck Coating 40lb", retailer:"Amazon", link:amazonLink("B07KOOLDCK"), earn:"3–8%" },
+  cool_deck:       { name:"Kool Deck Pool Deck Coating 40lb", retailer:"Amazon", link:amazonSearchLink("Kool Deck pool deck coating 40lb"), earn:"3–8%" },
   wood_composite:  { name:"TimberTech Composite Deck Board 16ft", retailer:"Lowe's", link:lowesLink("timbertech composite deck board 16ft"), earn:"1–4%" },
   fire_pit:        { name:"Propane Fire Pit Table 48in Natural Gas", retailer:"Home Depot", link:hdLink("propane fire pit table 48 inch"), earn:"2–8%" },
-  fire_bowls:      { name:"Concrete Fire Bowl 30in Propane", retailer:"Amazon", link:amazonLink("B08CONCFBL"), earn:"3–8%" },
+  fire_bowls:      { name:"Concrete Fire Bowl 30in Propane", retailer:"Amazon", link:amazonSearchLink("concrete fire bowl 30in propane"), earn:"3–8%" },
   pergola:         { name:"12x12 Cedar Pergola Kit", retailer:"Lowe's", link:lowesLink("12x12 cedar pergola kit"), earn:"1–4%" },
   retaining_wall:  { name:"Versa-Lok Retaining Wall Block", retailer:"Home Depot", link:hdLink("versalok retaining wall block"), earn:"2–8%" },
   outdoor_kitchen: { name:"Stainless Built-In Grill 4-Burner", retailer:"Home Depot", link:hdLink("stainless built-in grill 4 burner outdoor"), earn:"2–8%" },
   landscape_beds:  { name:"Black Landscape Edging 20ft Roll", retailer:"Lowe's", link:lowesLink("black landscape edging 20ft"), earn:"1–4%" },
-  fence:           { name:"Pool Safety Fence 4ft x 12ft Panel", retailer:"Amazon", link:amazonLink("B07SAFEFNC"), earn:"3–8%" },
-  putting_green:   { name:"Artificial Putting Green Turf 5x10", retailer:"Amazon", link:amazonLink("B09PUTTGRN"), earn:"3–8%" },
-  sport_court:     { name:"Sport Court Flooring Tile 20-pack", retailer:"Amazon", link:amazonLink("B08SRTCRTF"), earn:"3–8%" },
-  bocce:           { name:"Bocce Ball Set Professional 8-ball", retailer:"Amazon", link:amazonLink("B07BOCCEST"), earn:"3–8%" },
+  fence:           { name:"Pool Safety Fence 4ft x 12ft Panel", retailer:"Amazon", link:amazonSearchLink("pool safety fence 4ft x 12ft panel"), earn:"3–8%" },
+  putting_green:   { name:"Artificial Putting Green Turf 5x10", retailer:"Amazon", link:amazonSearchLink("artificial putting green turf 5x10"), earn:"3–8%" },
+  sport_court:     { name:"Sport Court Flooring Tile 20-pack", retailer:"Amazon", link:amazonSearchLink("sport court flooring tile 20 pack"), earn:"3–8%" },
+  bocce:           { name:"Bocce Ball Set Professional 8-ball", retailer:"Amazon", link:amazonSearchLink("bocce ball set professional 8 ball"), earn:"3–8%" },
 };
 
 const ENTRY_FEATURES = [
@@ -219,13 +219,15 @@ const HARDSCAPE_OPTIONS = [
   { id:"bocce", label:"Bocce Ball Court", icon:"🎯", unit:"unit" },
 ];
 
+// Only pump_1_5hp/pump_3hp/ic40_bundle are confirmed live Amazon listings
+// (checked directly against amazon.com - fetch-and-title-match, since Amazon's
+// bot detection blocks curl). Every other Pentair ASIN previously here was
+// either dead (404) or resolved to an unrelated product (e.g. the old
+// "chlorinator" ASIN pointed at a chainsaw sharpener) - those items now use a
+// search-link fallback (see getPentairEquipment) instead of a fabricated ASIN.
 const PENTAIR_AMAZON = {
-  pump_1_5hp:"B0C3JNRWMN", pump_3hp:"B0CY8RB8Q3", pump_touchscreen:"B0F85WWPRV",
-  filter_cc320:"B00004RA8N", filter_triton:"B00004RAQN", filter_fns60:"B00004RB0O",
-  heater_250:"B000BKRGX4", heater_400:"B000BKRGY8",
-  intellicenter:"B09RKKC13Y", intellibrite:"B01HIOVHGI",
-  ic40_cell:"B001DSLLH4", ic40_bundle:"B006H3X33A", chlorinator:"B00004RA7E",
-  booster:"B0C3JNRWMN",
+  pump_1_5hp:"B0C3JNRWMN", pump_3hp:"B0CY8RB8Q3",
+  ic40_bundle:"B006H3X33A",
 };
 function getPentairEquipment(gallons, extras) {
   // Pump sizing: industry standard = turn over pool volume in 8 hours
@@ -243,12 +245,12 @@ function getPentairEquipment(gallons, extras) {
   // Filter sizing: sq ft of filter area should be ≥ (GPM / 0.375) for cartridge
   const filterSqFt = Math.ceil(gpm / 0.375);
   const filter = gallons <= 15000
-    ? { model:"Pentair Clean & Clear Plus 320", sku:"160340", asin:PENTAIR_AMAZON.filter_cc320, earn:"3-8%",
+    ? { model:"Pentair Clean & Clear Plus 320", sku:"160340", query:"Pentair Clean and Clear Plus 320 cartridge filter", earn:"3-8%",
         note:`320 sq ft cartridge filter — right-sized for up to 20,000 gal. No backwash needed, easy quarterly cleaning. Holds debris well between cleanings.` }
     : gallons <= 25000
-    ? { model:"Pentair Triton II TR-60 Sand", sku:"140210", asin:PENTAIR_AMAZON.filter_triton, earn:"3-8%",
+    ? { model:"Pentair Triton II TR-60 Sand", sku:"140210", query:"Pentair Triton II TR-60 sand filter", earn:"3-8%",
         note:`High-flow sand filter rated for your flow range (~${gpm} GPM). Simple backwash cleaning. Recommended for pools with heavy bather load or nearby trees.` }
-    : { model:"Pentair FNS Plus 60 DE Filter", sku:"180010", asin:PENTAIR_AMAZON.filter_fns60, earn:"3-8%",
+    : { model:"Pentair FNS Plus 60 DE Filter", sku:"180010", query:"Pentair FNS Plus 60 DE filter", earn:"3-8%",
         note:`60 sq ft DE filter — finest filtration available, down to 3-5 microns. Best water clarity for your ${gallons.toLocaleString()} gal pool. Backwash every 4-6 weeks.` };
 
   // Heater sizing: BTU needed ≈ surface area × temp rise × 12
@@ -256,20 +258,20 @@ function getPentairEquipment(gallons, extras) {
   const btuNeeded = surfaceArea * 20 * 12; // 20°F rise, 12 BTU/hr/sq ft
   const heater = extras.heater
     ? gallons <= 15000
-      ? { model:"Pentair MasterTemp 250K BTU Gas", sku:"460736", asin:PENTAIR_AMAZON.heater_250, earn:"3-8%",
+      ? { model:"Pentair MasterTemp 250K BTU Gas", sku:"460736", query:"Pentair MasterTemp 250000 BTU pool heater", earn:"3-8%",
           note:`Your ~${surfaceArea} sq ft pool needs ~${Math.round(btuNeeded/1000)}K BTU. The 250K handles pools up to 15,000 gal efficiently. Heats ~1°F/hr in moderate conditions.` }
-      : { model:"Pentair MasterTemp 400K BTU Gas", sku:"460805", asin:PENTAIR_AMAZON.heater_400, earn:"3-8%",
+      : { model:"Pentair MasterTemp 400K BTU Gas", sku:"460805", query:"Pentair MasterTemp 400000 BTU pool heater", earn:"3-8%",
           note:`At ${gallons.toLocaleString()} gal you need high BTU output. The 400K is the industry workhorse — heats your pool in 2-4 hours from cold. Most popular heater in US.` }
     : null;
 
   const automation = {
-    model:"Pentair IntelliCenter i8PS Bundle", sku:"521903", asin:PENTAIR_AMAZON.intellicenter, earn:"3-8%",
+    model:"Pentair IntelliCenter i8PS Bundle", sku:"521903", query:"Pentair IntelliCenter i8PS control system bundle", earn:"3-8%",
     note:`Controls your pump, lights, heater, and salt system from anywhere via the Pentair Home app. Required for full variable-speed pump efficiency programming. Includes IC40 salt cell.`
   };
 
   const lightQty = gallons <= 20000 ? 1 : gallons <= 40000 ? 2 : 3;
   const lighting = {
-    model:`Pentair IntelliBrite 5G Color LED (×${lightQty})`, sku:"640132", asin:PENTAIR_AMAZON.intellibrite, earn:"3-8%",
+    model:`Pentair IntelliBrite 5G Color LED (×${lightQty})`, sku:"640132", query:"Pentair IntelliBrite 5G color LED pool light", earn:"3-8%",
     qty: lightQty,
     note:`${lightQty} light${lightQty>1?"s":""} recommended for your ${gallons.toLocaleString()} gal pool${lightQty>1?" — one at each end for even coverage":""}. 16M colors, app controlled, 5-yr warranty. 75% less energy than incandescent.`
   };
@@ -277,11 +279,11 @@ function getPentairEquipment(gallons, extras) {
   const salt = extras.sanitization === "salt"
     ? { model:"Pentair IntelliChlor IC40 + Power Center", sku:"520555+520556", asin:PENTAIR_AMAZON.ic40_bundle, earn:"3-8%",
         note:`IC40 handles up to 40,000 gal — perfect for your ${gallons.toLocaleString()} gal pool. Self-cleaning cell. Included with IntelliCenter bundle above. Eliminates chlorine purchasing.` }
-    : { model:"Pentair Rainbow 320 Inline Chlorinator", sku:"R171096", asin:PENTAIR_AMAZON.chlorinator, earn:"3-8%",
+    : { model:"Pentair Rainbow 320 Inline Chlorinator", sku:"R171096", query:"Pentair Rainbow 320 inline chlorinator", earn:"3-8%",
         note:`Traditional inline tablet chlorinator. Reliable, simple, low cost to operate. Holds 9 lbs of 3-inch tablets. Good alternative if you prefer not using a salt system.` };
 
   const boost = extras.waterFeature
-    ? { model:"Pentair IntelliFlo VSF Booster Pump", sku:"011065B", asin:PENTAIR_AMAZON.booster, earn:"3-8%",
+    ? { model:"Pentair IntelliFlo VSF Booster Pump", sku:"011065B", query:"Pentair IntelliFlo VSF booster pump", earn:"3-8%",
         note:`Dedicated pump for water features, deck jets, scuppers, or bubblers. Keeps your main pump optimized for filtration while the booster handles feature flow separately.` }
     : null;
 
@@ -490,49 +492,49 @@ const SHOP_CATEGORIES=[
     {name:"Blue Glass Mosaic Waterline Tile 4x4",retailer:"Home Depot",badge:"Best Seller",img:"🟦",link:hdLink("blue glass mosaic pool tile"),earn:"2-8%"},
     {name:"Iridescent Waterline Pool Tile",retailer:"Wayfair",badge:"Top Rated",img:"🔷",link:wayfairLink("iridescent pool tile"),earn:"3-7%"},
     {name:"White Porcelain Pool Tile 6x6",retailer:"Lowe's",badge:"Value",img:"⬜",link:lowesLink("white porcelain pool tile"),earn:"1-4%"},
-    {name:"Pebble Tec Stone Pool Finish Kit",retailer:"Amazon",badge:"Premium",img:"🪨",link:amazonLink("B07PBTECEF"),earn:"3-8%"},
+    {name:"Pebble Tec Stone Pool Finish Kit",retailer:"Amazon",badge:"Premium",img:"🪨",link:amazonSearchLink("Pebble Tec stone pool finish"),earn:"3-8%"},
   ]},
   {id:"pavers",label:"Pavers",icon:"🧱",products:[
     {name:"Travertine Pool Coping 12x24",retailer:"Home Depot",badge:"Top Pick",img:"🟫",link:hdLink("travertine pool coping"),earn:"2-8%"},
     {name:"Charcoal Concrete Paver 16x16",retailer:"Lowe's",badge:"Budget",img:"⬛",link:lowesLink("concrete paver 16x16"),earn:"1-4%"},
-    {name:"Tumbled Travertine Deck Tile",retailer:"Amazon",badge:"Popular",img:"🟤",link:amazonLink("B089TRVTNE"),earn:"3-8%"},
+    {name:"Tumbled Travertine Deck Tile",retailer:"Amazon",badge:"Popular",img:"🟤",link:amazonSearchLink("tumbled travertine deck tile"),earn:"3-8%"},
     {name:"Bluestone Pool Deck Slabs",retailer:"Wayfair",badge:"Luxury",img:"🔵",link:wayfairLink("bluestone pool deck slabs"),earn:"3-7%"},
   ]},
   {id:"lighting",label:"Lighting",icon:"💡",products:[
-    {name:"Pentair IntelliBrite 5G Color LED",retailer:"Amazon",badge:"Best Seller",img:"🔵",link:amazonLink("B01HIOVHGI"),earn:"3-8%"},
+    {name:"Pentair IntelliBrite 5G Color LED",retailer:"Amazon",badge:"Best Seller",img:"🔵",link:amazonSearchLink("Pentair IntelliBrite 5G color LED pool light"),earn:"3-8%"},
     {name:"Kichler 12V Landscape Path Lights 6-pack",retailer:"Home Depot",badge:"Top Rated",img:"🔆",link:hdLink("kichler landscape path lights"),earn:"2-8%"},
-    {name:"Solar Deck Post Cap Lights",retailer:"Amazon",badge:"Easy Install",img:"☀️",link:amazonLink("B08SOLRDC1"),earn:"3-8%"},
+    {name:"Solar Deck Post Cap Lights",retailer:"Amazon",badge:"Easy Install",img:"☀️",link:amazonSearchLink("solar deck post cap lights"),earn:"3-8%"},
     {name:"48ft Patio String Lights LED",retailer:"Wayfair",badge:"Ambiance",img:"✨",link:wayfairLink("patio string lights 48ft"),earn:"3-7%"},
   ]},
   {id:"furniture",label:"Furniture",icon:"🪑",products:[
     {name:"Teak Reclining Sun Lounger Set of 2",retailer:"Wayfair",badge:"Luxury",img:"🪑",link:wayfairLink("teak pool sun lounger set"),earn:"3-7%"},
     {name:"Aluminum Chaise Lounge Stackable",retailer:"Home Depot",badge:"Durable",img:"🛋️",link:hdLink("aluminum chaise lounge pool"),earn:"2-8%"},
     {name:"5-Piece Outdoor Dining Wicker Set",retailer:"Wayfair",badge:"Best Seller",img:"🍽️",link:wayfairLink("5 piece outdoor dining wicker"),earn:"3-7%"},
-    {name:"Floating Pool Lounge Chair",retailer:"Amazon",badge:"Fun Pick",img:"🏊",link:amazonLink("B09FLOATCHR"),earn:"3-8%"},
+    {name:"Floating Pool Lounge Chair",retailer:"Amazon",badge:"Fun Pick",img:"🏊",link:amazonSearchLink("floating pool lounge chair"),earn:"3-8%"},
   ]},
   {id:"umbrellas",label:"Shade",icon:"⛱️",products:[
     {name:"9ft Cantilever Offset Umbrella",retailer:"Wayfair",badge:"Top Rated",img:"☂️",link:wayfairLink("9ft cantilever offset patio umbrella"),earn:"3-7%"},
     {name:"Coolaroo Shade Sail 16ft Triangle",retailer:"Home Depot",badge:"Popular",img:"🔺",link:hdLink("coolaroo shade sail 16ft"),earn:"2-8%"},
-    {name:"10ft Market Umbrella Solar LED",retailer:"Amazon",badge:"Smart",img:"⛱️",link:amazonLink("B09MKTUMBL"),earn:"3-8%"},
+    {name:"10ft Market Umbrella Solar LED",retailer:"Amazon",badge:"Smart",img:"⛱️",link:amazonSearchLink("10ft market umbrella solar LED"),earn:"3-8%"},
   ]},
   {id:"fire",label:"Fire Features",icon:"🔥",products:[
-    {name:"Propane Fire Bowl 30in Concrete",retailer:"Amazon",badge:"Best Seller",img:"🔥",link:amazonLink("B08FIREBWL"),earn:"3-8%"},
+    {name:"Propane Fire Bowl 30in Concrete",retailer:"Amazon",badge:"Best Seller",img:"🔥",link:amazonSearchLink("propane fire bowl 30 inch concrete"),earn:"3-8%"},
     {name:"Natural Gas Fire Pit Table 48in",retailer:"Home Depot",badge:"Premium",img:"🏮",link:hdLink("natural gas fire pit table 48"),earn:"2-8%"},
     {name:"Fire & Water Bowl Combo",retailer:"Wayfair",badge:"Showpiece",img:"🌋",link:wayfairLink("fire water bowl pool"),earn:"3-7%"},
   ]},
   {id:"water_features",label:"Water Features",icon:"💧",products:[
-    {name:"Pentair Deck Jet 2-pack",retailer:"Amazon",badge:"Pro Pick",img:"⛲",link:amazonLink("B00DECKJET"),earn:"3-8%"},
+    {name:"Pentair Deck Jet 2-pack",retailer:"Amazon",badge:"Pro Pick",img:"⛲",link:amazonSearchLink("Pentair deck jet pool water feature"),earn:"3-8%"},
     {name:"Sheer Descent Water Curtain 24in",retailer:"Home Depot",badge:"Luxury",img:"💦",link:hdLink("sheer descent water curtain 24"),earn:"2-8%"},
     {name:"Stacked Stone Waterfall Kit",retailer:"Lowe's",badge:"Natural",img:"🪨",link:lowesLink("stacked stone waterfall kit pool"),earn:"1-4%"},
   ]},
   {id:"plants",label:"Landscaping",icon:"🌿",products:[
     {name:"Privacy Arborvitae 4ft Live Tree",retailer:"Home Depot",badge:"Best Seller",img:"🌲",link:hdLink("arborvitae privacy tree 4ft"),earn:"2-8%"},
-    {name:"Bird of Paradise Plant Large",retailer:"Amazon",badge:"Tropical",img:"🌺",link:amazonLink("B07BIRDPRD"),earn:"3-8%"},
-    {name:"Boxwood Hedge Live Plant 3-pack",retailer:"Amazon",badge:"Classic",img:"🟩",link:amazonLink("B09BOXWOOD3"),earn:"3-8%"},
+    {name:"Bird of Paradise Plant Large",retailer:"Amazon",badge:"Tropical",img:"🌺",link:amazonSearchLink("bird of paradise plant large"),earn:"3-8%"},
+    {name:"Boxwood Hedge Live Plant 3-pack",retailer:"Amazon",badge:"Classic",img:"🟩",link:amazonSearchLink("boxwood hedge live plant 3 pack"),earn:"3-8%"},
   ]},
   {id:"safety",label:"Safety",icon:"🚧",products:[
-    {name:"Pool Safety Fence 4ft x 12ft Panel",retailer:"Amazon",badge:"Best Seller",img:"🚧",link:amazonLink("B07SAFEFNC"),earn:"3-8%"},
-    {name:"Pool Alarm In-Water Wave Sensor",retailer:"Amazon",badge:"Safety Tech",img:"🔔",link:amazonLink("B08POOLALM"),earn:"3-8%"},
+    {name:"Pool Safety Fence 4ft x 12ft Panel",retailer:"Amazon",badge:"Best Seller",img:"🚧",link:amazonSearchLink("pool safety fence 4ft x 12ft panel"),earn:"3-8%"},
+    {name:"Pool Alarm In-Water Wave Sensor",retailer:"Amazon",badge:"Safety Tech",img:"🔔",link:amazonSearchLink("pool alarm in water wave sensor"),earn:"3-8%"},
     {name:"Pool Handrail Stainless 60in",retailer:"Lowe's",badge:"Code Required",img:"🔩",link:lowesLink("pool handrail stainless 60"),earn:"1-4%"},
   ]},
 ];
