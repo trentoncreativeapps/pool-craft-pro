@@ -47,6 +47,7 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: "claude-haiku-4-5-20251001",
         max_tokens: 220,
+        system: "Respond with plain prose only - no markdown, no headers, no titles, no bullet points, no asterisks.",
         messages: [{ role: "user", content: prompt }],
       }),
     });
