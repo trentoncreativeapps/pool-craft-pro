@@ -27,29 +27,37 @@ export default async function handler(req, res) {
     return res.status(429).json({ error: "Too many requests - please slow down" });
   }
 
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return res.status(503).json({ error: "AI descriptions aren't configured yet - add an Anthropic API key to enable this." });
+  }
+
   const { prompt } = req.body || {};
   if (!prompt || typeof prompt !== "string" || prompt.length > 2000) {
     return res.status(400).json({ error: "prompt required, must be a string under 2000 chars" });
   }
 
-  const resp = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": process.env.ANTHROPIC_API_KEY,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model: "claude-opus-4-8",
-      max_tokens: 220,
-      messages: [{ role: "user", content: prompt }],
-    }),
-  });
+  try {
+    const resp = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": process.env.ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: "claude-opus-4-8",
+        max_tokens: 220,
+        messages: [{ role: "user", content: prompt }],
+      }),
+    });
 
-  if (!resp.ok) {
-    return res.status(502).json({ error: "Description service unavailable" });
+    if (!resp.ok) {
+      return res.status(502).json({ error: "Description service unavailable" });
+    }
+    const data = await resp.json();
+    const text = data?.content?.[0]?.text || null;
+    return res.status(200).json({ text });
+  } catch (e) {
+    return res.status(502).json({ error: e.message || "Could not reach the description service" });
   }
-  const data = await resp.json();
-  const text = data?.content?.[0]?.text || null;
-  return res.status(200).json({ text });
 }
