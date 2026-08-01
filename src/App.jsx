@@ -668,47 +668,9 @@ const SUPABASE_SETUP_SQL = `create table if not exists pool_projects (
 alter table pool_projects enable row level security;
 create policy "public access" on pool_projects for all using (true) with check (true);`;
 
-// Team accounts (Settings -> Team Management). Run this once in the same
-// Supabase SQL editor as the Cloud Sync setup above, if you want real
-// multi-login Team access instead of just Team billing. Unlike pool_projects
-// above, these policies are scoped to auth.uid() - team membership is more
-// sensitive than a design draft, so it's worth doing properly from the start.
-const TEAM_SETUP_SQL = `create table if not exists teams (
-  id uuid primary key default gen_random_uuid(),
-  owner_id uuid not null references auth.users(id) on delete cascade,
-  seats int not null default 2,
-  created_at timestamptz not null default now()
-);
-create table if not exists team_members (
-  id uuid primary key default gen_random_uuid(),
-  team_id uuid not null references teams(id) on delete cascade,
-  user_id uuid references auth.users(id) on delete cascade,
-  email text not null,
-  status text not null default 'pending',
-  invited_at timestamptz not null default now(),
-  joined_at timestamptz,
-  unique(team_id, email)
-);
-alter table teams enable row level security;
-alter table team_members enable row level security;
-
-create policy "owner manages own team" on teams
-  for all using (auth.uid() = owner_id) with check (auth.uid() = owner_id);
-
-create policy "members can view their team" on teams
-  for select using (exists (select 1 from team_members where team_members.team_id = teams.id and team_members.user_id = auth.uid()));
-
-create policy "owner manages members" on team_members
-  for all using (exists (select 1 from teams where teams.id = team_members.team_id and teams.owner_id = auth.uid()))
-  with check (exists (select 1 from teams where teams.id = team_members.team_id and teams.owner_id = auth.uid()));
-
-create policy "members can see their own membership row" on team_members
-  for select using (user_id = auth.uid());
-
-create policy "invited users can activate their own pending row" on team_members
-  for update
-  using (user_id is null and lower(email) = lower(auth.jwt() ->> 'email'))
-  with check (user_id = auth.uid() and lower(email) = lower(auth.jwt() ->> 'email'));`;
+// Team accounts (Settings -> Team Management) DB setup lives in
+// supabase/team_setup.sql - not shipped in the client bundle since it's pure
+// reference SQL for the app owner, never rendered or needed at runtime.
 
 // Unified project store: tries Supabase first (if configured), else localStorage.
 async function listProjects() {
@@ -1494,7 +1456,7 @@ function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, fin
   };
 
   const handleRender = async () => {
-    if (!bgPhoto) { setError("Please upload a backyard photo first. FLUX edits your real photo - it needs to see the actual space."); return; }
+    if (!bgPhoto) { setError("Please upload a backyard photo first. Our AI edits your real photo - it needs to see the actual space."); return; }
     if (dailyLimit <= 0) { setError("AI rendering needs an active Basic or Pro plan - subscribe in Settings to unlock it."); return; }
     if (dailyRenders >= dailyLimit) { setError(`You've used all ${dailyLimit} renders for today - pool and hardscape renders share this limit.`); return; }
 
@@ -1502,7 +1464,7 @@ function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, fin
     setProgress(0); setProgressMsg("Queuing render request..."); setRenderedImage(null); setAiDescription(null);
 
     const steps = [
-      [8,  "Sending photo to FLUX..."], [20, "FLUX is analyzing your backyard..."],
+      [8,  "Sending photo to AI..."], [20, "AI is analyzing your backyard..."],
       [38, "Placing pool at correct perspective..."], [55, "Rendering water, light & reflections..."],
       [70, "Matching shadows & ground texture..."], [84, "Polishing photorealistic details..."], [95, "Almost done..."],
     ];
@@ -1527,13 +1489,13 @@ function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, fin
         const msg = parsed?.error || txt.slice(0,140);
         if (resp.status === 429) { setQueued(true); throw new Error("Rate limit reached - wait 60 seconds and try again."); }
         if (resp.status === 400) throw new Error(`Bad request: ${msg}. Try a smaller photo (under 4MB) or a different image format.`);
-        throw new Error(`FLUX API error ${resp.status}: ${msg}`);
+        throw new Error(`Rendering error ${resp.status}: ${msg}`);
       }
 
       const data = await resp.json();
       const b64Result = data?.b64_json;
       const urlResult = data?.url;
-      if (!b64Result && !urlResult) throw new Error("FLUX returned no image. Please try again.");
+      if (!b64Result && !urlResult) throw new Error("No image returned. Please try again.");
 
       setProgress(100); setProgressMsg("Done!");
       const finalImg = b64Result ? `data:image/jpeg;base64,${b64Result}` : urlResult;
@@ -1570,10 +1532,10 @@ function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, fin
     <div style={{display:"flex",flexDirection:"column",gap:14}}>
       <div style={{background:"#ffffff",border:"1px solid #e2e8f0",borderRadius:14,padding:14}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,marginBottom:10}}>
-          <div><div style={{fontSize:13,fontWeight:800,color:"#22c55e"}}>✅ FLUX AI Rendering</div><div style={{fontSize:12,color:"#64748b",marginTop:2}}>fal.ai's FLUX model photorealistically renders your pool into a real backyard photo.</div></div>
+          <div><div style={{fontSize:13,fontWeight:800,color:"#22c55e"}}>✅ AI Rendering</div><div style={{fontSize:12,color:"#64748b",marginTop:2}}>Our AI model photorealistically renders your pool into a real backyard photo.</div></div>
         </div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
-          {[{label:"Renders This Month", val:monthlyRenders, of:MONTHLY_LIMIT, color:"#0e7490"},{label:"Total Renders", val:renderCount, of:null, color:"#6d28d9"},{label:"Est. API Cost", val:`$${(monthlyRenders*0.07).toFixed(2)}`, of:null, color:"#16a34a"}].map(s=>(
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+          {[{label:"Renders This Month", val:monthlyRenders, of:MONTHLY_LIMIT, color:"#0e7490"},{label:"Total Renders", val:renderCount, of:null, color:"#6d28d9"}].map(s=>(
             <div key={s.label} style={{background:"#e2e8f0",borderRadius:8,padding:"9px 10px",textAlign:"center"}}>
               <div style={{fontSize:10,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:4}}>{s.label}</div>
               <div style={{fontSize:17,fontWeight:800,color:s.color}}>{s.val}{s.of?<span style={{fontSize:11,color:"#64748b",fontWeight:400}}> / {s.of}</span>:""}</div>
@@ -1585,13 +1547,13 @@ function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, fin
       <div style={{background:"rgba(245,158,11,0.08)",border:"1px solid rgba(245,158,11,0.25)",borderRadius:12,padding:12}}>
         <div style={{fontSize:11,color:"#b45309",fontWeight:700,marginBottom:4}}>⚠️ Fair use applies</div>
         <div style={{fontSize:12,color:"#475569",lineHeight:1.6}}>
-          Renders run on a shared <strong style={{color:"#0f172a"}}>fal.ai</strong> API key (fal.ai/dashboard) - pay per image, no per-user cap on our end. Your plan's daily render limit is what keeps usage fair across customers.
+          Renders run on a shared rendering account - pay per image, no per-user cap on our end. Your plan's daily render limit is what keeps usage fair across customers.
         </div>
       </div>
 
       <div style={{background:"#f8fafc",border:`2px solid ${bgPhoto?"rgba(34,197,94,0.4)":"rgba(6,182,212,0.2)"}`,borderRadius:14,padding:14}}>
         <div style={{fontSize:11,color:"#06b6d4",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>📸 Backyard Photo - Required</div>
-        <div style={{fontSize:12,color:"#64748b",marginBottom:10}}>FLUX edits your actual photo - the pool is rendered realistically into your real space matching lighting, perspective & shadows. Keep photos under 8MB.</div>
+        <div style={{fontSize:12,color:"#64748b",marginBottom:10}}>Our AI edits your actual photo - the pool is rendered realistically into your real space matching lighting, perspective & shadows. Keep photos under 8MB.</div>
         <div style={{display:"flex",gap:8}}>
           <label style={{flex:1,padding:"13px 0",borderRadius:10,background:bgPhoto?"rgba(34,197,94,0.1)":"rgba(6,182,212,0.08)",border:`1px solid ${bgPhoto?"rgba(34,197,94,0.35)":"rgba(6,182,212,0.2)"}`,color:bgPhoto?"#22c55e":"#06b6d4",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
             {bgPhoto?"✅ Photo ready - tap to change":"📁 Upload Backyard Photo"}
@@ -1625,7 +1587,7 @@ function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, fin
       </div>
 
       <div style={{background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:14,padding:14}}>
-        <div style={{fontSize:11,color:"#06b6d4",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>✍️ Tell FLUX What to Add</div>
+        <div style={{fontSize:11,color:"#06b6d4",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>✍️ Tell Us What to Add</div>
         <textarea value={userTweak} onChange={e=>setUserTweak(e.target.value)}
           placeholder="e.g. 'add a natural rock waterfall on the left side with tropical palms and a fire pit in the back right corner'" rows={3}
           style={{width:"100%",background:"#e2e8f0",border:"1px solid #cbd5e1",borderRadius:10,padding:"10px 12px",color:"#0f172a",fontSize:13,outline:"none",resize:"vertical",boxSizing:"border-box",lineHeight:1.6,fontFamily:"inherit"}} />
@@ -1655,14 +1617,14 @@ function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, fin
       <button onClick={rendering||dailyRenders>=dailyLimit?null:handleRender}
         style={{width:"100%",padding:"17px",borderRadius:12,background:rendering?"#e2e8f0":"linear-gradient(135deg,#7c3aed,#5b21b6)",
           border:"none",color:rendering?"#64748b":"white",fontWeight:800,fontSize:16,cursor:rendering?"not-allowed":"pointer",boxShadow:!rendering?"0 4px 24px rgba(124,58,237,0.35)":"none",letterSpacing:"0.02em",transition:"all 0.2s"}}>
-        {rendering ? `⏳ ${progressMsg}` : (renderedImage ? "🔄 Generate New Variation" : "🚀 Generate with FLUX")}
+        {rendering ? `⏳ ${progressMsg}` : (renderedImage ? "🔄 Generate New Variation" : "🚀 Generate Rendering")}
       </button>
 
       {rendering&&(
         <div style={{background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:12,padding:16}}>
           <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}><span style={{fontSize:12,color:"#7c3aed",fontWeight:600}}>{progressMsg}</span><span style={{fontSize:12,color:"#64748b"}}>{progress}%</span></div>
           <div style={{height:6,background:"#e2e8f0",borderRadius:3,overflow:"hidden"}}><div style={{height:"100%",width:`${progress}%`,background:"linear-gradient(90deg,#7c3aed,#a78bfa,#06b6d4)",borderRadius:3,transition:"width 2.5s ease"}} /></div>
-          <div style={{marginTop:16,textAlign:"center"}}><div style={{fontSize:36}}>🚀</div><div style={{fontSize:13,color:"#7c3aed",marginTop:6,fontWeight:600}}>FLUX is working on your render...</div><div style={{fontSize:11,color:"#64748b",marginTop:3}}>Photo-realistic results take 20-45 seconds</div></div>
+          <div style={{marginTop:16,textAlign:"center"}}><div style={{fontSize:36}}>🚀</div><div style={{fontSize:13,color:"#7c3aed",marginTop:6,fontWeight:600}}>AI is working on your render...</div><div style={{fontSize:11,color:"#64748b",marginTop:3}}>Photo-realistic results take 20-45 seconds</div></div>
         </div>
       )}
 
@@ -1679,8 +1641,8 @@ function AIRenderingPanel({ bgPhoto, setBgPhoto, shape, poolColor, len, wid, fin
       {renderedImage&&!rendering&&(
         <div style={{background:"#f8fafc",border:"2px solid rgba(124,58,237,0.35)",borderRadius:16,overflow:"hidden",boxShadow:"0 8px 40px rgba(124,58,237,0.18)"}}>
           <div style={{position:"relative"}}>
-            <img src={renderedImage} alt="FLUX pool rendering" style={{width:"100%",display:"block"}} />
-            <div style={{position:"absolute",top:10,left:10,background:"rgba(124,58,237,0.92)",borderRadius:8,padding:"5px 12px",fontSize:11,color:"white",fontWeight:700}}>🚀 FLUX - Render #{renderCount}</div>
+            <img src={renderedImage} alt="AI pool rendering" style={{width:"100%",display:"block"}} />
+            <div style={{position:"absolute",top:10,left:10,background:"rgba(124,58,237,0.92)",borderRadius:8,padding:"5px 12px",fontSize:11,color:"white",fontWeight:700}}>🚀 Render #{renderCount}</div>
             <div style={{position:"absolute",top:10,right:10,background:"rgba(0,0,0,0.6)",borderRadius:8,padding:"5px 10px",fontSize:10,color:"#475569"}}>Pool Craft Pro</div>
           </div>
           {aiDescription&&(
@@ -1956,7 +1918,7 @@ function HardscapeDesigner({ hardscapes, toggleHardscape, setHSQty, dailyRenders
     setRendering(true); setError(null);
     setProgress(0); setProgressMsg("Preparing your design..."); setRendered(null); setAiDesc(null);
 
-    const steps = [[10,"Sending to FLUX..."],[24,"Analyzing your outdoor space..."],[40,"Placing hardscape elements..."],[56,"Rendering materials & textures..."],[70,"Adding lighting & atmosphere..."],[85,"Polishing final details..."]];
+    const steps = [[10,"Sending to AI..."],[24,"Analyzing your outdoor space..."],[40,"Placing hardscape elements..."],[56,"Rendering materials & textures..."],[70,"Adding lighting & atmosphere..."],[85,"Polishing final details..."]];
     let si=0;
     const interval = setInterval(()=>{ if(si<steps.length){ setProgress(steps[si][0]); setProgressMsg(steps[si][1]); si++; } }, 3000);
 
@@ -1980,7 +1942,7 @@ function HardscapeDesigner({ hardscapes, toggleHardscape, setHSQty, dailyRenders
         const txt = await resp.text().catch(()=>""); let parsed={}; try{parsed=JSON.parse(txt);}catch{}
         const msg = parsed?.error||txt.slice(0,120);
         if(resp.status===429) throw new Error("Rate limit - wait 60 seconds and try again.");
-        throw new Error(`FLUX error ${resp.status}: ${msg}`);
+        throw new Error(`Rendering error ${resp.status}: ${msg}`);
       }
 
       const data = await resp.json();
@@ -2004,7 +1966,7 @@ function HardscapeDesigner({ hardscapes, toggleHardscape, setHSQty, dailyRenders
       <div style={{background:"#ffffff",border:`2px solid ${photo?"rgba(52,211,153,0.45)":"#e2e8f0"}`,borderRadius:16,overflow:"hidden"}}>
         <div style={{background:"linear-gradient(135deg,#134e4a,#0f3d38)",padding:"14px 16px"}}>
           <div style={{fontSize:14,fontWeight:800,color:"#047857",marginBottom:3}}>🏡 Outdoor Space Designer</div>
-          <div style={{fontSize:12,color:"#6ee7b7",lineHeight:1.5}}>Upload your backyard photo - Select elements below - FLUX renders everything into your real space</div>
+          <div style={{fontSize:12,color:"#6ee7b7",lineHeight:1.5}}>Upload your backyard photo - Select elements below - our AI renders everything into your real space</div>
         </div>
         <div style={{padding:14}}>
           <div style={{display:"flex",gap:8,marginBottom:photo?10:0}}>
@@ -2133,7 +2095,7 @@ function HardscapeDesigner({ hardscapes, toggleHardscape, setHSQty, dailyRenders
           <div style={{background:"#f8fafc",border:"2px solid rgba(52,211,153,0.35)",borderRadius:14,overflow:"hidden",boxShadow:"0 6px 30px rgba(52,211,153,0.12)"}}>
             <div style={{position:"relative"}}>
               <img src={rendered} alt="Hardscape rendering" style={{width:"100%",display:"block"}} />
-              <div style={{position:"absolute",top:10,left:10,background:"rgba(5,150,105,0.92)",borderRadius:8,padding:"5px 12px",fontSize:11,color:"white",fontWeight:700}}>🏡 FLUX - Outdoor Design #{renderCount}</div>
+              <div style={{position:"absolute",top:10,left:10,background:"rgba(5,150,105,0.92)",borderRadius:8,padding:"5px 12px",fontSize:11,color:"white",fontWeight:700}}>🏡 Outdoor Design #{renderCount}</div>
               <div style={{position:"absolute",top:10,right:10,background:"rgba(0,0,0,0.6)",borderRadius:8,padding:"4px 10px",fontSize:10,color:"#475569"}}>Pool Craft Pro</div>
             </div>
             {aiDesc&&(<div style={{padding:"12px 14px",background:"rgba(52,211,153,0.06)",borderTop:"1px solid rgba(52,211,153,0.15)"}}><div style={{fontSize:10,color:"#047857",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:5}}>🤖 AI Designer Notes</div><div style={{fontSize:13,color:"#475569",lineHeight:1.6,fontStyle:"italic"}}>{aiDesc}</div></div>)}
@@ -2240,7 +2202,7 @@ function SitePlanMap({ poolLen, poolWid, poolShape, poolColor, initialAddress })
       });
 
       map.on("error", (e) => {
-        setInitError(e?.error?.message || "This Mapbox token was rejected — double check it's a valid public token (starts with \"pk.\").");
+        setInitError(e?.error?.message || "This access token was rejected — double check it's valid.");
       });
 
       map.on("load", () => {
@@ -2249,7 +2211,7 @@ function SitePlanMap({ poolLen, poolWid, poolShape, poolColor, initialAddress })
       });
     } catch (err) {
       if (mapRef.current) { mapRef.current.remove(); mapRef.current = null; }
-      setInitError(err.message || "Couldn't initialize the map — this Mapbox token looks invalid.");
+      setInitError(err.message || "Couldn't initialize the map — this access token looks invalid.");
       return;
     }
 
@@ -2408,10 +2370,10 @@ function SitePlanMap({ poolLen, poolWid, poolShape, poolColor, initialAddress })
     return (
       <div style={{background:"#f8fafc",border:"1px dashed #cbd5e1",borderRadius:14,padding:20,textAlign:"center"}}>
         <div style={{fontSize:32,marginBottom:8}}>🗺️</div>
-        <div style={{fontSize:14,fontWeight:700,color:"#0f172a",marginBottom:6}}>Add a Mapbox token to enable the Site Plan map</div>
-        <div style={{fontSize:12,color:"#64748b",marginBottom:14}}>Free at mapbox.com — grab a public access token (starts with "pk.") from your account's Tokens page.</div>
+        <div style={{fontSize:14,fontWeight:700,color:"#0f172a",marginBottom:6}}>Site Plan map isn't available right now</div>
+        <div style={{fontSize:12,color:"#64748b",marginBottom:14}}>This feature is temporarily unavailable - please check back soon, or paste your own map access token below to enable it now.</div>
         <div style={{display:"flex",gap:6,maxWidth:420,margin:"0 auto"}}>
-          <input type="password" value={tokenInput} onChange={e=>setTokenInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&saveMapboxToken()} placeholder="Paste Mapbox public token (pk....)" style={{flex:1,background:"#e2e8f0",border:"1px solid #cbd5e1",borderRadius:8,padding:"9px 12px",color:"#0f172a",fontSize:12,outline:"none"}}/>
+          <input type="password" value={tokenInput} onChange={e=>setTokenInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&saveMapboxToken()} placeholder="Paste map access token..." style={{flex:1,background:"#e2e8f0",border:"1px solid #cbd5e1",borderRadius:8,padding:"9px 12px",color:"#0f172a",fontSize:12,outline:"none"}}/>
           <button onClick={saveMapboxToken} disabled={!tokenInput.trim()} style={{padding:"9px 16px",borderRadius:8,background:tokenInput.trim()?"rgba(6,182,212,0.15)":"#e2e8f0",border:"1px solid rgba(6,182,212,0.3)",color:tokenInput.trim()?"#06b6d4":"#64748b",fontSize:12,fontWeight:700,cursor:tokenInput.trim()?"pointer":"not-allowed"}}>Save</button>
         </div>
       </div>
@@ -2422,7 +2384,7 @@ function SitePlanMap({ poolLen, poolWid, poolShape, poolColor, initialAddress })
     <div style={{display:"flex",flexDirection:"column",gap:12}}>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,flexWrap:"wrap"}}>
         <div style={{fontSize:12,color:"#64748b"}}>Search an address, then drag the ✛ handle to move the pool and the ↻ handle to rotate it.</div>
-        <button onClick={removeMapboxToken} style={{fontSize:11,color:"#64748b",background:"none",border:"none",cursor:"pointer",padding:"4px 2px"}}>Remove Mapbox token</button>
+        <button onClick={removeMapboxToken} style={{fontSize:11,color:"#64748b",background:"none",border:"none",cursor:"pointer",padding:"4px 2px"}}>Remove custom map token</button>
       </div>
 
       {initError && (
@@ -2663,7 +2625,7 @@ function SchematicTab({ poolLen, poolWid, poolShape, depthId, overrides={}, setO
 // ─── HOW IT WORKS — plain-English tour, visible to everyone (paying or not) ────
 const HOW_IT_WORKS_SECTIONS = [
   { icon:"🏊", title:"Design your pool in minutes", body:"Pick a shape, punch in the length and width, choose a finish and water color, and watch an instant 3D model appear. No CAD software, no drafting wait." },
-  { icon:"📸", title:"See it in your actual backyard", body:"Upload a photo of the real yard and FLUX AI renders a photorealistic pool right into it — correct lighting, shadows, and perspective. Homeowners stop having to imagine it." },
+  { icon:"📸", title:"See it in your actual backyard", body:"Upload a photo of the real yard and our AI renders a photorealistic pool right into it — correct lighting, shadows, and perspective. Homeowners stop having to imagine it." },
   { icon:"🗺️", title:"Know it'll pass setback compliance before you dig", body:"Search the real address, pull the real parcel boundary, and drag the pool into place on a true-to-scale map. If it crosses a setback line, it turns red — before permits, not after." },
   { icon:"📐", title:"Get a real engineering layout, not a guess", body:"Rebar grid spacing, skimmer and return placement, main drain location, plumbing runs — generated automatically from the pool's actual dimensions, not eyeballed." },
   { icon:"📊", title:"Every material and cost, calculated for you", body:"Excavation, gunite, rebar, plumbing, tile, plaster bags — all computed from the pool's real geometry the moment you set its dimensions. No spreadsheets, no manual math." },
@@ -3070,7 +3032,7 @@ function OnboardingModal({ onComplete, onSeePricing, userMode, setUserMode, setL
           <div style={{fontSize:13,color:"#475569",lineHeight:1.7}}>The most complete pool design tool ever built for contractors and homeowners. Design, estimate, render, and close — all in one place.</div>
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:4}}>
-          {[{icon:"⚡",label:"AI Renderings",sub:"FLUX (fal.ai)"},{icon:"📊",label:"Materials Calc",sub:"Real engineering math"},{icon:"🗺️",label:"Site Plan",sub:"Scale-accurate map"},{icon:"💰",label:"Cost Estimator",sub:"Local market rates"},{icon:"📄",label:"Client Proposals",sub:"Close the deal"},{icon:"🏗️",label:"Build Tracker",sub:"Post-sale tool"}].map(f=>(
+          {[{icon:"⚡",label:"AI Renderings",sub:"Photorealistic results"},{icon:"📊",label:"Materials Calc",sub:"Real engineering math"},{icon:"🗺️",label:"Site Plan",sub:"Scale-accurate map"},{icon:"💰",label:"Cost Estimator",sub:"Local market rates"},{icon:"📄",label:"Client Proposals",sub:"Close the deal"},{icon:"🏗️",label:"Build Tracker",sub:"Post-sale tool"}].map(f=>(
             <div key={f.label} style={{background:"rgba(201,168,76,0.08)",border:"1px solid rgba(201,168,76,0.18)",borderRadius:10,padding:"10px 12px"}}>
               <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}><span style={{fontSize:18}}>{f.icon}</span><span style={{fontSize:12,fontWeight:700,color:"#0f172a"}}>{f.label}</span></div>
               <div style={{fontSize:10,color:"#64748b",paddingLeft:26}}>{f.sub}</div>
@@ -3641,7 +3603,6 @@ function TeamManagementPanel({ user, ownPlan, seats, teamMembership }) {
   const [dbError, setDbError] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteError, setInviteError] = useState(null);
-  const [showSql, setShowSql] = useState(false);
 
   const loadTeam = useCallback(async () => {
     const sb = await loadSupabase();
@@ -3686,7 +3647,6 @@ function TeamManagementPanel({ user, ownPlan, seats, teamMembership }) {
     setMembers((prev) => prev.filter((m) => m.id !== id));
   };
 
-  const copySql = () => { try { navigator.clipboard.writeText(TEAM_SETUP_SQL); } catch {} };
 
   if (!isOwner && teamMembership) {
     return (
@@ -3708,16 +3668,7 @@ function TeamManagementPanel({ user, ownPlan, seats, teamMembership }) {
       <div style={{fontSize:11,color:"#64748b",marginBottom:12}}>{seats}-seat plan · {activeCount} active{pendingCount>0?`, ${pendingCount} pending`:""}. Invited teammates sign up (or log in) normally with the email you invite — they don't need their own subscription.</div>
 
       {dbError && (
-        <div style={{marginBottom:12}}>
-          <div style={{padding:"10px 12px",background:"rgba(245,158,11,0.08)",border:"1px solid rgba(245,158,11,0.25)",borderRadius:8,fontSize:12,color:"#b45309",marginBottom:8}}>⚠️ Team tables aren't set up in your Supabase project yet. Paste this into the same SQL editor you used for Cloud Sync, then reopen this tab.</div>
-          <button onClick={()=>setShowSql(p=>!p)} style={{fontSize:11,color:"#22c55e",background:"none",border:"none",cursor:"pointer",padding:0,marginBottom:showSql?8:0}}>{showSql?"▲ Hide setup code":"▼ Show setup SQL code"}</button>
-          {showSql && (
-            <div>
-              <pre style={{background:"#0a0e1a",border:"1px solid #e2e8f0",borderRadius:8,padding:10,fontSize:10,color:"#86efac",overflowX:"auto",whiteSpace:"pre-wrap",margin:0}}>{TEAM_SETUP_SQL}</pre>
-              <button onClick={copySql} style={{marginTop:6,padding:"5px 10px",borderRadius:6,background:"rgba(34,197,94,0.1)",border:"1px solid rgba(34,197,94,0.25)",color:"#22c55e",fontSize:11,fontWeight:700,cursor:"pointer"}}>📋 Copy SQL</button>
-            </div>
-          )}
-        </div>
+        <div style={{padding:"10px 12px",background:"rgba(245,158,11,0.08)",border:"1px solid rgba(245,158,11,0.25)",borderRadius:8,fontSize:12,color:"#b45309",marginBottom:12}}>⚠️ Team features aren't available right now - please check back soon or contact support.</div>
       )}
 
       {!dbError && !loading && (
@@ -3863,8 +3814,8 @@ function SettingsScreen({ userMode, setUserMode, onSwitchMode, plan, ownPlan, se
 
       {/* AI Rendering / Billing */}
       <div style={{background:"#ffffff",border:"1px solid #e2e8f0",borderRadius:14,padding:14}}>
-        <div style={{fontSize:12,fontWeight:700,color:"#7c3aed",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4}}>🚀 FLUX — AI Pool Rendering</div>
-        <div style={{fontSize:11,color:"#64748b",marginBottom:12}}>Every plan runs on a shared fal.ai key configured on the server — just choose a plan below.</div>
+        <div style={{fontSize:12,fontWeight:700,color:"#7c3aed",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4}}>🚀 AI Pool Rendering</div>
+        <div style={{fontSize:11,color:"#64748b",marginBottom:12}}>Every plan runs on our shared rendering account, configured on the server — just choose a plan below.</div>
 
         {!user ? (
           <div style={{padding:"14px",borderRadius:10,background:"rgba(6,182,212,0.06)",border:"1px solid rgba(6,182,212,0.2)",fontSize:12,color:"#475569"}}>
@@ -3947,16 +3898,16 @@ function SettingsScreen({ userMode, setUserMode, onSwitchMode, plan, ownPlan, se
       {/* Maps & Parcel */}
       <div style={{background:"#ffffff",border:"1px solid #e2e8f0",borderRadius:14,padding:14}}>
         <div style={{fontSize:12,fontWeight:700,color:"#06b6d4",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4}}>🛰️ Site Plan Map</div>
-        <div style={{fontSize:11,color:"#64748b",marginBottom:10}}>The Site Plan tab's interactive map works out of the box - no setup needed. Only paste your own Mapbox token below if you'd rather track usage on your own free Mapbox account instead.</div>
-        <KeyRow label="Mapbox Access Token (optional override)" value={mapboxToken} setValue={setMapboxToken} storageKey="pc_mapbox_token" placeholder="Paste your own Mapbox public token (pk....)" isSet={!!mapboxToken}
-          hint="Optional - leave blank to use the built-in map. Free at mapbox.com if you want your own token instead."/>
+        <div style={{fontSize:11,color:"#64748b",marginBottom:10}}>The Site Plan tab's interactive map works out of the box - no setup needed. Only paste your own map access token below if you'd rather track usage on your own account instead.</div>
+        <KeyRow label="Map Access Token (optional override)" value={mapboxToken} setValue={setMapboxToken} storageKey="pc_mapbox_token" placeholder="Paste your own map access token..." isSet={!!mapboxToken}
+          hint="Optional - leave blank to use the built-in map."/>
         <div style={{marginTop:8,fontSize:11,color:"#64748b"}}>Real parcel boundary data (lot lines, zoning, setbacks) is powered by a shared account, same as the map above - no setup needed on your end.</div>
       </div>
 
       {/* Cloud Sync */}
       <div style={{background:"#ffffff",border:"1px solid #e2e8f0",borderRadius:14,padding:14}}>
-        <div style={{fontSize:12,fontWeight:700,color:"#22c55e",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4}}>☁️ Cloud Sync (Supabase)</div>
-        <div style={{fontSize:11,color:"#64748b",marginBottom:10}}>Sync projects across all your devices. Free at supabase.com. Create a project, run the setup SQL, then paste your URL and anon key.</div>
+        <div style={{fontSize:12,fontWeight:700,color:"#22c55e",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4}}>☁️ Cloud Sync</div>
+        <div style={{fontSize:11,color:"#64748b",marginBottom:10}}>Sync projects across all your devices.</div>
         <CloudSyncPanel />
       </div>
 
@@ -4031,7 +3982,7 @@ function SettingsScreen({ userMode, setUserMode, onSwitchMode, plan, ownPlan, se
           <span style={{color:"#0f172a"}}>POOL </span><span style={{color:"#a8873a"}}>CRAFT </span><span style={{color:"#0f172a"}}>PRO</span>
         </div>
         <div style={{fontSize:10,color:"#64748b",letterSpacing:"2px",textTransform:"uppercase",marginBottom:8}}>Design Pools. Craft Outdoor Living.</div>
-        <div style={{fontSize:11,color:"#64748b",lineHeight:1.7}}>Version 1.0 · poolcraftpro.ai · Built with React<br/>AI rendering by fal.ai FLUX · Maps by Mapbox<br/>Parcel data by Realie · Cloud sync by Supabase</div>
+        <div style={{fontSize:11,color:"#64748b",lineHeight:1.7}}>Version 1.0 · poolcraftpro.ai</div>
       </div>
     </div>
   );
@@ -4368,7 +4319,7 @@ function QuickRender({ len, wid, shape, finishId, colorId, entries, hardscapes, 
     if (dailyLimit <= 0) { setError("AI rendering needs an active Basic or Pro plan - subscribe in Settings to unlock it."); return; }
     if (dailyRenders >= dailyLimit) { setError(`You've used all ${dailyLimit} renders for today - pool and hardscape renders share this limit.`); return; }
     setRendering(true); setError(null); setProgress(5); setRendered(null); setAiNote(null);
-    const steps = [[10,"Sending to FLUX..."],[25,"Analyzing the space..."],[42,"Placing your pool..."],[58,"Rendering water & light..."],[74,"Matching shadows..."],[88,"Final polish..."]];
+    const steps = [[10,"Sending to AI..."],[25,"Analyzing the space..."],[42,"Placing your pool..."],[58,"Rendering water & light..."],[74,"Matching shadows..."],[88,"Final polish..."]];
     let si = 0;
     const iv = setInterval(() => { if (si < steps.length) { setProgress(steps[si][0]); si++; } }, 3500);
     try {
@@ -4494,7 +4445,7 @@ function QuickRender({ len, wid, shape, finishId, colorId, entries, hardscapes, 
       {rendering && (
         <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 14, padding: 20, textAlign: "center" }}>
           <div style={{ fontSize: 40, marginBottom: 12 }}>🚀</div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: "#7c3aed", marginBottom: 10 }}>FLUX is rendering your pool...</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "#7c3aed", marginBottom: 10 }}>AI is rendering your pool...</div>
           <div style={{ height: 6, background: "#e2e8f0", borderRadius: 3, overflow: "hidden", marginBottom: 8 }}>
             <div style={{ height: "100%", width: `${progress}%`, background: "linear-gradient(90deg,#7c3aed,#a78bfa,#c9a84c)", borderRadius: 3, transition: "width 3s ease" }} />
           </div>
