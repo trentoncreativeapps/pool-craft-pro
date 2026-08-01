@@ -861,17 +861,21 @@ function CloudSyncPanel() {
   );
 }
 
-// ─── REGRID PARCEL LOOKUP — drop in a real key when ready ─────────────────────
-// Sign up at regrid.com to get real parcel data (lot size, zoning, setbacks).
-// Until a key is added below, the app uses realistic estimated data so the
-// rest of the planning flow works end-to-end.
-function getRegridKey() {
-  try { return localStorage.getItem("pc_regrid_key") || ""; } catch { return ""; }
-}
-
+// ─── REALIE PARCEL LOOKUP ───────────────────────────────────────────────────
+// Calls the /api/parcel server-side proxy rather than Realie directly - a
+// Realie API key is a metered, billed credential (unlike Mapbox's public
+// token, which is designed to be safe in client-side requests) and must
+// never be exposed in a browser network request. One shared REALIE_API_KEY
+// set in Vercel covers every customer automatically, same pattern as
+// Mapbox/fal.ai/Anthropic - the proxy itself returns a non-200 until that's
+// set, in which case the app falls back to realistic estimated data so the
+// rest of the planning flow still works end-to-end.
 async function lookupParcel(addr) {
-  const REGRID_KEY = getRegridKey();
-  if (!REGRID_KEY) {
+  const resp = await fetch("/api/parcel", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ address: addr }),
+  });
+  if (!resp.ok) {
     return {
       address: addr,
       parcel: `APN-${Math.floor(Math.random()*900000+100000)}`,
@@ -883,53 +887,19 @@ async function lookupParcel(addr) {
       source: "estimated",
     };
   }
-  const encoded = encodeURIComponent(addr);
-  const resp = await fetch(`https://app.regrid.com/api/v1/search.json?query=${encoded}&token=${REGRID_KEY}&limit=1`);
-  if (!resp.ok) throw new Error("Regrid API error");
   const data = await resp.json();
-  const p = data?.results?.[0];
+  const p = data?.property;
   if (!p) throw new Error("Address not found");
   return {
-    address: p.fields?.address || addr,
-    parcel:  p.fields?.parcelnumb || "—",
-    lot_size: p.fields?.ll_gisacre ? `${Number(p.fields.ll_gisacre).toFixed(2)} acres` : "—",
-    lot_sqft: p.fields?.ll_gissqft ? `${Math.round(p.fields.ll_gissqft).toLocaleString()} sq ft` : "—",
-    zoning:   p.fields?.zoning_description || p.fields?.zoning || "Residential",
+    address: p.addressFull || addr,
+    parcel:  p.parcelId || "—",
+    lot_size: p.acres ? `${Number(p.acres).toFixed(2)} acres` : "—",
+    lot_sqft: p.landArea ? `${Math.round(p.landArea).toLocaleString()} sq ft` : "—",
+    zoning:   p.zoningCode || "Residential",
     setback_front: "Verify with county", setback_rear: "Verify with county",
     setback_side: "Verify with county", pool_setback: "Verify with county",
-    source: "regrid",
+    source: "realie",
   };
-}
-
-function RegridKeyPanel() {
-  const [key, setKey] = useState(getRegridKey());
-  const [input, setInput] = useState("");
-  const save = () => {
-    const k = input.trim(); if (!k) return;
-    try { localStorage.setItem("pc_regrid_key", k); } catch {}
-    setKey(k); setInput("");
-  };
-  const remove = () => {
-    try { localStorage.removeItem("pc_regrid_key"); } catch {}
-    setKey("");
-  };
-  if (key) {
-    return (
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 12px",background:"rgba(34,197,94,0.08)",border:"1px solid rgba(34,197,94,0.2)",borderRadius:8,marginTop:8}}>
-        <div style={{fontSize:11,fontWeight:700,color:"#22c55e"}}>✅ Regrid live parcel data — active</div>
-        <button onClick={remove} style={{fontSize:11,color:"#64748b",background:"none",border:"none",cursor:"pointer",padding:"8px 4px",minHeight:36}}>Remove</button>
-      </div>
-    );
-  }
-  return (
-    <div style={{marginTop:8,padding:"10px 12px",background:"rgba(100,116,139,0.08)",border:"1px dashed #cbd5e1",borderRadius:8}}>
-      <div style={{fontSize:11,color:"#475569",marginBottom:6}}>Currently showing an estimated parcel outline. Add a free Regrid API key (regrid.com) for your real lot size, zoning & setbacks.</div>
-      <div style={{display:"flex",gap:6}}>
-        <input type="password" value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&save()} placeholder="Paste Regrid API key..." style={{flex:1,background:"#e2e8f0",border:"1px solid #cbd5e1",borderRadius:6,padding:"6px 10px",color:"#0f172a",fontSize:11,outline:"none"}}/>
-        <button onClick={save} disabled={!input.trim()} style={{padding:"6px 12px",borderRadius:6,background:input.trim()?"rgba(34,197,94,0.15)":"#e2e8f0",border:"1px solid rgba(34,197,94,0.3)",color:input.trim()?"#22c55e":"#64748b",fontSize:11,fontWeight:700,cursor:input.trim()?"pointer":"not-allowed"}}>Save</button>
-      </div>
-    </div>
-  );
 }
 
 // ─── 3D POOL PREVIEW ───────────────────────────────────────────────────────────
@@ -1138,7 +1108,7 @@ function Pool3D({ poolLen, poolWid, poolShape, poolColor, depthId, entries, fini
   );
 }
 
-// ─── SITE PLAN GEOMETRY HELPERS (Mapbox GL + Regrid + Turf.js) ────────────────
+// ─── SITE PLAN GEOMETRY HELPERS (Mapbox GL + Realie + Turf.js) ────────────────
 // Shared token (VITE_MAPBOX_TOKEN) makes Site Plan work out of the box for every
 // customer; a token saved locally in Settings overrides it, for a contractor who
 // wants to use their own Mapbox account instead (e.g. to track their own usage).
@@ -1239,35 +1209,43 @@ function buildSetbackEnvelope(parcelPolygon, refPoint, { houseSetback, rearSetba
   }
 }
 
-// Fetches the real parcel boundary from Regrid's v2 point-search API (requires
-// a user-supplied Regrid key, same BYOK pattern as lookupParcel() above). Falls
-// back to a synthesized rectangular parcel centered near the searched point,
-// sized from a typical suburban 0.25-acre lot, when no key is set or the call
-// fails - matching the app's existing estimated/live data pattern.
+// Fetches the real parcel boundary via the /api/parcel server-side proxy
+// (never calls Realie directly from the browser - see the proxy's own
+// comment for why). Falls back to a synthesized rectangular parcel centered
+// near the searched point, sized from a typical suburban 0.25-acre lot, when
+// no key is configured server-side or the call fails - matching the app's
+// existing estimated/live data pattern.
 async function fetchParcelPolygon(lat, lng) {
-  const token = getRegridKey();
-  if (token) {
-    try {
-      const resp = await fetch(`https://app.regrid.com/api/v2/parcels/point?lat=${lat}&lon=${lng}&radius=60&limit=1&token=${token}`);
-      if (resp.ok) {
-        const data = await resp.json();
-        const feature = data?.parcels?.features?.[0];
-        if (feature?.geometry) {
-          const fields = feature.properties?.fields || {};
-          return {
-            polygon: turf.feature(feature.geometry),
-            attrs: {
-              parcel: fields.parcelnumb || "—",
-              lot_size: fields.ll_gisacre ? `${Number(fields.ll_gisacre).toFixed(2)} acres` : "—",
-              lot_sqft: fields.ll_gissqft ? `${Math.round(fields.ll_gissqft).toLocaleString()} sq ft` : "—",
-              zoning: fields.zoning_description || fields.zoning || "Residential",
-            },
-            source: "regrid",
-          };
-        }
+  try {
+    const resp = await fetch("/api/parcel", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ lat, lng }),
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      const p = data?.properties?.[0];
+      const geom = p?.geometry;
+      if (geom) {
+        // Realie returns a GeoJSON MultiPolygon, but buildSetbackEnvelope
+        // expects a plain Polygon (coordinates[0] as the outer ring) -
+        // unwrap to the first polygon in the set, which is the parcel itself
+        // in the overwhelming majority of real-world (non-multi-lot) cases.
+        const polyGeom = geom.type === "MultiPolygon"
+          ? { type: "Polygon", coordinates: geom.coordinates[0] }
+          : geom;
+        return {
+          polygon: turf.feature(polyGeom),
+          attrs: {
+            parcel: p.parcelId || "—",
+            lot_size: p.acres ? `${Number(p.acres).toFixed(2)} acres` : "—",
+            lot_sqft: p.landArea ? `${Math.round(p.landArea).toLocaleString()} sq ft` : "—",
+            zoning: p.zoningCode || "Residential",
+          },
+          source: "realie",
+        };
       }
-    } catch {}
-  }
+    }
+  } catch {}
   const estSqFt = 10890; // ~0.25 acre typical suburban lot
   const ratio = 4 / 3;
   const estWidthFt = Math.sqrt(estSqFt / ratio);
@@ -1277,7 +1255,7 @@ async function fetchParcelPolygon(lat, lng) {
   const parcelCenter = turf.destination([lng, lat], estDepthFt / 2, 0, { units: "feet" }).geometry.coordinates;
   const rect = buildRectPolygon(parcelCenter, estDepthFt, estWidthFt, 0);
   // Without real building-footprint data we can't know where the house actually
-  // sits, so the guessed rectangle's dead-center (which the "regrid" branch uses
+  // sits, so the guessed rectangle's dead-center (which the "realie" branch uses
   // as its default) is as likely to land on the house as in the yard. A backyard
   // pool is typically well behind the house, so start further back - at ~70% of
   // the estimated depth from the street-facing point - as a better first guess;
@@ -2174,7 +2152,7 @@ function HardscapeDesigner({ hardscapes, toggleHardscape, setHSQty, dailyRenders
   );
 }
 
-// ─── SITE PLAN MAP — Mapbox GL JS + Regrid parcels + Turf.js setbacks ─────────
+// ─── SITE PLAN MAP — Mapbox GL JS + Realie parcels + Turf.js setbacks ─────────
 function SitePlanMap({ poolLen, poolWid, poolShape, poolColor, initialAddress }) {
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
@@ -2486,7 +2464,7 @@ function SitePlanMap({ poolLen, poolWid, poolShape, poolColor, initialAddress })
         <div style={{background:"rgba(6,182,212,0.08)",border:"1px solid rgba(6,182,212,0.2)",borderRadius:12,padding:14}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
             <div style={{fontSize:12,color:"#06b6d4",fontWeight:700}}>📍 Parcel Data</div>
-            <div style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:parcelSource==="regrid"?"rgba(34,197,94,0.15)":"rgba(245,158,11,0.15)",border:`1px solid ${parcelSource==="regrid"?"rgba(34,197,94,0.3)":"rgba(245,158,11,0.3)"}`,color:parcelSource==="regrid"?"#22c55e":"#b45309",fontWeight:700}}>{parcelSource==="regrid"?"🟢 Live Regrid Data":"🟡 Estimated"}</div>
+            <div style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:parcelSource==="realie"?"rgba(34,197,94,0.15)":"rgba(245,158,11,0.15)",border:`1px solid ${parcelSource==="realie"?"rgba(34,197,94,0.3)":"rgba(245,158,11,0.3)"}`,color:parcelSource==="realie"?"#22c55e":"#b45309",fontWeight:700}}>{parcelSource==="realie"?"🟢 Live Parcel Data":"🟡 Estimated — Not Real Property Lines"}</div>
           </div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
             {[{label:"Parcel / APN",val:parcelAttrs.parcel},{label:"Lot Size",val:parcelAttrs.lot_size},{label:"Lot Sq Ft",val:parcelAttrs.lot_sqft},{label:"Zoning",val:parcelAttrs.zoning}].map(r=>(
@@ -2497,7 +2475,6 @@ function SitePlanMap({ poolLen, poolWid, poolShape, poolColor, initialAddress })
       )}
 
       <div style={{fontSize:11,color:"#64748b"}}>{POOL_SHAPES.find(s=>s.id===poolShape)?.label || "Pool"} shown as its {poolLen}' x {poolWid}' bounding rectangle for setback/placement purposes. Setback data is for planning reference — always verify with your local building department before permit submission.</div>
-      <RegridKeyPanel />
     </div>
   );
 }
@@ -3822,7 +3799,6 @@ function SettingsScreen({ userMode, setUserMode, onSwitchMode, plan, ownPlan, se
     } finally { setBillingLoading(false); }
   };
 
-  const [regridKey, setRegridKey] = useState(()=>{ try{return localStorage.getItem("pc_regrid_key")||"";}catch{return "";} });
   const [mapboxToken, setMapboxToken] = useState(()=>{ try{return localStorage.getItem("pc_mapbox_token")||"";}catch{return "";} });
   const supabaseCfg = getSupabaseConfig();
   const [sbUrl, setSbUrl] = useState(supabaseCfg.url);
@@ -3974,8 +3950,7 @@ function SettingsScreen({ userMode, setUserMode, onSwitchMode, plan, ownPlan, se
         <div style={{fontSize:11,color:"#64748b",marginBottom:10}}>The Site Plan tab's interactive map works out of the box - no setup needed. Only paste your own Mapbox token below if you'd rather track usage on your own free Mapbox account instead.</div>
         <KeyRow label="Mapbox Access Token (optional override)" value={mapboxToken} setValue={setMapboxToken} storageKey="pc_mapbox_token" placeholder="Paste your own Mapbox public token (pk....)" isSet={!!mapboxToken}
           hint="Optional - leave blank to use the built-in map. Free at mapbox.com if you want your own token instead."/>
-        <KeyRow label="Regrid API Key (Parcel Data)" value={regridKey} setValue={setRegridKey} storageKey="pc_regrid_key" placeholder="Paste Regrid key..." isSet={!!regridKey}
-          hint="Optional — enables real parcel boundary geometry, lot size, zoning & setback data. Sign up at regrid.com. App works with an estimated rectangular parcel until this is set."/>
+        <div style={{marginTop:8,fontSize:11,color:"#64748b"}}>Real parcel boundary data (lot lines, zoning, setbacks) is powered by a shared account, same as the map above - no setup needed on your end.</div>
       </div>
 
       {/* Cloud Sync */}
@@ -4056,7 +4031,7 @@ function SettingsScreen({ userMode, setUserMode, onSwitchMode, plan, ownPlan, se
           <span style={{color:"#0f172a"}}>POOL </span><span style={{color:"#a8873a"}}>CRAFT </span><span style={{color:"#0f172a"}}>PRO</span>
         </div>
         <div style={{fontSize:10,color:"#64748b",letterSpacing:"2px",textTransform:"uppercase",marginBottom:8}}>Design Pools. Craft Outdoor Living.</div>
-        <div style={{fontSize:11,color:"#64748b",lineHeight:1.7}}>Version 1.0 · poolcraftpro.ai · Built with React<br/>AI rendering by fal.ai FLUX · Maps by Mapbox<br/>Parcel data by Regrid · Cloud sync by Supabase</div>
+        <div style={{fontSize:11,color:"#64748b",lineHeight:1.7}}>Version 1.0 · poolcraftpro.ai · Built with React<br/>AI rendering by fal.ai FLUX · Maps by Mapbox<br/>Parcel data by Realie · Cloud sync by Supabase</div>
       </div>
     </div>
   );
@@ -5486,7 +5461,7 @@ export default function PoolCraftPro() {
               <div style={{marginTop:12,background:"rgba(6,182,212,0.08)",border:"1px solid rgba(6,182,212,0.2)",borderRadius:12,padding:14}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
                   <div style={{fontSize:12,color:"#06b6d4",fontWeight:700}}>✅ Parcel Found - {parcelData.address}</div>
-                  <div style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:parcelData.source==="regrid"?"rgba(34,197,94,0.15)":"rgba(245,158,11,0.15)",border:`1px solid ${parcelData.source==="regrid"?"rgba(34,197,94,0.3)":"rgba(245,158,11,0.3)"}`,color:parcelData.source==="regrid"?"#22c55e":"#b45309",fontWeight:700}}>{parcelData.source==="regrid"?"🟢 Live Regrid Data":"🟡 Estimated"}</div>
+                  <div style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:parcelData.source==="realie"?"rgba(34,197,94,0.15)":"rgba(245,158,11,0.15)",border:`1px solid ${parcelData.source==="realie"?"rgba(34,197,94,0.3)":"rgba(245,158,11,0.3)"}`,color:parcelData.source==="realie"?"#22c55e":"#b45309",fontWeight:700}}>{parcelData.source==="realie"?"🟢 Live Parcel Data":"🟡 Estimated — Not Real Property Lines"}</div>
                 </div>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
                   {[{label:"Parcel / APN",val:parcelData.parcel},{label:"Lot Size",val:parcelData.lot_size},{label:"Lot Sq Ft",val:parcelData.lot_sqft},{label:"Zoning",val:parcelData.zoning},{label:"Front Setback",val:parcelData.setback_front},{label:"Rear Setback",val:parcelData.setback_rear},{label:"Side Setback",val:parcelData.setback_side},{label:"Pool Setback",val:parcelData.pool_setback}].map(r=>(
